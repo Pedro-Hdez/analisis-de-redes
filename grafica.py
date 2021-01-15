@@ -54,30 +54,12 @@ class Grafica:
         
         Si no se encuentra la arista, regresa None, None
     """
-    def buscar_arista(self, a, b, etiqueta=None):
-        # Variables donde se guardarán los resultados a regresar
-        arista1 = None
-        arista2 = None
-
-        # Se busca la arista solicitada dentro de la lista del nodo a
-        for arista in self.grafica[a]:
-
-            if arista.destino == b and arista.etiqueta == etiqueta:
-                arista1 = arista
-                break
-
-        # Se busca la arista solicitada dentro de la lista del nodo b
-        for arista in self.grafica[b]:
-            if arista.destino == a and arista.etiqueta == etiqueta:
-                arista2 = arista
-                break
-        
-        # Si se encuentra la arista, entonces se regresan
-        if arista1 and arista2:
-            return arista1, arista2
-        
-        # Si no se encontró la arista, entonces se regresa None
-        return None, None
+    def buscar_arista(self, etiqueta):
+        for nodo in self.grafica:
+            for arista in self.grafica[nodo]:
+                if arista.etiqueta == etiqueta:
+                    return nodo
+        return None
     
     """
         Este método agrega un nodo a la gráfica.
@@ -103,7 +85,7 @@ class Grafica:
         b: Nodo 2 de la arista.
         etiqueta: Etiqueta de la arista. None por default.
     """
-    def agregar_arista(self, a, b, etiqueta=None):
+    def agregar_arista(self, a, b, etiqueta):
         # Se agrega el nodo a y después se agrega una arista hacia
         # b con la etiqueta a su lista
         self.agregar_nodo(a)
@@ -128,22 +110,23 @@ class Grafica:
         unSentido: True para eliminar la arista de a y b
                    False para eliminar la arista únicamente de a
     """    
-    def eliminar_arista(self, a, b, etiqueta=None, unSentido=False):
-        # Primero se busca la arista que se quiere eliminar
-        arista1, arista2 = self.buscar_arista(a, b, etiqueta=etiqueta)
+    def eliminar_arista(self, etiqueta):
+        nodo1 = self.buscar_arista(etiqueta)
 
-        # Si existe, entonces se procede a eliminar
-        if arista1 and arista2:
-            # Primero se elimina de la lista de aristas de a y el
-            # contador de aristas se decrementa
-            self.grafica[a].remove(arista1)
-            self.num_aristas -= 1
+        if nodo1:
+            for arista in self.grafica[nodo1]:
+                if arista.etiqueta == etiqueta:
+                    nodo2 = arista.destino
+                    self.grafica[nodo1].remove(arista)
+                    break
             
-            # Si unSentido = True, entonces la arista también se elimina
-            # de la lista de b
-            if not unSentido:
-                self.grafica[b].remove(arista2)
-    
+            for arista in self.grafica[nodo2]:
+                if arista.etiqueta == etiqueta:
+                    self.grafica[nodo1].remove(arista)
+                    break
+            
+            self.num_aristas -= 1
+
     """
         Este método elimina un nodo de la gráfica
 
@@ -159,11 +142,11 @@ class Grafica:
             # la bandera unSentido=True porque no se necesita borrar la arista del nodo que
             # vamos a eliminar.
             for arista in self.grafica[nodo]:
-                self.eliminar_arista(arista.destino, nodo, etiqueta=arista.etiqueta, unSentido=True)
+                self.eliminar_arista(arista.etiqueta)
     
             # Cuando todas las aristas del nodo se hayan eliminado procedemos a 
             # eliminar el nodo de la gráfica y decrementamos el contador de nodos
-            _ = self.grafica.pop(nodo)
+            self.grafica.pop(nodo)
             self.num_nodos -= 1
     
     """
@@ -215,9 +198,7 @@ class Grafica:
     def vaciar_nodo(self, nodo):
         # Se elimina cada arista en ambos sentidos
         while self.grafica[nodo]:
-            self.eliminar_arista(nodo,
-                                 self.grafica[nodo][0].destino,
-                                 self.grafica[nodo][0].etiqueta)
+            self.eliminar_arista(self.grafica[nodo][0].etiqueta)
     """
         Este método limpia la gráfica
     """
