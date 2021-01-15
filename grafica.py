@@ -112,18 +112,21 @@ class Grafica:
     """    
     def eliminar_arista(self, etiqueta):
         nodo1 = self.buscar_arista(etiqueta)
-
         if nodo1:
-            for arista in self.grafica[nodo1]:
-                if arista.etiqueta == etiqueta:
-                    nodo2 = arista.destino
-                    self.grafica[nodo1].remove(arista)
+            for i in range(len(self.grafica[nodo1])):
+                if self.grafica[nodo1][i].etiqueta == etiqueta:
+                    arista = self.grafica[nodo1][i]
+                    nodo2 = self.grafica[nodo1][i].destino
+                    break
+
+            self.grafica[nodo1].remove(arista)
+        
+            for i in range(len(self.grafica[nodo2])):
+                if self.grafica[nodo2][i].etiqueta == etiqueta:
+                    arista = self.grafica[nodo2][i]
                     break
             
-            for arista in self.grafica[nodo2]:
-                if arista.etiqueta == etiqueta:
-                    self.grafica[nodo1].remove(arista)
-                    break
+            self.grafica[nodo2].remove(arista)
             
             self.num_aristas -= 1
 
@@ -141,8 +144,8 @@ class Grafica:
             # inciden en él. Lo hacemos con el método eliminar_arista() y usamos
             # la bandera unSentido=True porque no se necesita borrar la arista del nodo que
             # vamos a eliminar.
-            for arista in self.grafica[nodo]:
-                self.eliminar_arista(arista.etiqueta)
+            while self.grafica[nodo]:
+                self.eliminar_arista(self.grafica[nodo][0].etiqueta)
     
             # Cuando todas las aristas del nodo se hayan eliminado procedemos a 
             # eliminar el nodo de la gráfica y decrementamos el contador de nodos
@@ -228,14 +231,21 @@ class Grafica:
 
 if __name__ == "__main__":
     g = Grafica()
-    g.agregar_nodo("a")
-    g.agregar_nodo("b")
-    g.agregar_nodo("c")
 
-    g.agregar_arista("a", "b", "v1")
-    g.agregar_arista("a", "b", "v2")
-    g.agregar_arista("a", "b", "v3")
+    g.agregar_arista("v2", "v1", "e1")
+    g.agregar_arista("v1", "v1", "e6")
+    g.agregar_arista("v2", "v3", "e4")
+    g.agregar_arista("v2", "v4", "e2")
+    g.agregar_arista("v2", "v4", "e5")
+    g.agregar_arista("v4", "v5", "e3")
+    g.agregar_nodo("v6")
+    
     print(g)
+    print("Nodos:", g.obtener_numero_nodos())
+    print("Aristas:", g.obtener_numero_aristas())
 
-    g.eliminar_nodo("a")
+    print("Vaciando todo alv")
+    g.vaciar_grafica()
     print(g)
+    print("Nodos:", g.obtener_numero_nodos())
+    print("Aristas:", g.obtener_numero_aristas())
