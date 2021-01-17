@@ -79,7 +79,7 @@ class Grafica:
         # se agrega y el contador de nodos se incrementa
         if not self.buscar_nodo(nodo):
             self.__grafica[nodo] = []
-            self.num_nodos += 1
+            self.__num_nodos += 1
             return True
         else:
             return False
@@ -172,7 +172,7 @@ class Grafica:
             # Cuando todas las aristas del nodo se hayan eliminado procedemos a 
             # eliminar el nodo de la gráfica y decrementamos el contador de nodos
             self.__grafica.pop(nodo)
-            self.num_nodos -= 1
+            self.__num_nodos -= 1
             return True
         else:
             return False
@@ -204,7 +204,7 @@ class Grafica:
     """
     def obtener_numero_nodos(self):
         # Simplemente regresamos el valor del contador de nodos
-        return self.num_nodos
+        return self.__num_nodos
     
     """
         Este método obtiene el número de aristas de la gráfica
@@ -236,7 +236,7 @@ class Grafica:
     """
     def vaciar_grafica(self):
         self.__grafica = {}
-        self.num_nodos = 0
+        self.__num_nodos = 0
         self.__num_aristas = 0
     
     """
