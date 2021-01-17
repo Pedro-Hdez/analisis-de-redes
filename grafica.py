@@ -12,11 +12,11 @@ def validar(num):
 
 def clear(): 
   
-    # for windows 
-    if name == 'nt': 
-        _ = system('cls') 
+    # for Linux
+    if name == 'posix': 
+        _ = system('clear') 
   
-    # for mac and linux(here, os.name is 'posix') 
+    # for windows
     else: 
         _ = system('clear') 
 
