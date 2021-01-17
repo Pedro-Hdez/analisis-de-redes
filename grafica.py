@@ -16,9 +16,9 @@ class Grafica:
         Esta clase representa una gráfica y sus operaciones.
     """
     def __init__(self):
-        self.grafica = {} # Estructura donde se va a guardar la gráfica
-        self.num_nodos = 0 # Contador de nodos
-        self.num_aristas = 0 # Contador de aristas
+        self.__grafica = {} # Estructura donde se va a guardar la gráfica
+        self.__num_nodos = 0 # Contador de nodos
+        self.__num_aristas = 0 # Contador de aristas
     
     """
         Este método busca un nodo en la gráfica.
@@ -31,7 +31,7 @@ class Grafica:
         None si el nodo no se encuentra en la gráfica. 
     """
     def buscar_nodo(self, nodo):
-        if nodo in self.grafica:
+        if nodo in self.__grafica:
             return True
         return None
     
@@ -52,8 +52,8 @@ class Grafica:
         Si no se encuentra la arista, regresa None, None
     """
     def buscar_arista(self, etiqueta):
-        for nodo in self.grafica:
-            for arista in self.grafica[nodo]:
+        for nodo in self.__grafica:
+            for arista in self.__grafica[nodo]:
                 if arista.etiqueta == etiqueta:
                     return nodo
         return None
@@ -70,7 +70,7 @@ class Grafica:
         # Se busca el nodo en la gráfica, si no está, entonces
         # se agrega y el contador de nodos se incrementa
         if not self.buscar_nodo(nodo):
-            self.grafica[nodo] = []
+            self.__grafica[nodo] = []
             self.num_nodos += 1
         else:
             print("El nodo", nodo, "ya existe.")
@@ -89,15 +89,15 @@ class Grafica:
         # b con la etiqueta a su lista
         if not self.buscar_arista(etiqueta):
             self.agregar_nodo(a)
-            self.grafica[a].append( Arista(b, etiqueta) )
+            self.__grafica[a].append( Arista(b, etiqueta) )
 
             # Se agrega el nodo b y después se agrega una arista hacia
             # a con la etiqueta a su lista
             self.agregar_nodo(b)
-            self.grafica[b].append( Arista(a, etiqueta) )
+            self.__grafica[b].append( Arista(a, etiqueta) )
 
             # El contador de aristas se incrementa
-            self.num_aristas += 1
+            self.__num_aristas += 1
         else:
             print("La arista", etiqueta, "ya existe")
 
@@ -114,29 +114,29 @@ class Grafica:
         # Si se encontró entonces se pasa a eliminarla de ambos vértices
         if nodo1:
             # Se busca en el nodo1
-            for i in range(len(self.grafica[nodo1])):
-                if self.grafica[nodo1][i].etiqueta == etiqueta:
+            for i in range(len(self.__grafica[nodo1])):
+                if self.__grafica[nodo1][i].etiqueta == etiqueta:
                     # Se guarda la arista y el otro nodo en el que
                     # incide
-                    arista = self.grafica[nodo1][i]
-                    nodo2 = self.grafica[nodo1][i].destino
+                    arista = self.__grafica[nodo1][i]
+                    nodo2 = self.__grafica[nodo1][i].destino
                     break
             
             # La arista se elimina del nodo1
-            self.grafica[nodo1].remove(arista)
+            self.__grafica[nodo1].remove(arista)
 
             # Se busca en el nodo2
-            for i in range(len(self.grafica[nodo2])):
-                if self.grafica[nodo2][i].etiqueta == etiqueta:
+            for i in range(len(self.__grafica[nodo2])):
+                if self.__grafica[nodo2][i].etiqueta == etiqueta:
                     # Se guarda la arista
-                    arista = self.grafica[nodo2][i]
+                    arista = self.__grafica[nodo2][i]
                     break
 
             # La arista se elimina del nodo2
-            self.grafica[nodo2].remove(arista)
+            self.__grafica[nodo2].remove(arista)
             
             # Se decrementa el contador de aristas
-            self.num_aristas -= 1
+            self.__num_aristas -= 1
         else:
             print("La arista", etiqueta, "no existe")
 
@@ -154,12 +154,12 @@ class Grafica:
             # inciden en él. Lo hacemos con el método eliminar_arista() y usamos
             # la bandera unSentido=True porque no se necesita borrar la arista del nodo que
             # vamos a eliminar.
-            while self.grafica[nodo]:
-                self.eliminar_arista(self.grafica[nodo][0].etiqueta)
+            while self.__grafica[nodo]:
+                self.eliminar_arista(self.__grafica[nodo][0].etiqueta)
     
             # Cuando todas las aristas del nodo se hayan eliminado procedemos a 
             # eliminar el nodo de la gráfica y decrementamos el contador de nodos
-            self.grafica.pop(nodo)
+            self.__grafica.pop(nodo)
             self.num_nodos -= 1
         else:
             print("El nodo", nodo, "no existe")
@@ -179,7 +179,7 @@ class Grafica:
         # Primero se busca el nodo
         if self.buscar_nodo(nodo):
             # El grado se calcula con la longitud de su lista de aristas
-            return len(self.grafica[nodo])
+            return len(self.__grafica[nodo])
     
     """
         Este método obtiene el número de nodos de la gráfica
@@ -201,7 +201,7 @@ class Grafica:
     """
     def obtener_numero_aristas(self):
         # Simplemente regresamos el valor del contador de aristas
-        return self.num_aristas
+        return self.__num_aristas
     
     """
         Este método elimina todas las aristas de un nodo
@@ -213,17 +213,17 @@ class Grafica:
     def vaciar_nodo(self, nodo):
         # Se elimina cada arista en ambos sentidos
         if self.buscar_nodo(nodo):
-            while self.grafica[nodo]:
-                self.eliminar_arista(self.grafica[nodo][0].etiqueta)
+            while self.__grafica[nodo]:
+                self.eliminar_arista(self.__grafica[nodo][0].etiqueta)
         else:
             print("El nodo", nodo, "no existe")
     """
         Este método limpia la gráfica
     """
     def vaciar_grafica(self):
-        self.grafica = {}
+        self.__grafica = {}
         self.num_nodos = 0
-        self.num_aristas = 0
+        self.__num_aristas = 0
     
     """
         Este método imprime la gráfica en forma de lista.
@@ -232,9 +232,9 @@ class Grafica:
     """
     def __str__(self):
         resultado = []
-        for nodo in self.grafica:
+        for nodo in self.__grafica:
             resultado.append(nodo)
-            for arista in self.grafica[nodo]:
+            for arista in self.__grafica[nodo]:
                 a = (arista.etiqueta, nodo, arista.destino)
                 if not (arista.etiqueta, arista.destino, nodo) in resultado:
                     resultado.append(a)
