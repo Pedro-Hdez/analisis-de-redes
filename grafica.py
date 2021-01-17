@@ -321,7 +321,7 @@ if __name__ == "__main__":
           if g.eliminar_arista(arista):
             print("Arista", arista, "eliminado")
           else:
-            print("La arista", etiqueta, "no existe")
+            print("La arista", arista, "no existe")
           
           input("\nPresione Enter para continuar...")
       
