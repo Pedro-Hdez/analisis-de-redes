@@ -399,4 +399,4 @@ if __name__ == "__main__":
                     input("\nPresione Enter para continuar...")
 
         else:
-            print("Error. Ingrese un número entre 1 y 13. Presione Enter para intentarlo de nuevo...")    
+            input("Error. Ingrese un número entre 1 y 13. Presione Enter para intentarlo de nuevo...")    
