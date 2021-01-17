@@ -72,6 +72,8 @@ class Grafica:
         if not self.buscar_nodo(nodo):
             self.grafica[nodo] = []
             self.num_nodos += 1
+        else:
+            print("El nodo", nodo, "ya existe.")
     
     """
         Este método agrega una arista a la gráfica
@@ -85,16 +87,19 @@ class Grafica:
     def agregar_arista(self, a, b, etiqueta):
         # Se agrega el nodo a y después se agrega una arista hacia
         # b con la etiqueta a su lista
-        self.agregar_nodo(a)
-        self.grafica[a].append( Arista(b, etiqueta) )
+        if not self.buscar_arista(etiqueta):
+            self.agregar_nodo(a)
+            self.grafica[a].append( Arista(b, etiqueta) )
 
-        # Se agrega el nodo b y después se agrega una arista hacia
-        # a con la etiqueta a su lista
-        self.agregar_nodo(b)
-        self.grafica[b].append( Arista(a, etiqueta) )
+            # Se agrega el nodo b y después se agrega una arista hacia
+            # a con la etiqueta a su lista
+            self.agregar_nodo(b)
+            self.grafica[b].append( Arista(a, etiqueta) )
 
-        # El contador de aristas se incrementa
-        self.num_aristas += 1
+            # El contador de aristas se incrementa
+            self.num_aristas += 1
+        else:
+            print("La arista", etiqueta, "ya existe")
 
     """
         Este método elimina una arista de la gráfica
@@ -132,6 +137,8 @@ class Grafica:
             
             # Se decrementa el contador de aristas
             self.num_aristas -= 1
+        else:
+            print("La arista", etiqueta, "no existe")
 
     """
         Este método elimina un nodo de la gráfica
@@ -154,6 +161,8 @@ class Grafica:
             # eliminar el nodo de la gráfica y decrementamos el contador de nodos
             self.grafica.pop(nodo)
             self.num_nodos -= 1
+        else:
+            print("El nodo", nodo, "no existe")
     
     """
         Este método obtiene el grado de un nodo de la gráfica
@@ -203,8 +212,11 @@ class Grafica:
     """
     def vaciar_nodo(self, nodo):
         # Se elimina cada arista en ambos sentidos
-        while self.grafica[nodo]:
-            self.eliminar_arista(self.grafica[nodo][0].etiqueta)
+        if self.buscar_nodo(nodo):
+            while self.grafica[nodo]:
+                self.eliminar_arista(self.grafica[nodo][0].etiqueta)
+        else:
+            print("El nodo", nodo, "no existe")
     """
         Este método limpia la gráfica
     """
@@ -233,4 +245,10 @@ class Grafica:
 
 
 if __name__ == "__main__":
-    print("a")
+    g = Grafica()
+
+    g.agregar_arista("1", "2", "v1")
+    print(g)
+
+    g.agregar_arista("1", "2", "v1")
+    print(g)
