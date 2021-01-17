@@ -7,14 +7,18 @@ def validar(num):
         int(num)
         return True
     except:
-        print("a")
         return False
     
 
 def clear(): 
   
-    _ = system('cls') 
-    _ = system('clear')
+    # for windows 
+    if name == 'nt': 
+        _ = system('cls') 
+  
+    # for mac and linux(here, os.name is 'posix') 
+    else: 
+        _ = system('clear') 
 
 class Arista:
     """
@@ -295,7 +299,14 @@ if __name__ == "__main__":
                 input("Error. Opción inválida. Presione Enter para intentarlo de nuevo...")
             else:
                 if (seleccion == "1"):
-                    naristas = int(input("Ingrese la cantidad de aristas que desea agregar: "))
+                    error = True
+                    while(error):
+                        naristas = input("Ingrese la cantidad de aristas que desea agregar: ")
+                        if not (validar(naristas)):
+                            input("Error. Ingrese un número. Presione enter para intentarlo de nuevo...")
+                        else:
+                            naristas = int(naristas)
+                            error = False
                     while (naristas >0):
                         nodo1 = input("Ingrese el nodo 1: ")
                         nodo2 = input("Ingrese el nodo 2: ")
