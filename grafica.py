@@ -1,15 +1,20 @@
 from os import system, name
 
 # define our clear function 
+
+def validar(num):
+    try:
+        int(num)
+        return True
+    except:
+        print("a")
+        return False
+    
+
 def clear(): 
   
-    # for windows 
-    if name == 'nt': 
-        _ = system('cls') 
-  
-    # for mac and linux(here, os.name is 'posix') 
-    else: 
-        _ = system('clear')
+    _ = system('cls') 
+    _ = system('clear')
 
 class Arista:
     """
@@ -268,113 +273,119 @@ if __name__ == "__main__":
     seleccion = ""
 
     while (seleccion != "13"):
-      clear()
-      print("Menu")
-      print("1) Agregar arista")
-      print("2) Agregar nodo")
-      print("3) Eliminar nodo")
-      print("4) Eliminar arista")
-      print("5) Buscar nodo")
-      print("6) Buscar arista")
-      print("7) Obtener grado de un nodo")
-      print("8) Obtener numero de nodos")
-      print("9) Obtener numero de aristas")
-      print("10) Vaciar un nodo")
-      print("11) Vaciar grafica")
-      print("12) Imprimir grafica")
-      print("13) Salir")
+        clear()
+        print("Menu")
+        print("1) Agregar arista")
+        print("2) Agregar nodo")
+        print("3) Eliminar nodo")
+        print("4) Eliminar arista")
+        print("5) Buscar nodo")
+        print("6) Buscar arista")
+        print("7) Obtener grado de un nodo")
+        print("8) Obtener numero de nodos")
+        print("9) Obtener numero de aristas")
+        print("10) Vaciar un nodo")
+        print("11) Vaciar grafica")
+        print("12) Imprimir grafica")
+        print("13) Salir")
 
-      seleccion = input()
-
-      if (seleccion == "1"):
-          naristas = int(input("Ingrese la cantidad de aristas que desea agregar: "))
-          while (naristas >0):
-            nodo1 = input("Ingrese el nodo 1: ")
-            nodo2 = input("Ingrese el nodo 2: ")
-            etiqueta = input("Ingrese la etiqueta del arista: ")
-            if g.agregar_arista(nodo1, nodo2, etiqueta):
-            	naristas = naristas - 1
+        seleccion = input()
+        if validar(seleccion):
+            if (int(seleccion) < 1 or int(seleccion) > 13):
+                input("Error. Opción inválida. Presione Enter para intentarlo de nuevo...")
             else:
-              print(f"La arista ({nodo1}, {nodo2}, {etiqueta}) ya existe")
-          input("\nNodos agregados. Presione Enter para continuar...")
+                if (seleccion == "1"):
+                    naristas = int(input("Ingrese la cantidad de aristas que desea agregar: "))
+                    while (naristas >0):
+                        nodo1 = input("Ingrese el nodo 1: ")
+                        nodo2 = input("Ingrese el nodo 2: ")
+                        etiqueta = input("Ingrese la etiqueta del arista: ")
+                        if g.agregar_arista(nodo1, nodo2, etiqueta):
+                            naristas = naristas - 1
+                        else:
+                            print(f"La arista ({nodo1}, {nodo2}, {etiqueta}) ya existe")
+                    input("\nAristas agregadas. Presione Enter para continuar...")
 
-      if (seleccion == "2"):
-          nodo = input("Ingrese el nombre del nodo: ")
-          if g.agregar_nodo(nodo):
-            print("Nodo", nodo, "agregado")
-          else:
-            print("El nodo", nodo, "ya existe")
-          input("\nPresione Enter para continuar...")
-          
-          
-      if (seleccion == "3"):
-          nodo = input("Ingrese el nombre del nodo que desea eliminar: ")
-          if g.eliminar_nodo(nodo):
-            print("Nodo", nodo, "eliminado")
-          else:
-            print("El nodo", nodo, "no existe")
-          
-          input("\nPresione Enter para continuar...")
-          
-      if (seleccion == "4"):
-          arista = input("Ingrese el nombre del arista que desea eliminar: ")
-          if g.eliminar_arista(arista):
-            print("Arista", arista, "eliminado")
-          else:
-            print("La arista", arista, "no existe")
-          
-          input("\nPresione Enter para continuar...")
-      
-      if (seleccion == "5"):
-          nodo = input("Ingrese el nombre del nodo: ")
-          if g.buscar_nodo(nodo):
-          	print("El nodo", nodo, "existe")
-          else:
-            print("El nodo", nodo, "no existe")
-          
-          input("\nPresione Enter para continuar...")
-          
-      if (seleccion == "6"):
-        etiqueta = input("Ingrese la etiqueta de la arista: ")
-        if (g.buscar_arista(etiqueta)):
-          print("La arista", etiqueta, "existe")
-        else:
-          print("La arista", etiqueta, "no existe")
-        
-        input("\nPresione Enter para continuar...")
-      
-      if (seleccion == "7"):
-        nodo = input("Ingrese el nombre del nodo: ")
-        grado = g.obtener_grado(nodo)
-        if grado:
-        	print("El grado del nodo", nodo, "es:", grado)
-        else:
-        	print("El nodo", nodo, "no existe")
+                if (seleccion == "2"):
+                    nodo = input("Ingrese el nombre del nodo: ")
+                    if g.agregar_nodo(nodo):
+                        print("Nodo", nodo, "agregado")
+                    else:
+                        print("El nodo", nodo, "ya existe")
+                    input("\nPresione Enter para continuar...")
+                    
+                    
+                if (seleccion == "3"):
+                    nodo = input("Ingrese el nombre del nodo que desea eliminar: ")
+                    if g.eliminar_nodo(nodo):
+                        print("Nodo", nodo, "eliminado")
+                    else:
+                        print("El nodo", nodo, "no existe")
+                    
+                    input("\nPresione Enter para continuar...")
+                    
+                if (seleccion == "4"):
+                    arista = input("Ingrese el nombre del arista que desea eliminar: ")
+                    if g.eliminar_arista(arista):
+                        print("Arista", arista, "eliminado")
+                    else:
+                        print("La arista", arista, "no existe")
+                    
+                    input("\nPresione Enter para continuar...")
                 
-        input("\nPresione Enter para continuar...")
-        
-      if (seleccion == "8"):
-        print("La grafica tiene", g.obtener_numero_nodos(), "nodos")
-        input("\nPresione Enter para continuar...")
-      
-      if (seleccion == "9"):
-        print("La grafica tiene", g.obtener_numero_aristas(), "aristas")
-        input("\nPresione Enter para continuar...")
-        
-      if (seleccion == "10"):
-        nodo = input("Ingrese el nodo que desee vaciar: ")
-        if g.vaciar_nodo(nodo):
-        	print("El nodo", nodo, "se ha vaciado.")
+                if (seleccion == "5"):
+                    nodo = input("Ingrese el nombre del nodo: ")
+                    if g.buscar_nodo(nodo):
+                        print("El nodo", nodo, "existe")
+                    else:
+                        print("El nodo", nodo, "no existe")
+                    
+                    input("\nPresione Enter para continuar...")
+                    
+                if (seleccion == "6"):
+                    etiqueta = input("Ingrese la etiqueta de la arista: ")
+                    if (g.buscar_arista(etiqueta)):
+                        print("La arista", etiqueta, "existe")
+                    else:
+                        print("La arista", etiqueta, "no existe")
+                    
+                    input("\nPresione Enter para continuar...")
+                
+                if (seleccion == "7"):
+                    nodo = input("Ingrese el nombre del nodo: ")
+                    grado = g.obtener_grado(nodo)
+                    if grado:
+                        print("El grado del nodo", nodo, "es:", grado)
+                    else:
+                        print("El nodo", nodo, "no existe")
+                            
+                    input("\nPresione Enter para continuar...")
+                    
+                if (seleccion == "8"):
+                    print("La grafica tiene", g.obtener_numero_nodos(), "nodos")
+                    input("\nPresione Enter para continuar...")
+                
+                if (seleccion == "9"):
+                    print("La grafica tiene", g.obtener_numero_aristas(), "aristas")
+                    input("\nPresione Enter para continuar...")
+                    
+                if (seleccion == "10"):
+                    nodo = input("Ingrese el nodo que desee vaciar: ")
+                    if g.vaciar_nodo(nodo):
+                        print("El nodo", nodo, "se ha vaciado.")
+                    else:
+                        print("El nodo", nodo, "no existe")
+                            
+                    input("\nPresione Enter para continuar...")
+                            
+                if (seleccion == "11"):
+                    g.vaciar_grafica()
+                    print("La grafica se ha vaciado.")
+                    input("\nPresione Enter para continuar...")
+                
+                if (seleccion == "12"):
+                    print(g)
+                    input("\nPresione Enter para continuar...")
+
         else:
-          print("El nodo", nodo, "no existe")
-                
-        input("\nPresione Enter para continuar...")
-                
-      if (seleccion == "11"):
-        g.vaciar_grafica()
-        print("La grafica se ha vaciado.")
-        input("\nPresione Enter para continuar...")
-      
-      if (seleccion == "12"):
-        print(g)
-        input("\nPresione Enter para continuar...")
+            print("Error. Ingrese un número entre 1 y 13. Presione Enter para intentarlo de nuevo...")    
