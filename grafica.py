@@ -42,15 +42,12 @@ class Grafica:
 
         Parámetros
         ----------
-        a: Nodo 1 de la arista a buscar
-        b: Nodo 2 de la arista a buscar
-        etiqueta: Etiqueta de la arista (None por default)
+        etiqueta: Etiqueta de la arista a buscar
 
         Regresa
         -------
-        Si se encuentra la arista, regresa arista1, arista2:
-            - arista1: Arista dentro de la lista del nodo a
-            - arista2: Arista dentro de la lista del nodo b
+        Si se encuentra la arista, regresa el nodo en donde se encontró
+        Si no se encuentra, entonces regresa None
         
         Si no se encuentra la arista, regresa None, None
     """
@@ -83,7 +80,7 @@ class Grafica:
         ----------
         a: Nodo 1 de la arista.
         b: Nodo 2 de la arista.
-        etiqueta: Etiqueta de la arista. None por default.
+        etiqueta: Etiqueta de la arista.
     """
     def agregar_arista(self, a, b, etiqueta):
         # Se agrega el nodo a y después se agrega una arista hacia
@@ -104,30 +101,36 @@ class Grafica:
 
         Parámetros
         ----------
-        a: Nodo 1 de la arista
-        b: Nodo 2 de la arista
-        etiqueta: Etiqueta de la arista. None por default
-        unSentido: True para eliminar la arista de a y b
-                   False para eliminar la arista únicamente de a
+        etiqueta: Etiqueta de la arista
     """    
     def eliminar_arista(self, etiqueta):
+        # Primero, se busca la arista.
         nodo1 = self.buscar_arista(etiqueta)
+        # Si se encontró entonces se pasa a eliminarla de ambos vértices
         if nodo1:
+            # Se busca en el nodo1
             for i in range(len(self.grafica[nodo1])):
                 if self.grafica[nodo1][i].etiqueta == etiqueta:
+                    # Se guarda la arista y el otro nodo en el que
+                    # incide
                     arista = self.grafica[nodo1][i]
                     nodo2 = self.grafica[nodo1][i].destino
                     break
-
+            
+            # La arista se elimina del nodo1
             self.grafica[nodo1].remove(arista)
-        
+
+            # Se busca en el nodo2
             for i in range(len(self.grafica[nodo2])):
                 if self.grafica[nodo2][i].etiqueta == etiqueta:
+                    # Se guarda la arista
                     arista = self.grafica[nodo2][i]
                     break
-            
+
+            # La arista se elimina del nodo2
             self.grafica[nodo2].remove(arista)
             
+            # Se decrementa el contador de aristas
             self.num_aristas -= 1
 
     """
@@ -230,22 +233,4 @@ class Grafica:
 
 
 if __name__ == "__main__":
-    g = Grafica()
-
-    g.agregar_arista("v2", "v1", "e1")
-    g.agregar_arista("v1", "v1", "e6")
-    g.agregar_arista("v2", "v3", "e4")
-    g.agregar_arista("v2", "v4", "e2")
-    g.agregar_arista("v2", "v4", "e5")
-    g.agregar_arista("v4", "v5", "e3")
-    g.agregar_nodo("v6")
-    
-    print(g)
-    print("Nodos:", g.obtener_numero_nodos())
-    print("Aristas:", g.obtener_numero_aristas())
-
-    print("Vaciando todo alv")
-    g.vaciar_grafica()
-    print(g)
-    print("Nodos:", g.obtener_numero_nodos())
-    print("Aristas:", g.obtener_numero_aristas())
+    print("a")
