@@ -1,4 +1,5 @@
 from os import system, name
+import copy
 
 # define our clear function 
 
@@ -258,6 +259,10 @@ class Grafica:
         Primero aparecerán todos los nodos, después, todas
         las aristas
     """
+
+    def copiar(self):
+        return copy.copy(self)
+
     def __str__(self):
         resultado = []
         for nodo in self.__grafica:
