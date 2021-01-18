@@ -279,9 +279,10 @@ class Grafica:
 
 if __name__ == "__main__":
     g = Grafica()
+
     seleccion = ""
 
-    while (seleccion != "13"):
+    while (seleccion != "15"):
         clear()
         print("Menu")
         print("1) Agregar arista")
@@ -296,11 +297,13 @@ if __name__ == "__main__":
         print("10) Vaciar un nodo")
         print("11) Vaciar grafica")
         print("12) Imprimir grafica")
+        print("13) Copiar grafica")
+        print("14) Ver copia de la grafica")
         print("13) Salir")
 
         seleccion = input()
         if validar(seleccion):
-            if (int(seleccion) < 1 or int(seleccion) > 13):
+            if (int(seleccion) < 1 or int(seleccion) > 15):
                 input("Error. Opción inválida. Presione Enter para intentarlo de nuevo...")
             else:
                 if (seleccion == "1"):
@@ -402,6 +405,17 @@ if __name__ == "__main__":
                 if (seleccion == "12"):
                     print(g)
                     input("\nPresione Enter para continuar...")
+                
+                if (seleccion == "13"):
+                    copia = g.copiar()
+                    print("Grafica copiada correctamente: ")
+                    print(copia)
+                    input("\nPresione Enter para continuar...")
+
+                if (seleccion == "14"):
+                    print("Ultima copia guardada: ")
+                    print(copia)
+                    input("\nPresione Enter para continuar...")
 
         else:
-            input("Error. Ingrese un número entre 1 y 13. Presione Enter para intentarlo de nuevo...")    
+            input("Error. Ingrese un número entre 1 y 15. Presione Enter para intentarlo de nuevo...")    
