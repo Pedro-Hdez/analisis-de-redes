@@ -12,7 +12,6 @@ def validar(num):
     
 
 def clear(): 
-  
     # for Linux
     if name == 'posix': 
         _ = system('clear') 
@@ -43,6 +42,22 @@ class Grafica:
         self.__num_aristas = 0 # Contador de aristas
     
     """
+        Este método lee una gráfica desde un archivo
+    """
+    def leer_grafica(self, archivo):
+        file1 = open(archivo, 'r') 
+        Lines = file1.readlines() 
+
+        for line in Lines:
+            line = line.strip().split(",")
+            length = len(line)
+            if length == 1:
+                self.agregar_nodo(line[0])
+            elif length == 2:
+                self.agregar_arista(line[0], line[1])
+            else:
+                self.agregar_arista(line[0], line[1], line[2])
+    """
         Este método busca un nodo en la gráfica.
 
         Parametros:
@@ -55,7 +70,8 @@ class Grafica:
     def buscar_nodo(self, nodo):
         if nodo in self.__grafica:
             return True
-        return False
+        else:
+            return False
     
     """
         Este método busca una arista. En caso de que un nodo
@@ -73,11 +89,14 @@ class Grafica:
         
         Si no se encuentra la arista, regresa None, None
     """
-    def buscar_arista(self, etiqueta):
-        for nodo in self.__grafica:
-            for arista in self.__grafica[nodo]:
-                if arista.etiqueta == etiqueta:
-                    return nodo
+    def buscar_arista(self, a, b, etiqueta=None):
+        for arista in self.__grafica[a]:
+            if etiqueta == None:
+                if arista.destino == b:
+                    return True
+            else:
+                if arista.destino == b and arista.etiqueta == etiqueta:
+                    return True
         return False
     
     """
@@ -107,24 +126,17 @@ class Grafica:
         b: Nodo 2 de la arista.
         etiqueta: Etiqueta de la arista.
     """
-    def agregar_arista(self, a, b, etiqueta):
-        # Se agrega el nodo a y después se agrega una arista hacia
-        # b con la etiqueta a su lista
-        if not self.buscar_arista(etiqueta):
-            self.agregar_nodo(a)
-            self.__grafica[a].append( Arista(b, etiqueta) )
+    def agregar_arista(self, a, b, etiqueta=None):
+        self.agregar_nodo(a)
+        self.__grafica[a].append( Arista(b, etiqueta) )
 
-            # Se agrega el nodo b y después se agrega una arista hacia
-            # a con la etiqueta a su lista
-            self.agregar_nodo(b)
-            self.__grafica[b].append( Arista(a, etiqueta) )
+        # Se agrega el nodo b y después se agrega una arista hacia
+        # a con la etiqueta a su lista
+        self.agregar_nodo(b)
+        self.__grafica[b].append( Arista(a, etiqueta) )
 
-            # El contador de aristas se incrementa
-            self.__num_aristas += 1
-            
-            return True
-        else:
-            return False
+        # El contador de aristas se incrementa
+        self.__num_aristas += 1
 
     """
         Este método elimina una arista de la gráfica
@@ -133,38 +145,34 @@ class Grafica:
         ----------
         etiqueta: Etiqueta de la arista
     """    
-    def eliminar_arista(self, etiqueta):
-        # Primero, se busca la arista.
-        nodo1 = self.buscar_arista(etiqueta)
-        # Si se encontró entonces se pasa a eliminarla de ambos vértices
-        if nodo1:
-            # Se busca en el nodo1
-            for i in range(len(self.__grafica[nodo1])):
-                if self.__grafica[nodo1][i].etiqueta == etiqueta:
-                    # Se guarda la arista y el otro nodo en el que
-                    # incide
-                    arista = self.__grafica[nodo1][i]
-                    nodo2 = self.__grafica[nodo1][i].destino
-                    break
+    def eliminar_arista(self, a, b, etiqueta=None):
+        if self.buscar_arista(a, b):
+            for i in range(len(self.__grafica[a])):
+                if etiqueta == None:
+                    if self.__grafica[a][i].destino == b:
+                        arista1 = self.__grafica[a][i]
+                        break
+                else:
+                    if self.__grafica[a][i].destino == b and self.__grafica[a][i].etiqueta == etiqueta:
+                        arista1 = self.__grafica[a][i]
+                        break
             
-            # La arista se elimina del nodo1
-            self.__grafica[nodo1].remove(arista)
-
-            # Se busca en el nodo2
-            for i in range(len(self.__grafica[nodo2])):
-                if self.__grafica[nodo2][i].etiqueta == etiqueta:
-                    # Se guarda la arista
-                    arista = self.__grafica[nodo2][i]
-                    break
-
-            # La arista se elimina del nodo2
-            self.__grafica[nodo2].remove(arista)
+            for i in range(len(self.__grafica[b])):
+                if etiqueta == None:
+                    if self.__grafica[b][i].destino == a:
+                        arista2 = self.__grafica[b][i]
+                        break
+                else:
+                    if self.__grafica[b][i].destino == a and self.__grafica[b][i].etiqueta == etiqueta:
+                        arista2 = self.__grafica[b][i]
+                        break
             
-            # Se decrementa el contador de aristas
+            self.__grafica[a].remove(arista1)
+            self.__grafica[b].remove(arista2)
             self.__num_aristas -= 1
             return True
-        else:
-            return False
+
+        return False
 
     """
         Este método elimina un nodo de la gráfica
@@ -181,7 +189,7 @@ class Grafica:
             # la bandera unSentido=True porque no se necesita borrar la arista del nodo que
             # vamos a eliminar.
             while self.__grafica[nodo]:
-                self.eliminar_arista(self.__grafica[nodo][0].etiqueta)
+                self.eliminar_arista(nodo, self.__grafica[nodo][0].destino)
     
             # Cuando todas las aristas del nodo se hayan eliminado procedemos a 
             # eliminar el nodo de la gráfica y decrementamos el contador de nodos
@@ -242,7 +250,7 @@ class Grafica:
         # Se elimina cada arista en ambos sentidos
         if self.buscar_nodo(nodo):
             while self.__grafica[nodo]:
-                self.eliminar_arista(self.__grafica[nodo][0].etiqueta)
+                self.eliminar_arista(nodo, self.__grafica[nodo][0].destino)
             return True
         else:
             return False
@@ -279,6 +287,7 @@ class Grafica:
 
 if __name__ == "__main__":
     g = Grafica()
+    g.leer_grafica("grafica.txt")
 
     seleccion = ""
 
@@ -344,11 +353,16 @@ if __name__ == "__main__":
                     input("\nPresione Enter para continuar...")
                     
                 if (seleccion == "4"):
-                    arista = input("Ingrese el nombre del arista que desea eliminar: ")
-                    if g.eliminar_arista(arista):
-                        print("Arista", arista, "eliminado")
+                    nodo1 = input("Nodo 1: ")
+                    nodo2 = input("Nodo 2: ")
+                    etiqueta = input("Etiqueta (Enter si desea omitirla): ")
+                    if etiqueta == "":
+                        etiqueta = None
+
+                    if g.eliminar_arista(nodo1, nodo2, etiqueta):
+                        print(f"Arista eliminada")
                     else:
-                        print("La arista", arista, "no existe")
+                        print(f"La arista no existe")
                     
                     input("\nPresione Enter para continuar...")
                 
@@ -362,18 +376,23 @@ if __name__ == "__main__":
                     input("\nPresione Enter para continuar...")
                     
                 if (seleccion == "6"):
-                    etiqueta = input("Ingrese la etiqueta de la arista: ")
-                    if (g.buscar_arista(etiqueta)):
-                        print("La arista", etiqueta, "existe")
+                    nodo1 = input("Nodo 1: ")
+                    nodo2 = input("Nodo 2: ")
+                    etiqueta = input("Etiqueta (Enter si desea omitirla): ")
+                    if etiqueta == "":
+                        etiqueta = None
+
+                    if (g.buscar_arista(nodo1, nodo2, etiqueta)):
+                        print("La arista existe")
                     else:
-                        print("La arista", etiqueta, "no existe")
+                        print("La arista no existe")
                     
                     input("\nPresione Enter para continuar...")
                 
                 if (seleccion == "7"):
                     nodo = input("Ingrese el nombre del nodo: ")
                     grado = g.obtener_grado(nodo)
-                    if grado:
+                    if type(grado) != bool:
                         print("El grado del nodo", nodo, "es:", grado)
                     else:
                         print("El nodo", nodo, "no existe")
