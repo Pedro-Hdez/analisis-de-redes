@@ -281,6 +281,41 @@ class Grafica:
     def copiar(self):
         return copy.copy(self)
     
+    def __limpiar_etiquetas(self):
+        for nodo in self.__grafica:
+            nodo.etiqueta = None
+
+    def es_bipartita(self):
+        # Se iteran todos los nodos de la gráfica
+        for nodo_inicial in self.__grafica:
+            # Se el nodo inicial no tiene etiqueta, entonces se
+            # agrega directamente a la partición 1
+            if not nodo_inicial.etiqueta:
+                nodo_inicial.etiqueta = 1
+            
+            # Se iteran todos los nodos adyacentes al nodo inicial
+            for arista in self.__grafica[nodo_inicial]:
+                nodo_adyacente = self.buscar_nodo(arista.destino)
+                # Si el nodo adyacente no tiene etiqueta, entonces
+                # se agrega a la partición contraria del nodo inicial
+                if not nodo_adyacente.etiqueta:
+                    if nodo_inicial.etiqueta == 1:
+                        nodo_adyacente.etiqueta = 2
+                    else:
+                        nodo_adyacente.etiqueta = 1
+                else:
+                    # Si el nodo adyacente sí tiene etiqueta, entonces 
+                    # se revisa que no sea igual a la etiqueta del nodo inicial.
+                    # en ese caso, la gráfica no es bipartita.
+                    if nodo_adyacente.etiqueta != nodo_inicial.etiqueta:
+                        continue
+                    else:
+                        return None, None
+        
+        # Si se lograron etiquetar todos los nodos de la gráfica sin conflicto, 
+        # entonces la gráfica es bipartita y se regresan las particiones
+        return [n.nombre for n in self.__grafica if n.etiqueta == 1], [n.nombre for n in self.__grafica if n.etiqueta == 2]
+    
     def __str__(self):
         resultado = []
         for nodo in self.__grafica:
