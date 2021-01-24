@@ -1,12 +1,4 @@
-a,b
 a,c
+a,d
+b,c
 b,d
-c,d
-d,f
-d,e
-f,g
-g,e
-c,e
-c,h
-h,i
-i,e

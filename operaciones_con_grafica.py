@@ -1,4 +1,4 @@
-from grafica import Grafica
+from grafica2 import Grafica
 from os import system, name
 
 def validar(num):
@@ -20,10 +20,10 @@ def clear():
 
 g = Grafica()
 g.leer_grafica("grafica.txt")
-
+copia = Grafica()
 seleccion = ""
 
-while (seleccion != "15"):
+while (seleccion != "16"):
     clear()
     print("Menu")
     print("1) Agregar arista")
@@ -40,11 +40,12 @@ while (seleccion != "15"):
     print("12) Imprimir grafica")
     print("13) Copiar grafica")
     print("14) Ver copia de la grafica")
-    print("13) Salir")
+    print("15) Verificar si la grafica es bipartita")
+    print("16) Salir")
 
     seleccion = input()
     if validar(seleccion):
-        if (int(seleccion) < 1 or int(seleccion) > 15):
+        if (int(seleccion) < 1 or int(seleccion) > 16):
             input("Error. Opción inválida. Presione Enter para intentarlo de nuevo...")
         else:
             if (seleccion == "1"):
@@ -166,6 +167,20 @@ while (seleccion != "15"):
             if (seleccion == "14"):
                 print("Ultima copia guardada: ")
                 print(copia)
+                input("\nPresione Enter para continuar...")
+                
+            if (seleccion == "15"):         
+                v1, v2 = g.es_bipartita()
+                if v1:
+                    print("La grafica SÍ es bipartita :)\n")
+                    print("V1")
+                    print (v1)
+                    print("V2")
+                    print (v2)
+                else:
+                    print("La grafica NO es bipartita :(")
+
+               
                 input("\nPresione Enter para continuar...")
 
     else:
