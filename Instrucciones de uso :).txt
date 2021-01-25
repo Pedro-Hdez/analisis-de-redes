@@ -1,0 +1,15 @@
+- Para correr el programa con menú es necesario correr el archivo operaciones_con_grafica.py
+
+- El código fuente de la clase gráfica se encuentra en el archivo grafica2.py
+
+- Para ingresar una gráfica modifique el archivo grafica.txt o tambien puede ingresar los nodos y aristas manualmente al correr el menú.
+	El formato para ingresar una grafica mediante archivo de texto es:
+	
+	v1,v2,e1
+	v2,v3,e1
+	.
+	.
+	.
+	.
+
+
