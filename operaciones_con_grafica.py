@@ -133,11 +133,11 @@ while (seleccion != "16"):
                 input("\nPresione Enter para continuar...")
                 
             if (seleccion == "8"):
-                print("La grafica tiene", g.obtener_numero_nodos(), "nodos")
+                print("La gráfica tiene", g.obtener_numero_nodos(), "nodos")
                 input("\nPresione Enter para continuar...")
             
             if (seleccion == "9"):
-                print("La grafica tiene", g.obtener_numero_aristas(), "aristas")
+                print("La gráfica tiene", g.obtener_numero_aristas(), "aristas")
                 input("\nPresione Enter para continuar...")
                 
             if (seleccion == "10"):
@@ -151,7 +151,7 @@ while (seleccion != "16"):
                         
             if (seleccion == "11"):
                 g.vaciar_grafica()
-                print("La grafica se ha vaciado.")
+                print("La gráfica se ha vaciado.")
                 input("\nPresione Enter para continuar...")
             
             if (seleccion == "12"):
@@ -160,25 +160,29 @@ while (seleccion != "16"):
             
             if (seleccion == "13"):
                 copia = g.copiar()
-                print("Grafica copiada correctamente: ")
+                print("Gráfica copiada correctamente: ")
                 print(copia)
                 input("\nPresione Enter para continuar...")
 
             if (seleccion == "14"):
-                print("Ultima copia guardada: ")
+                print("Última copia guardada: ")
                 print(copia)
                 input("\nPresione Enter para continuar...")
                 
             if (seleccion == "15"):         
                 v1, v2 = g.es_bipartita()
                 if v1:
-                    print("La grafica SÍ es bipartita :)\n")
+                    print("\n")
+                    print("La gráfica SÍ es bipartita :)")
+                    print("Gráfica g: ")
+                    print(g)
+                    print("Conjuntos:")
                     print("V1")
                     print (v1)
                     print("V2")
                     print (v2)
                 else:
-                    print("La grafica NO es bipartita :(")
+                    print("La gráfica NO es bipartita :(")
 
                
                 input("\nPresione Enter para continuar...")
