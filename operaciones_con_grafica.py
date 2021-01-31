@@ -196,7 +196,7 @@ while (seleccion != "17"):
                 cola = Cola()
                 
                 g.paseo_euler()
-                print("paseo: ")
+                
              
                 input("\nPresione Enter para continuar...")
                 

@@ -393,21 +393,17 @@ class Grafica:
         if nodos_iniciales:
             vp = nodos_iniciales[0]
             vc = nodos_iniciales[1]
-        
+        else:
+            vp = self.buscar_nodo("a")
+            vc = self.buscar_nodo("a")
+
         # Si no, tomamos por default el primer nodo (Paseo cerrado)
-        vp = self.buscar_nodo("a")
-        print(vp.nombre)
-        vc = self.buscar_nodo("a")
-        grado1 = self.obtener_grado(vp.nombre)
-        grado2 = self.obtener_grado(vc.nombre)
-        print(grado1)
-        print(grado2)
+
         cola.encolar(vc)
         pila.apilar(vp)
         
-        while(self.obtener_grado(vp.nombre)>0.0 and self.obtener_grado(vc.nombre)>0.0):
-            
-            contador = 0
+        while(self.obtener_grado(vp.nombre)>0 and self.obtener_grado(vc.nombre)>0):
+
             # Se iteran todos los nodos adyacentes al nodo inicial
             for arista in self.__grafica[vc]:
                 nodo_adyacente = self.buscar_nodo(arista.destino)
@@ -419,17 +415,23 @@ class Grafica:
             if(self.obtener_grado(vp.nombre)==1):
                 arista_adyacente = self.__grafica[vp][0]
                 self.eliminar_arista(vp.nombre,arista_adyacente.destino,arista_adyacente.etiqueta)
-                vp = arista_adyacente.destino
+                vp = self.buscar_nodo(arista_adyacente.destino)
+                print(vp)
                 pila.apilar(vp)
-            
-            
+
+        print("cola:")    
+        print(cola)   
+        print("pila") 
+        print(pila)
         pila.desapilar()
       	
         paseo = []
         while(not cola.es_vacia()):
             paseo.append(cola.desencolar().nombre)
+         
         while not pila.es_vacia():
-            paseo.append(cola.desapilar().nombre)
+            paseo.append(pila.desapilar().nombre)
+         
         
         print(paseo)
         return paseo
