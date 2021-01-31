@@ -193,9 +193,13 @@ while (seleccion != "17"):
                 input("\nPresione Enter para continuar...")
 
             if (seleccion == "16"):  
-                cola = Cola()
                 
-                g.paseo_euler()
+                paseo_euler = g.paseo_euler()
+                if paseo_euler:
+                    print("Se encontró el siguiente paseo de Euler:")
+                    print(paseo_euler)
+                else:
+                    print("La gráfica no contiene paseos de Euler")
                 
              
                 input("\nPresione Enter para continuar...")

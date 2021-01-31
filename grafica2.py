@@ -333,7 +333,7 @@ class Grafica:
     """
 
     def copiar(self):
-        return copy.copy(self)
+        return copy.deepcopy(self)
     
     def __limpiar_etiquetas(self):
         for nodo in self.__grafica:
@@ -370,16 +370,17 @@ class Grafica:
         # entonces la gráfica es bipartita y se regresan las particiones
         return [n.nombre for n in self.__grafica if n.etiqueta == 1], [n.nombre for n in self.__grafica if n.etiqueta == 2]
 	
-    def lista_nodos(self):
+    def diccionario(self):
     	return self.__grafica
     
     def paseo_euler(self):
         nodos_iniciales = []
-        g = self.copiar()
+        copia = self.copiar().diccionario()
+        
         
         # Se cuentan los nodos con grado impar
-        for nodo in g.lista_nodos():
-            if len(g.lista_nodos()[nodo]) % 2 != 0:
+        for nodo in self.__grafica:
+            if len(self.__grafica[nodo]) % 2 != 0:
                 nodos_iniciales.append(nodo)
                 
         if len(nodos_iniciales) > 0 and len(nodos_iniciales) != 2:
@@ -394,9 +395,8 @@ class Grafica:
             vp = nodos_iniciales[0]
             vc = nodos_iniciales[1]
         else:
-            vp = self.buscar_nodo("a")
-            vc = self.buscar_nodo("a")
-
+            vp = vc = list(self.__grafica.items())[0][0]
+        
         # Si no, tomamos por default el primer nodo (Paseo cerrado)
 
         cola.encolar(vc)
@@ -416,15 +416,10 @@ class Grafica:
                 arista_adyacente = self.__grafica[vp][0]
                 self.eliminar_arista(vp.nombre,arista_adyacente.destino,arista_adyacente.etiqueta)
                 vp = self.buscar_nodo(arista_adyacente.destino)
-                print(vp)
                 pila.apilar(vp)
 
-        print("cola:")    
-        print(cola)   
-        print("pila") 
-        print(pila)
+        
         pila.desapilar()
-      	
         paseo = []
         while(not cola.es_vacia()):
             paseo.append(cola.desencolar().nombre)
@@ -432,8 +427,7 @@ class Grafica:
         while not pila.es_vacia():
             paseo.append(pila.desapilar().nombre)
          
-        
-        print(paseo)
+        self.__grafica = copia
         return paseo
         
 
