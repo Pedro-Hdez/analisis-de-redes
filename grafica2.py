@@ -27,9 +27,63 @@ class Nodo:
         self.nombre = nombre
         self.etiqueta = etiqueta
 
+#----------------------------------------------------------------
+class Cola:
+    """ Representa a una cola, con operaciones de encolar y desencolar.
+        El primero en ser encolado es también el primero en ser desencolado.
+    """
+
+    def __init__(self):
+        """ Crea una cola vacía. """
+        # La cola vacía se representa por una lista vacía
+        self.items=[]
+
+    def imprimir_cola(self):
+        for i in range(len(self.items)):
+            print(self.items[i])
+
+    def encolar(self, x):
+        """ Agrega el elemento x como último de la cola. """
+        self.items.append(x)
+    def es_vacia(self):
+        """ Devuelve True si la cola esta vacía, False si no."""
+        return self.items == []
+      
+    def desencolar(self):
+        """ Elimina el primer elemento de la cola y devuelve su
+        valor. Si la cola está vacía, levanta ValueError. """
+        try:
+            return self.items.pop(0)
+        except:
+            raise ValueError("La cola está vacía")
+        
 
 #----------------------------------------------------------------
+class Pila:
+    """ Representa una pila con operaciones de apilar, desapilar y
+        verificar si está vacía. """
 
+    def __init__(self):
+        """ Crea una pila vacía. """
+        # La pila vacía se representa con una lista vacía
+        self.items=[]
+        
+    def apilar(self, x):
+        """ Agrega el elemento x a la pila. """
+        # Apilar es agregar al final de la lista.
+        self.items.append(x)
+
+    def es_vacia(self):
+    	return self.items == []
+
+    def desapilar(self):
+        """ Elimina el primer elemento de la cola y devuelve su
+        valor. Si la cola está vacía, levanta ValueError. """
+        try:
+            return self.items.pop()
+        except:
+            raise ValueError("La cola está vacía")
+#----------------------------------------------------------------
 class Grafica:
     """
         Esta clase representa una gráfica y sus operaciones.
@@ -315,7 +369,74 @@ class Grafica:
         # Si se lograron etiquetar todos los nodos de la gráfica sin conflicto, 
         # entonces la gráfica es bipartita y se regresan las particiones
         return [n.nombre for n in self.__grafica if n.etiqueta == 1], [n.nombre for n in self.__grafica if n.etiqueta == 2]
+	
+    def lista_nodos(self):
+    	return self.__grafica
     
+    def paseo_euler(self):
+        nodos_iniciales = []
+        g = self.copiar()
+        
+        # Se cuentan los nodos con grado impar
+        for nodo in g.lista_nodos():
+            if len(g.lista_nodos()[nodo]) % 2 != 0:
+                nodos_iniciales.append(nodo)
+                
+        if len(nodos_iniciales) > 0 and len(nodos_iniciales) != 2:
+        	return False
+        
+        # Cola y pila del algoritmo
+        cola = Cola()
+        pila = Pila()
+        
+        # Si existen nodos iniciales, los tomamos (Paseo abierto desde vp a vc)
+        if nodos_iniciales:
+            vp = nodos_iniciales[0]
+            vc = nodos_iniciales[1]
+        
+        # Si no, tomamos por default el primer nodo (Paseo cerrado)
+        vp = self.buscar_nodo("a")
+        print(vp.nombre)
+        vc = self.buscar_nodo("a")
+        grado1 = self.obtener_grado(vp.nombre)
+        grado2 = self.obtener_grado(vc.nombre)
+        print(grado1)
+        print(grado2)
+        cola.encolar(vc)
+        pila.apilar(vp)
+        
+        while(self.obtener_grado(vp.nombre)>0.0 and self.obtener_grado(vc.nombre)>0.0):
+            
+            contador = 0
+            # Se iteran todos los nodos adyacentes al nodo inicial
+            for arista in self.__grafica[vc]:
+                nodo_adyacente = self.buscar_nodo(arista.destino)
+                if(self.obtener_grado(nodo_adyacente.nombre)>1):
+                    self.eliminar_arista(vc.nombre,nodo_adyacente.nombre,arista.etiqueta)
+                    vc = nodo_adyacente
+                    cola.encolar(vc)
+                    break
+            if(self.obtener_grado(vp.nombre)==1):
+                arista_adyacente = self.__grafica[vp][0]
+                self.eliminar_arista(vp.nombre,arista_adyacente.destino,arista_adyacente.etiqueta)
+                vp = arista_adyacente.destino
+                pila.apilar(vp)
+            
+            
+        pila.desapilar()
+      	
+        paseo = []
+        while(not cola.es_vacia()):
+            paseo.append(cola.desencolar().nombre)
+        while not pila.es_vacia():
+            paseo.append(cola.desapilar().nombre)
+        
+        print(paseo)
+        return paseo
+        
+
+        
+       
     def __str__(self):
         resultado = []
         for nodo in self.__grafica:

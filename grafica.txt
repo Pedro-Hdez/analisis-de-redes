@@ -1,4 +1,8 @@
 a,c,e1
-a,d,e2
-b,c,e3
-b,d,e4
+a,g,e2
+c,b,e3
+c,f,e4
+f,e,e7
+b,e,e8
+e,g,e9
+

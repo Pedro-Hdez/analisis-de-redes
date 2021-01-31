@@ -1,5 +1,6 @@
 from grafica2 import Grafica
 from os import system, name
+from grafica2 import Cola
 
 def validar(num):
     try:
@@ -10,11 +11,12 @@ def validar(num):
     
 
 def clear(): 
-    # for Linux
-    if name == 'posix': 
-        _ = system('clear') 
   
-    # for windows
+    # for windows 
+    if name == 'nt': 
+        _ = system('cls') 
+  
+    # for mac and linux(here, os.name is 'posix') 
     else: 
         _ = system('clear') 
 
@@ -23,7 +25,7 @@ g.leer_grafica("grafica.txt")
 copia = Grafica()
 seleccion = ""
 
-while (seleccion != "16"):
+while (seleccion != "17"):
     clear()
     print("Menu")
     print("1) Agregar arista")
@@ -41,11 +43,12 @@ while (seleccion != "16"):
     print("13) Copiar grafica")
     print("14) Ver copia de la grafica")
     print("15) Verificar si la grafica es bipartita")
-    print("16) Salir")
+    print("16) paseo euler")
+    print("17) Salir")
 
     seleccion = input()
     if validar(seleccion):
-        if (int(seleccion) < 1 or int(seleccion) > 16):
+        if (int(seleccion) < 1 or int(seleccion) > 17):
             input("Error. Opción inválida. Presione Enter para intentarlo de nuevo...")
         else:
             if (seleccion == "1"):
@@ -182,10 +185,21 @@ while (seleccion != "16"):
                     print("V2")
                     print (v2)
                 else:
+                    print("Gráfica g: ")
+                    print(g)
                     print("La gráfica NO es bipartita :(")
 
                
                 input("\nPresione Enter para continuar...")
+
+            if (seleccion == "16"):  
+                cola = Cola()
+                
+                g.paseo_euler()
+                print("paseo: ")
+             
+                input("\nPresione Enter para continuar...")
+                
 
     else:
         input("Error. Ingrese un número entre 1 y 15. Presione Enter para intentarlo de nuevo...")   
