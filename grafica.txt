@@ -1,5 +1,6 @@
-e,g
-a,c
-a,g
-c,b
-b,e
+a,b
+b,c
+c,a
+
+d,f
+d,f

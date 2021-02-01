@@ -193,7 +193,6 @@ while (seleccion != "17"):
                 input("\nPresione Enter para continuar...")
 
             if (seleccion == "16"):  
-                
                 paseo_euler = g.paseo_euler()
                 if paseo_euler:
                     print("Se encontró el siguiente paseo de Euler:")

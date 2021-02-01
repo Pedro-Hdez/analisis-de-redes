@@ -373,7 +373,39 @@ class Grafica:
     def diccionario(self):
     	return self.__grafica
     
+    def es_conexa(self):
+        """
+            Este método hace una búsqueda a lo profundo en cada nodo
+            para saber si la gráfica es conexa
+        """
+
+        # Algoritmo de búsqueda
+        visitados = []
+        pila = Pila()
+        pila.apilar(list(self.__grafica.items())[0][0].nombre)
+        while not pila.es_vacia():
+            nodo_actual = pila.desapilar()
+            for arista in self.__grafica[self.buscar_nodo(nodo_actual)]:
+                nodo_adyacente = arista.destino
+                if nodo_adyacente not in visitados:
+                    pila.apilar(nodo_adyacente)
+            if nodo_actual not in visitados:
+                visitados.append(nodo_actual)
+
+        # Si la gráfica es conexa, entonces todos los nodos deberían
+        # estar presentes en la lista de visitados
+        for nodo in self.__grafica:
+            if nodo.nombre not in visitados:
+                return False
+        return True
+        
+        
+
+
     def paseo_euler(self):
+        if not self.es_conexa():
+            return False
+
         nodos_iniciales = []
         copia = self.copiar().diccionario()
         
