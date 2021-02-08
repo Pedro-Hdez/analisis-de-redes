@@ -338,10 +338,9 @@ class Grafica:
     def __limpiar_etiquetas(self):
         for nodo in self.__grafica:
             nodo.etiqueta = None
-
-    def es_bipartita(self):
-        # Se iteran todos los nodos de la gráfica
-        for nodo_inicial in self.__grafica:
+    
+    def __buscar_particiones(self, nodos):
+        for nodo_inicial in nodos:
             # Se el nodo inicial no tiene etiqueta, entonces se
             # agrega directamente a la partición 1
             if not nodo_inicial.etiqueta:
@@ -364,12 +363,35 @@ class Grafica:
                     if nodo_adyacente.etiqueta != nodo_inicial.etiqueta:
                         continue
                     else:
+                        self.__limpiar_etiquetas()
                         return None, None
         
         # Si se lograron etiquetar todos los nodos de la gráfica sin conflicto, 
         # entonces la gráfica es bipartita y se regresan las particiones
         return [n.nombre for n in self.__grafica if n.etiqueta == 1], [n.nombre for n in self.__grafica if n.etiqueta == 2]
-	
+
+    def es_bipartita(self):
+        # Se obtienen todos los nodos de la gráfica. Servirá para reordenar los nodos
+        # y así comenzar con uno diferente cada vez
+        nodos = [n for n in self.__grafica]
+
+        # El proceso de etiquetado se repetirá, de ser necesario, tantas veces como
+        # nodos tengamos en la gráfica
+        for _ in range(len(nodos)):
+            # Se buscan las particiones
+            particion1, particion2 = self.__buscar_particiones(nodos)
+            # Si existen las particiones, entonces se regresan
+            if particion1:
+                return particion1, particion2
+            # Si no existen las particiones, entonces se reordena la lista de nodos.
+            # Movemos el último elemento hasta el inicio para así tomar un nuevo nodo inicial
+            # al momento de etiquetar
+            nodos.insert(0, nodos.pop())
+        
+        # Si al final probamos el etiquetado iniciando con todos y cada uno de los nodos y siempre
+        # falló, entonces la gráfica no es bipartita
+        return None, None
+    
     def diccionario(self):
     	return self.__grafica
     
