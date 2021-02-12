@@ -7,6 +7,7 @@
 """
 
 import copy
+import operator
 
 class Arista:
     """
@@ -491,77 +492,98 @@ class Grafica:
             if nodo.etiqueta == None:
                 return False
         return True
-
-    def busqueda_a_profundidad(self):
-        # Se toma el primer vértice y se marca
-        v = list(self.__grafica.items())[0][0]
-        v.etiqueta = 1
-        
-        pila = Pila()
-        while not self.__todos_nodos_marcados():
-            # Se buscan las aristas de v sin marcar
-            aristas_validas = [a for a in self.__grafica[v] if not self.buscar_nodo(a.destino).etiqueta]
-            
-            # Si existen aristas válidas, entonces se marca la arista y el otro
-            # extremo; además se apila v y se hace v = w. Luego, se repite el algoritmo
-            # hasta este punto
-            if aristas_validas:
-                arista = aristas_validas[0]
-                w = self.buscar_nodo(arista.destino)
-
-                arista.etiqueta = 1
-                w.etiqueta = 1
-                pila.apilar(v)
-                v = w
-                continue
-            
-            # Si no existen aristas válidas y la pila tiene elementos, entonces
-            # se desapila un elemento y se repite el algoritmo hasta este punto
-            if not pila.es_vacia():
-                v = pila.desapilar()
-            # Si la pila ya está vacía, continuar con la siguiente parte del algoritmo
-            else:
-                break
-        
-        # Si quedaron vértices sin marcar, la gráfica no es conexa, de lo contrario,
-        # las aristas marcadas corresponden al árbol de expansión 
-        arbol_expansion = []
-        for nodo in self.__grafica:
-            for arista in self.__grafica[nodo]:
-                if arista.etiqueta:
-                    arbol_expansion.append((nodo.nombre, arista.destino))
-        
-        nodos_marcados = [n.nombre for n in self.__grafica if n.etiqueta]
-        nodos_no_marcados = [n .nombre for n in self.__grafica if not n.etiqueta]
-
-        print("NODOS MARCADOS\n",nodos_marcados)
-        print("NODOS NO MARCADOS\n",nodos_no_marcados)
-
-        return arbol_expansion
-
-
-                    
-                
-
-
-
-
-
-
     
-    def prueba(self):
-        v = list(self.__grafica.items())[0][0]
-        print(v.etiqueta)
-        v.etiqueta = "ETIQUETA"
-        for nodo in self.__grafica:
-            print(nodo.etiqueta)
+    """
+        Esta función ejecuta una búsqueda a profundidad en la gráfica para encontrar árboles de
+        expansión.
 
+        Regresa
+        -------
 
+        bosque: lista de listas. Cada lista corresponde al árbol de expansión
+                de una componente de la gráfica. Cada arista de los árboles
+                de expansión se representan con una tupla.
+    """
+    def busqueda_a_profundidad(self):
+        # Lista en donde se almacenarán los árboles de expansión para cada
+        # componente de la gráfica
+        bosque = [] 
 
+        # Lista de los nodos que no han sido etiquetados por el algoritmo
+        nodos_sin_etiqueta = [nodo for nodo in self.__grafica if not nodo.etiqueta]
+
+        # Etiqueta para identificar el árbol de expansión de la componente en cuestión
+        etiqueta_actual = 1
+
+        # Mientras existan nodos sin etiquetar se efectuará el algoritmo de 
+        # búsqueda
+        while nodos_sin_etiqueta:
+
+            # ----- ALGORITMO DE BÚSQUEDA A PROFUNDIDAD -----
+            
+            # Pila auxiliar del algoritmo
+            pila = Pila()
+
+            # Se toma el primer vértice y se etiqueta
+            v = nodos_sin_etiqueta[0]
+            v.etiqueta = etiqueta_actual
+
+            # Mientras falte algún nodo por etiquetar en la gráfica se continúa            
+            while not self.__todos_nodos_marcados():
+                # Se buscan las aristas de v sin marcar
+                aristas_validas = [a for a in self.__grafica[v] if not self.buscar_nodo(a.destino).etiqueta]
+                
+                # Si existen aristas válidas, entonces se marca la arista y el otro
+                # extremo; además se apila v y se hace v = w. Luego, se repite el algoritmo
+                # hasta este punto
+                if aristas_validas:
+                    arista = aristas_validas[0]
+                    w = self.buscar_nodo(arista.destino)
+
+                    arista.etiqueta = etiqueta_actual
+                    w.etiqueta = etiqueta_actual
+                    pila.apilar(v)
+                    v = w
+                    continue
+                
+                # Si no existen aristas válidas y la pila tiene elementos, entonces
+                # se desapila un elemento y se repite el algoritmo hasta este punto
+                if not pila.es_vacia():
+                    v = pila.desapilar()
+                # Si la pila ya está vacía, continuar con la siguiente parte del algoritmo
+                else:
+                    break
+            
+            # Si quedaron vértices sin marcar, la gráfica no es conexa, de lo contrario,
+            # las aristas marcadas corresponden al árbol de expansión 
+
+            # Se forma el árbol de expansión de la componente en cuestión
+            # buscando todas las aristas que tengan la etiqueta actual
+            arbol_expansion = []
+            for nodo in self.__grafica:
+                for arista in self.__grafica[nodo]:
+                    if arista.etiqueta == etiqueta_actual:
+                        arbol_expansion.append((nodo.nombre, arista.destino))
+            
+            # Si el arbol de expansion contiene aristas, entonces se ordenan
+            if arbol_expansion:
+                arbol_expansion.sort(key=lambda x:x[0])
+            # Si el árbol de expansión no contiene aristas, significa que la componente
+            # actual está formada de un solo vértice, así que éste se agrega al árbol
+            else:
+                arbol_expansion.append(nodos_sin_etiqueta[0].nombre)
+            # Se añade el árbol de expansión de la componente en cuestión a nuestro
+            # bosque
+            bosque.append(arbol_expansion)
+
+            # Se actualiza la lista de nodos sin etiqueta y la etiqueta actual
+            nodos_sin_etiqueta = [n for n in self.__grafica if not n.etiqueta]
+            etiqueta_actual += 1
         
+        # Al final, después de que todos los nodos de la gráfica están etiquetados,
+        # se regresa el bosque que se encontró
+        return bosque
 
-        
-       
     def __str__(self):
         resultado = []
         for nodo in self.__grafica:
