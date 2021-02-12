@@ -368,6 +368,7 @@ class Grafica:
         
         # Si se lograron etiquetar todos los nodos de la gráfica sin conflicto, 
         # entonces la gráfica es bipartita y se regresan las particiones
+        self.__limpiar_etiquetas()
         return [n.nombre for n in self.__grafica if n.etiqueta == 1], [n.nombre for n in self.__grafica if n.etiqueta == 2]
 
     def es_bipartita(self):
@@ -420,10 +421,7 @@ class Grafica:
             if nodo.nombre not in visitados:
                 return False
         return True
-        
-        
-
-
+    
     def paseo_euler(self):
         if not self.es_conexa():
             return False
@@ -483,6 +481,83 @@ class Grafica:
          
         self.__grafica = copia
         return paseo
+    
+    """
+        Este método verifica si todos los nodos de la gráfica ya se encuentran 
+        marcados
+    """
+    def __todos_nodos_marcados(self):
+        for nodo in self.__grafica:
+            if nodo.etiqueta == None:
+                return False
+        return True
+
+    def busqueda_a_profundidad(self):
+        # Se toma el primer vértice y se marca
+        v = list(self.__grafica.items())[0][0]
+        v.etiqueta = 1
+        
+        pila = Pila()
+        while not self.__todos_nodos_marcados():
+            # Se buscan las aristas de v sin marcar
+            aristas_validas = [a for a in self.__grafica[v] if not self.buscar_nodo(a.destino).etiqueta]
+            
+            # Si existen aristas válidas, entonces se marca la arista y el otro
+            # extremo; además se apila v y se hace v = w. Luego, se repite el algoritmo
+            # hasta este punto
+            if aristas_validas:
+                arista = aristas_validas[0]
+                w = self.buscar_nodo(arista.destino)
+
+                arista.etiqueta = 1
+                w.etiqueta = 1
+                pila.apilar(v)
+                v = w
+                continue
+            
+            # Si no existen aristas válidas y la pila tiene elementos, entonces
+            # se desapila un elemento y se repite el algoritmo hasta este punto
+            if not pila.es_vacia():
+                v = pila.desapilar()
+            # Si la pila ya está vacía, continuar con la siguiente parte del algoritmo
+            else:
+                break
+        
+        # Si quedaron vértices sin marcar, la gráfica no es conexa, de lo contrario,
+        # las aristas marcadas corresponden al árbol de expansión 
+        arbol_expansion = []
+        for nodo in self.__grafica:
+            for arista in self.__grafica[nodo]:
+                if arista.etiqueta:
+                    arbol_expansion.append((nodo.nombre, arista.destino))
+        
+        nodos_marcados = [n.nombre for n in self.__grafica if n.etiqueta]
+        nodos_no_marcados = [n .nombre for n in self.__grafica if not n.etiqueta]
+
+        print("NODOS MARCADOS\n",nodos_marcados)
+        print("NODOS NO MARCADOS\n",nodos_no_marcados)
+
+        return arbol_expansion
+
+
+                    
+                
+
+
+
+
+
+
+    
+    def prueba(self):
+        v = list(self.__grafica.items())[0][0]
+        print(v.etiqueta)
+        v.etiqueta = "ETIQUETA"
+        for nodo in self.__grafica:
+            print(nodo.etiqueta)
+
+
+
         
 
         
