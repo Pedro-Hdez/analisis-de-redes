@@ -717,47 +717,31 @@ class Grafica:
         
         # Ordenar las aristas de mayor a menor de acuerdo a su peso
         aristas.sort(key=lambda a:a[2], reverse=True)
-        print("ARISTAS")
-        for arista in aristas:
-          	print(arista)
-
-        # Crear el heap e inicializarlo
-        self.__heap = {}
+        
+        # Inicializar el heap con cada nodo como padre de sí mismo
         for nodo in self.__grafica:
             self.__heap[nodo.nombre] = nodo.nombre
         
-        print("HEAP")
-        print(self.__heap)
-
-        # Hacer el algoritmo
-        arbol = []
-        nodos_sin_etiqueta = [nodo.nombre for nodo in self.__grafica]
-        print("NODOS SIN ETIQUETA INICIALES")
-        print(nodos_sin_etiqueta)
-        while (len(arbol) < len(self.__grafica)) and nodos_sin_etiqueta:
-            print("HEAP")
-            print(self.__heap)
+        # ----- ALGORITMO DE KRUSKAL -----
+        # Arreglo en donde se almacenarán las aristas del árbol de mínima expansión
+        arbol = [] 
+        
+        # El algoritmo se ejecuta hasta que el número de aristas del árbol
+        # sea igual al númer de vértices - 1, además, deben existir aristas
+        # no visitadas
+        while len(arbol) < len(self.__grafica) and aristas:
+            # Obtenemos una arista
             arista = aristas.pop()
-            if not self.__heap[arista[0]] == self.__heap[arista[1]]:
-                arbol.append(arista)
-
-                try:
-                    nodos_sin_etiqueta.remove(arista[0])
-                except:
-                    pass
-                try:
-                    nodos_sin_etiqueta.remove(arista[1])
-                except:
-                    pass
-                
+            # Se busca el padre de cada arista. Si tienen padres distintos, 
+            # entonces no se formará un ciclo y por lo tanto se agregan al árbol
+            # y se unen
+            if self.__busqueda(arista[0]) != self.__busqueda(arista[1]):
+                arbol.append(arista)                                
                 self.__union(arista[0], arista[1])
-
-        print("ARBOL DE MINIMA EXPANSION") 
-        print(arbol)
-
-        print("NODOS SIN ETIQUETA")
-        print(nodos_sin_etiqueta)
-
+        
+        self.__heap = {}
+        
+        return arbol
 
     def __str__(self):
         resultado = []
