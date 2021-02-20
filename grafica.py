@@ -15,9 +15,10 @@ class Arista:
         y una etiqueta. De esta forma es más fácil agregar otros
         atributos, por ejemplo, un peso.
     """
-    def __init__(self, destino, etiqueta):
+    def __init__(self, destino, peso, etiqueta):
         self.destino = destino
         self.etiqueta = etiqueta
+        self.peso = peso
 
 class Nodo:
     """
@@ -93,6 +94,7 @@ class Grafica:
         self.__grafica = {} # Estructura donde se va a guardar la gráfica
         self.__num_nodos = 0 # Contador de nodos
         self.__num_aristas = 0 # Contador de aristas
+        self.__heap = {}
 
     """
         Este método busca un nodo en la gráfica.
@@ -136,16 +138,16 @@ class Grafica:
         b: Nodo 2 de la arista.
         etiqueta: Etiqueta de la arista.
     """
-    def agregar_arista(self, a, b, etiqueta=None):
+    def agregar_arista(self, a, b, etiqueta=None, peso=None):
         self.agregar_nodo(a)
         nodo_nuevo = self.buscar_nodo(a)
-        self.__grafica[nodo_nuevo].append( Arista(b, etiqueta) )
+        self.__grafica[nodo_nuevo].append( Arista(b, etiqueta, peso) )
 
         # Se agrega el nodo b y después se agrega una arista hacia
         # a con la etiqueta a su lista
         self.agregar_nodo(b)
         nodo_nuevo = self.buscar_nodo(b)
-        self.__grafica[nodo_nuevo].append( Arista(a, etiqueta) )
+        self.__grafica[nodo_nuevo].append( Arista(a, etiqueta, peso) )
 
         # El contador de aristas se incrementa
         self.__num_aristas += 1
@@ -164,9 +166,11 @@ class Grafica:
                 self.agregar_nodo(line[0])
             elif length == 2:
                 self.agregar_arista(line[0], line[1])
-            else:
+            elif length == 3:
                 self.agregar_arista(line[0], line[1], line[2])
-    
+            else:
+              	self.agregar_arista(line[0], line[1], line[2], line[4])
+                
 
     """
         Este método busca una arista. En caso de que un nodo
@@ -184,17 +188,24 @@ class Grafica:
         
         Si no se encuentra la arista, regresa None, None
     """
-    def buscar_arista(self, a, b, etiqueta=None):
-        if not self.buscar_nodo(a) or not self.buscar_nodo(a):
+    def buscar_arista(self, a, b, etiqueta=None, peso=None):
+        if not self.buscar_nodo(a) or not self.buscar_nodo(b):
             return False
-
+          
         for arista in self.__grafica[self.buscar_nodo(a)]:
             if etiqueta == None:
+                if arista.destino == b and arista.peso == peso:
+                    return True
+            elif peso == None:
+              	if arista.destino == b and arista.etiqueta == etiqueta:
+                	return True
+            elif not etiqueta and not peso:
                 if arista.destino == b:
                     return True
             else:
-                if arista.destino == b and arista.etiqueta == etiqueta:
-                    return True
+              	if arista.destion == b and arista.destino == etiqueta and arista.peso == peso:
+                  	return True
+              	
         return False
     
     """
@@ -204,30 +215,46 @@ class Grafica:
         ----------
         etiqueta: Etiqueta de la arista
     """    
-    def eliminar_arista(self, a, b, etiqueta=None):
+    def eliminar_arista(self, a, b, etiqueta=None, peso=None):
         if self.buscar_arista(a, b, etiqueta):
             nodo_a = self.buscar_nodo(a)
             nodo_b = self.buscar_nodo(b)
-
+            
             for i in range(len(self.__grafica[nodo_a])):
                 if etiqueta == None:
+                    if self.__grafica[nodo_a][i].destino == b and self.__grafica[nodo_a][i].peso == peso:
+                        arista1 = self.__grafica[nodo_a][i]
+                        break
+                elif peso == None:
+                    if self.__grafica[nodo_a][i].destino == b and self.__grafica[nodo_a][i].etiqueta == etiqueta:
+                        arista1 = self.__grafica[nodo_a][i]
+                        break
+                elif not etiqueta and not peso:
                     if self.__grafica[nodo_a][i].destino == b:
                         arista1 = self.__grafica[nodo_a][i]
                         break
                 else:
-                    if self.__grafica[nodo_a][i].destino == b and self.__grafica[nodo_a][i].etiqueta == etiqueta:
+                    if self.__grafica[nodo_a][i].destino == b and self.__grafica[nodo_a][i].peso == peso and self.__grafica[nodo_a][i].etiqueta == etiqueta:
                         arista1 = self.__grafica[nodo_a][i]
                         break
             
             for i in range(len(self.__grafica[nodo_b])):
                 if etiqueta == None:
-                    if self.__grafica[nodo_b][i].destino == a:
+                    if self.__grafica[nodo_b][i].destino == a and self.__grafica[nodo_b][i].peso == peso:
                         arista2 = self.__grafica[nodo_b][i]
                         break
-                else:
-                    if self.__grafica[nodo_b][i].destino == a and self.__grafica[nodo_b][i].etiqueta == etiqueta:
-                        arista2 = self.__grafica[nodo_b][i]
-                        break
+                    elif peso == None:
+                        if self.__grafica[nodo_b][i].destino == a and self.__grafica[nodo_b][i].etiqueta == etiqueta:
+                            arista2 = self.__grafica[nodo_b][i]
+                            break
+                    elif not etiqueta and not peso:
+                        if self.__grafica[nodo_b][i].destino == a:
+                            arista2 = self.__grafica[nodo_b][i]
+                            break
+                    else:
+                        if self.__grafica[nodo_b][i].destino == a and self.__grafica[nodo_b][i].peso == peso and self.__grafica[nodo_b][i].etiqueta == etiqueta:
+                            arista = self.__grafica[nodo_b][i]
+                            break
             
             self.__grafica[nodo_a].remove(arista1)
             self.__grafica[nodo_b].remove(arista2)
@@ -669,6 +696,67 @@ class Grafica:
         # se regresa el bosque que se encontró
         self.__limpiar_etiquetas()
         return bosque
+    
+
+    def __busqueda(self, v):
+        if (v == self.__heap[v]):
+            return v
+        return self.__busqueda(self.__heap[v])
+    
+    def __union(self, u, v):
+        self.__heap[self.__busqueda(u)] = self.__busqueda(v)
+
+    def algoritmo_kruskal(self):
+    	# Introducir todas las aristas a una lista
+        aristas = []
+        for nodo in self.__grafica:
+            for arista in self.__grafica[nodo]:
+                a = (nodo.nombre, arista.destino, float(arista.peso)) 
+                if a not in aristas:
+                    aristas.append((arista.destino, nodo.nombre, float(arista.peso)))
+        
+        # Ordenar las aristas de mayor a menor de acuerdo a su peso
+        aristas.sort(key=lambda a:a[2], reverse=True)
+        print("ARISTAS")
+        for arista in aristas:
+          	print(arista)
+
+        # Crear el heap e inicializarlo
+        self.__heap = {}
+        for nodo in self.__grafica:
+            self.__heap[nodo.nombre] = nodo.nombre
+        
+        print("HEAP")
+        print(self.__heap)
+
+        # Hacer el algoritmo
+        arbol = []
+        nodos_sin_etiqueta = [nodo.nombre for nodo in self.__grafica]
+        print("NODOS SIN ETIQUETA INICIALES")
+        print(nodos_sin_etiqueta)
+        while (len(arbol) < len(self.__grafica)) and nodos_sin_etiqueta:
+            print("HEAP")
+            print(self.__heap)
+            arista = aristas.pop()
+            if not self.__heap[arista[0]] == self.__heap[arista[1]]:
+                arbol.append(arista)
+
+                try:
+                    nodos_sin_etiqueta.remove(arista[0])
+                except:
+                    pass
+                try:
+                    nodos_sin_etiqueta.remove(arista[1])
+                except:
+                    pass
+                
+                self.__union(arista[0], arista[1])
+
+        print("ARBOL DE MINIMA EXPANSION") 
+        print(arbol)
+
+        print("NODOS SIN ETIQUETA")
+        print(nodos_sin_etiqueta)
 
 
     def __str__(self):
