@@ -13,32 +13,20 @@ global canvas_pady # Margen superior del canvas
 global root_size # Tamaño de la ventana principal
 global canvas_bgcolor # Color de fondo del canvas
 global min_node_separation # Minima separación que debe existir entre un nodo y otro
-global drag_data
+global drag_data # Información del objeto arrastrado
+global mouse_state # Estado del mouse ("node", "vertex")
 
-# Inicialización de las variables globales
-canvas_w = 700
-canvas_h = 600
-node_r = 25
-node_label = 1
-canvas_pady = 20
-root_size = "800x800"
-node_color = "cyan"
-canvas_bgcolor = "white"
-min_node_separation = 30
-drag_data = {"x":0, "y":0, "secure_x":0, "secure_y":0, "item":None}
+global nodes_button # Botón para la gestión de nodos
+global vertex_button # Botón para la gestión de las aristas
 
-root = tk.Tk()
-root.geometry(root_size)
-canvas = tk.Canvas(root, width = canvas_w, height=canvas_h, bg="white")
-canvas.pack(pady=canvas_pady)
+global buttons_frame_padx
+global buttons_frame_pady
 
-nodes_menu = tk.Menu(canvas, tearoff = 0)   
-nodes_menu.add_command(label ="Eliminar nodo") 
-nodes_menu.add_command(label ="Renombrar nodo") 
-nodes_menu.add_command(label ="Paste") 
-nodes_menu.add_command(label ="Reload") 
-nodes_menu.add_separator() 
-nodes_menu.add_command(label ="Rename") 
+global nodes_menu
+
+global element_selected
+
+
 """
     Este método dibuja un nodo en la gráfica.
     El nodo se representará con un círculo y su etiqueta. Este círculo tendrá radio 'node_r' con 
@@ -46,6 +34,9 @@ nodes_menu.add_command(label ="Rename")
 """
 def drawNode(event):
     # Se obtienen las coordenadas del evento (del click)
+    if mouse_state != "node":
+        return
+
     x = event.x
     y = event.y
     # Se imprimen las coordenadas del evento (para pruebas)
@@ -74,27 +65,39 @@ def drawNode(event):
     fin de desplegar un menú desde donde se podrá modificar el elemento seleccionado.
 """
 def onObjectClick(event):
+    global element_selected
+
+    x, y = event.x, event.y
     # Se encuentra el item que ha sido seleccionado mediante un click. Para ello utilizamos el 
     # método 'find_overlapping' del objeto canvas. Se le dan las coordenadas de la esquina superior
     # izquierda y la esquina inferior derecha de un rectángulo. El método regresará el índice de
     # todos los objetos que el rectángulo dado llegue a tocar. En este caso le damos las coordenadas
     # de solo un punto para tener más precisión al momento de seleccionar elementos.
     item = canvas.find_overlapping(
-           event.x, event.y, event.x, event.y)         
-    print(item)
+           x, y, x, y)         
+    
     # Si se seleccionó un item, entonces se obtienen sus etiquetas en forma de arreglo
     # para saber qué tipo de objeto es (nodo o arista) y además saber su nombre (en caso de que sea 
     # nodo) o su peso (en caso de que se trate de una arista)
-    if item:
-        tags = canvas.itemcget(item[0], "tags")
-        tags = list(tags.split(" "))
-        # La etiqueta "current" se usa para identificar el último elemento agregado al canvas. No
-        # nos interesa, por lo tanto, lo sacamos de la lista de etiquetas para así quedarnos 
-        # únicamente con el tipo de elemento y su nombre/peso
-        if "current" in tags:
-            tags.remove("current")
-        if "node" in tags:
-            print(f"Nodo {tags[1]} seleccionado")
+    if item:     
+        item_tag = canvas.itemcget(item, "tags").replace("current", "").strip()
+        
+        if not canvas.itemcget(item, "tags"):
+        # Bloque de excepción en caso de que seleccionemos la nada
+            try:
+                item = canvas.find_overlapping(x-node_r, y-node_r, x+node_r, y+node_r)[1] 
+                item_tag = canvas.itemcget(item, "tags").replace("current", "").strip()
+
+            except:
+                print("No se encontró elemento en la rebúsqueda")
+                return
+
+        element_selected = item
+
+        if "node" in item_tag:
+            nodes_menu.tk_popup(event.x_root, event.y_root)
+        print("Elemento seleccionado:", item_tag)
+
 
 """
     Este método inicializa la información necesaria para poder arrastrar un objeto
@@ -252,7 +255,102 @@ def drag_stop(event):
     print("\n\n-----")
 
 
+def nodesButtonClick():
+    global mouse_state
+    if nodes_button["state"] != "disabled":
+        mouse_state = "node"
+        nodes_button["state"] = "disabled"
+        vertex_button["state"] = "normal"
 
+def vertexButtonClick():
+    global mouse_state
+    if vertex_button["state"] != "disabled":
+        mouse_state = "vertex"
+        vertex_button["state"] = "disabled"
+        nodes_button["state"] = "normal"
+
+def removeNode():
+    global canvas
+    item = element_selected
+    item_tag = canvas.itemcget(item, "tags").replace("current", "").strip()
+        
+    if not item_tag:
+    # Bloque de excepción en caso de que seleccionemos la nada
+        try:
+            item = canvas.find_overlapping(x-node_r, y-node_r, x+node_r, y+node_r)[1] 
+            item_tag = canvas.itemcget(item, "tags"),replace("current", "").strip()
+
+        except:
+            print("No se encontró elemento a eliminar")
+            return        
+
+    print("Estoy en:", item_tag)
+
+    elements_to_remove = []
+    print("ANTES DE ELIMINAR", len(canvas.find_all()))
+    for item2 in canvas.find_all():
+        # De la misma forma que encontramos la etiqueta del item seleccionado, ahora 
+        # se tomará la del item en cuestión
+        this_tag_original = canvas.itemcget(item2, "tags")
+        this_tag_short = this_tag_original.replace("current", "").strip()
+
+        # Si las etiquetas son iguales, entonces se agrega a la lista de items de interés.
+        # Hasta este momento solo tnenemos Nodos y su Etiqueta, por lo tanto, cuando el 
+        # arreglo de regiones de interés tenga longitud 2 (nodo y su etiqueta) se rompe el ciclo 
+        if this_tag_short == item_tag:
+            elements_to_remove.append(item2)
+            if len(elements_to_remove) == 2:
+                break
+    
+    for element in elements_to_remove:
+        canvas.delete(element)
+
+    print("DESPUES DE ELIMINAR", len(canvas.find_all()))
+
+root_w = 800
+root_h = 800
+# Inicialización de las variables globales
+canvas_w = 700
+canvas_h = 600
+node_r = 25
+node_label = 1
+canvas_pady = 5
+root_size = f"{root_w}x{root_h}"
+node_color = "cyan"
+canvas_bgcolor = "white"
+min_node_separation = 30
+drag_data = {"x":0, "y":0, "secure_x":0, "secure_y":0, "item":None}
+mouse_state = ""
+
+
+buttons_frame_padx = 50
+buttons_frame_pady = 5
+
+nodes_button_padx = 0
+nodes_button_pady = 0
+vertex_button_padx = 0
+vertex_button_padx = 0
+
+root = tk.Tk()
+root.geometry(root_size)
+buttons_frame = tk.LabelFrame(root, bd=0)
+buttons_frame.pack(padx=buttons_frame_padx, pady=buttons_frame_pady)
+
+canvas = tk.Canvas(root, width = canvas_w, height=canvas_h, bg="white")
+canvas.pack(pady=canvas_pady)
+
+nodes_button = tk.Button(buttons_frame, text="Gestionar nodos", command=nodesButtonClick)
+nodes_button.pack(side=tk.LEFT, padx=10)
+
+vertex_button = tk.Button(buttons_frame, text="Gestionar aristas", command=vertexButtonClick)
+vertex_button.pack(side=tk.RIGHT, padx=10)
+
+nodes_menu = tk.Menu(canvas, tearoff = 0)   
+nodes_menu.add_command(label ="Eliminar nodo", command=removeNode) 
+nodes_menu.add_command(label ="Renombrar nodo") 
+
+element_selected = ""
+elements_to_remove = []
 
 canvas.bind("<Button 1>",drawNode)
 canvas.bind("<Button 3>",onObjectClick)
