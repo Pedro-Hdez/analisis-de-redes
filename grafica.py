@@ -729,7 +729,7 @@ class Grafica:
         # El algoritmo se ejecuta hasta que el número de aristas del árbol
         # sea igual al númer de vértices - 1, además, deben existir aristas
         # no visitadas
-        while len(arbol) < len(self.__grafica) and aristas:
+        while len(arbol) < len(self.__grafica) - 1:
             # Obtenemos una arista
             arista = aristas.pop()
             # Se busca el padre de cada arista. Si tienen padres distintos, 
@@ -741,6 +741,7 @@ class Grafica:
         
         self.__heap = {}
         
+        arbol.sort(key=lambda a,:(a[2], a[0]))
         return arbol
 
     def __str__(self):

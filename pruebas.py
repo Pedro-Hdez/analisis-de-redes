@@ -3,4 +3,6 @@ from grafica import *
 g = Grafica()
 g.leer_grafica("grafica.txt")
 
-g.algoritmo_kruskal()
+arbol_minimo = g.algoritmo_kruskal()
+print("Árbol de mínima expansión con Kruskal")
+print(arbol_minimo)
