@@ -728,8 +728,8 @@ class Grafica:
         
         # El algoritmo se ejecuta hasta que el número de aristas del árbol
         # sea igual al númer de vértices - 1, además, deben existir aristas
-        # no visitadas
-        while len(arbol) < len(self.__grafica) - 1:
+        # no seleccionadas en caso de que la gráfica no sea conexa
+        while len(arbol) < len(self.__grafica) - 1 and aristas:
             # Obtenemos una arista
             arista = aristas.pop()
             # Se busca el padre de cada arista. Si tienen padres distintos, 
