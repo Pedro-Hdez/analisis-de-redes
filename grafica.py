@@ -8,6 +8,7 @@
 
 import copy
 import operator
+import math
 
 class Arista:
     """
@@ -725,6 +726,77 @@ class Grafica:
         arbol.sort(key=lambda a:float(a[1].peso))
         self.__limpiar_etiquetas("aristas")
         return arbol
+    
+    def algoritmo_prim(self):
+        # Se obtienen todos los nodos sin etiqueta
+        nodos_sin_etiqueta = [n for n in self.__grafica]
+        # Se inicializa el bosque vacío
+        bosque = []
+
+        # Se buscarán árboles de mínima expansión mientras existan nodos sin etiqueta. Esto para
+        # encontrar lo árboles de todas las componentes en caso de que la gráfica no sea conexa
+        while nodos_sin_etiqueta:
+            # Se inicializa la lista de nodos marcados
+            nodos_marcados = []
+
+            # Se obtiene un nodo inicial y se agrega a la lista de nodos marcados
+            nodo_inicial = nodos_sin_etiqueta.pop()
+            nodo_inicial.etiqueta = 1
+            nodos_marcados.append(nodo_inicial)
+
+            # Se inicializa el árbol de la componente actual
+            arbol = []
+
+            # El algoritmo debe ejecutarse mientras exista una arista válida
+            while True:
+
+                # Se inicializan las variables 
+                peso_minimo = math.inf 
+                arista_minima = None
+                origen_arista_minima = None
+                nodo_destino = None # Nodo destino de la arista mínima
+
+                # Se recorren todas las aristas que iniciden en los nodos marcados, es decir, 
+                # los que ya están dentro del árbol de expansión
+                for nodo in nodos_marcados:
+                    for arista in self.__grafica[nodo]:
+                        nodo_destino = self.buscar_nodo(arista.destino) # obtienes el nodo destino de la arista actual
+                        # Si el peso de la arista es menor que el peso mínimo actual y el destino
+                        # no tiene etiqueta, entonces esta arista es un candidato a arista mínima
+                        if float(arista.peso) < peso_minimo and not nodo_destino.etiqueta:
+                            arista_minima = arista
+                            origen_arista_minima = nodo
+                            peso_minimo = float(arista.peso)
+                
+                # Si al final existe una arista mínima se agrega al árbol
+                if arista_minima:
+                    arbol.append((origen_arista_minima, arista_minima))
+                    # Se agrega el nodo destino de la arista mínima a la lista de nodos marcados
+                    destino_arista_minima = self.buscar_nodo(arista_minima.destino)
+                    destino_arista_minima.etiqueta = 1
+                    nodos_marcados.append(destino_arista_minima)
+                    # El nodo destino de la arista mínima se elimina de la lista de nodos sin etiqueta
+                    nodos_sin_etiqueta.remove(destino_arista_minima)
+                else:
+                    break
+            
+            # Cuando ya no existe arista válida entonces hemos terminado de encontrar el árbol de
+            # mínima expansión en la componente actual, por lo tanto, éste se agrega al bosque.
+            arbol.sort(key=lambda a:float(a[1].peso))
+            bosque.append(arbol)
+        
+        self.__limpiar_etiquetas("nodos")
+        return bosque
+
+                        
+
+
+
+
+
+
+            
+
 
     def __str__(self):
         resultado = ""
