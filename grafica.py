@@ -16,7 +16,8 @@ class Arista:
         y una etiqueta. De esta forma es más fácil agregar otros
         atributos, por ejemplo, un peso.
     """
-    def __init__(self, destino, peso=None, etiqueta=None):
+    def __init__(self, origen, destino, peso=None, etiqueta=None):
+        self.origen = origen
         self.destino = destino
         self.peso = peso
         self.etiqueta = etiqueta
@@ -29,6 +30,7 @@ class Nodo:
     def __init__(self, nombre, etiqueta=None):
         self.nombre = nombre
         self.etiqueta = etiqueta
+        self.grado = 0
 
 #----------------------------------------------------------------
 class Cola:
@@ -115,7 +117,6 @@ class Grafica:
         self.__grafica = {} # Estructura donde se va a guardar la gráfica
         self.__num_nodos = 0 # Contador de nodos
         self.__num_aristas = 0 # Contador de aristas
-        self.__heap = {}
 
     """
         Este método busca un nodo en la gráfica.
@@ -146,9 +147,11 @@ class Grafica:
         # se agrega y el contador de nodos se incrementa
         if self.buscar_nodo(nombre):
             return False
-        self.__grafica[Nodo(nombre, None)] = []
+
+        nodo = Nodo(nombre, etiqueta=None)
+        self.__grafica[nodo] = []
         self.__num_nodos += 1
-        return True
+        return True 
 
     """
         Este método agrega una arista a la gráfica
@@ -161,17 +164,36 @@ class Grafica:
     """
     def agregar_arista(self, a, b, peso=None):
         self.agregar_nodo(a)
-        nodo_nuevo = self.buscar_nodo(a)
-        self.__grafica[nodo_nuevo].append( Arista(b, peso) )
-
-        # Se agrega el nodo b y después se agrega una arista hacia
-        # a con la etiqueta a su lista
         self.agregar_nodo(b)
-        nodo_nuevo = self.buscar_nodo(b)
-        self.__grafica[nodo_nuevo].append( Arista(a, peso) )
+
+        nodo_a = self.buscar_nodo(a)
+        nodo_b = self.buscar_nodo(b)
+
+        self.__grafica[nodo_a].append( Arista(nodo_a, nodo_b, peso) )
+
+        # Si no se trata de un lazo, entonces la arista también se agrega en el nodo b
+        # y se aumenta en 1 el grado de a y el grado de b
+        if a != b:
+            self.agregar_nodo(b)
+            nodo_b = self.buscar_nodo(b)
+
+
+            # Se agrega el nodo b y después se agrega una arista hacia
+            # a con la etiqueta a su lista
+            self.__grafica[nodo_b].append( Arista(nodo_b, nodo_a, peso) )
+
+            nodo_a.grado += 1
+            nodo_b.grado += 1
+        # Si se trata de un lazo, entonces no debemos agregar otra arista extra. Simplemente 
+        # aumentamos el grado de a en 2.
+        else:
+            nodo_a.grado += 2
+
 
         # El contador de aristas se incrementa
         self.__num_aristas += 1
+        
+        return True
 
     """
         Este método lee una gráfica desde un archivo
@@ -207,15 +229,17 @@ class Grafica:
         Si no se encuentra la arista, regresa None, None
     """
     def buscar_arista(self, a, b, peso=None):
-        if not self.buscar_nodo(a) or not self.buscar_nodo(b):
+        nodo_a = self.buscar_nodo(a)
+
+        if not nodo_a:
             return False
           
-        for arista in self.__grafica[self.buscar_nodo(a)]:
+        for arista in self.__grafica[nodo_a]:
             if peso == None:
-                if arista.destino == b:
+                if arista.destino.nombre == b:
                     return arista
             else:
-                if arista.destino == b and arista.peso == peso:
+                if arista.destino.nombre == b and arista.peso == peso:
                     return arista 
         return False
     
@@ -227,33 +251,46 @@ class Grafica:
         etiqueta: Etiqueta de la arista
     """    
     def eliminar_arista(self, a, b, peso=None):
+        # Si existe la arista, entonces se procede a elminarla
         if self.buscar_arista(a, b, peso):
+            # Se busca el nodo a para eliminar la arista a,b
             nodo_a = self.buscar_nodo(a)
-            nodo_b = self.buscar_nodo(b)
-            
-            for i in range(len(self.__grafica[nodo_a])):
+            for arista in self.__grafica[nodo_a]:
                 if peso == None:
-                    if self.__grafica[nodo_a][i].destino == b:
-                        arista1 = self.__grafica[nodo_a][i]
+                    if arista.destino.nombre == b:
+                        arista1 = arista
                         break
                 else:
-                    if self.__grafica[nodo_a][i].destino == b and self.__grafica[nodo_a][i].peso == peso:
-                        arista1 = self.__grafica[nodo_a][i]
+                    if arista.destino.nombre == b and arista.peso == peso:
+                        arista1 = arista
                         break
-                
-            for i in range(len(self.__grafica[nodo_b])):
-                if peso == None:
-                    if self.__grafica[nodo_b][i].destino == a:
-                        arista2 = self.__grafica[nodo_b][i]
-                        break
-                else:
-                    if self.__grafica[nodo_b][i].destino == a and self.__grafica[nodo_b][i].peso == peso:
-                        arista2 = self.__grafica[nodo_b][i]
-                        break
-            
             self.__grafica[nodo_a].remove(arista1)
-            self.__grafica[nodo_b].remove(arista2)
+
+            # Si no se trata de un lazo, entonces se busca el nodo b para eliminar la arista b,a
+            # y el grado de ambos nodos se decrementa en 1
+            if a != b:
+                nodo_b = self.buscar_nodo(b)
+                for arista in self.__grafica[nodo_b]:
+                    if peso == None:
+                        if arista.destino.nombre == a:
+                            arista2 = arista
+                            break
+                    else:
+                        if arista.destino.nombre == a and arista.peso == peso:
+                            arista2 = arista
+                            break
+                
+                self.__grafica[nodo_b].remove(arista2)
+                nodo_a.grado -= 1
+                nodo_b.grado -= 1
+            # Si se trata de un lazo, entonces no es necesario eliminar la arista b,a (pues es la misma)
+            # simplemente se decrementa el grado de a en 2
+            else:
+                nodo_a.grado -= 2
+
+            # Sea cual sea el caso, el número de aristas se decrementa en 1
             self.__num_aristas -= 1
+
             return True
 
         return False
@@ -274,7 +311,7 @@ class Grafica:
             # la bandera unSentido=True porque no se necesita borrar la arista del nodo que
             # vamos a eliminar.
             while self.__grafica[nodo]:
-                self.eliminar_arista(nombre, self.__grafica[nodo][0].destino)
+                self.eliminar_arista(nombre, self.__grafica[nodo][0].destino.nombre)
     
             # Cuando todas las aristas del nodo se hayan eliminado procedemos a 
             # eliminar el nodo de la gráfica y decrementamos el contador de nodos
@@ -300,7 +337,7 @@ class Grafica:
         nodo = self.buscar_nodo(nombre)
         if nodo:
             # El grado se calcula con la longitud de su lista de aristas
-            return len(self.__grafica[nodo])
+            return nodo.grado
         return False
     
     """
@@ -337,7 +374,7 @@ class Grafica:
         nodo = self.buscar_nodo(nombre)
         if nodo:
             while self.__grafica[nodo]:
-                self.eliminar_arista(nombre, self.__grafica[nodo][0].destino)
+                self.eliminar_arista(nombre, self.__grafica[nodo][0].destino.nombre)
             return True
         else:
             return False
@@ -407,7 +444,7 @@ class Grafica:
             # En caso de que tengan etiqueta y sea la misma que la del nodo actual, entonces
             # la gráfica no es bipartita
             for arista in self.__grafica[nodo_actual]:
-                nodo_vecino = self.buscar_nodo(arista.destino)
+                nodo_vecino = arista.destino
                 if not nodo_vecino.etiqueta:
                     nodo_vecino.etiqueta = etiqueta
                     if etiqueta == 1:
@@ -436,10 +473,10 @@ class Grafica:
         # Algoritmo de búsqueda
         visitados = []
         pila = Pila()
-        pila.apilar(list(self.__grafica.items())[0][0].nombre)
+        pila.apilar(list(self.__grafica.items())[0][0])
         while not pila.es_vacia():
             nodo_actual = pila.desapilar()
-            for arista in self.__grafica[self.buscar_nodo(nodo_actual)]:
+            for arista in self.__grafica[nodo_actual]:
                 nodo_adyacente = arista.destino
                 if nodo_adyacente not in visitados:
                     pila.apilar(nodo_adyacente)
@@ -460,10 +497,9 @@ class Grafica:
         nodos_iniciales = []
         copia = self.copiar().diccionario()
         
-        
         # Se cuentan los nodos con grado impar
         for nodo in self.__grafica:
-            if len(self.__grafica[nodo]) % 2 != 0:
+            if nodo.grado % 2 != 0:
                 nodos_iniciales.append(nodo)
                 
         if len(nodos_iniciales) > 0 and len(nodos_iniciales) != 2:
@@ -477,42 +513,61 @@ class Grafica:
         if nodos_iniciales:
             vp = nodos_iniciales[0]
             vc = nodos_iniciales[1]
+            print(vp.nombre, vc.nombre)
         else:
-            vp = vc = list(self.__grafica.items())[0][0]
+            vp = vc = list(self.__grafica.keys())[0]
         
         # Si no, tomamos por default el primer nodo (Paseo cerrado)
-
         cola.encolar(vc)
         pila.apilar(vp)
         
-        while(self.obtener_grado(vp.nombre)>0 and self.obtener_grado(vc.nombre)>0):
+        while vp.grado>0 and vc.grado>0:
+            # Si vc tiene aristas...
+            if self.__grafica[vc]:
+                # ... se elige cualquier arista (vc,w) tal que el grado de w no sea 1...
+                arista_a_eliminar = None
+                for arista in self.__grafica[vc]:
+                    if arista.destino.grado != 1:
+                        arista_a_eliminar = arista
+                        break
+                
+                # ... si tal arista existe, eliminar (vc,w) de la gráfica y agregar w a la cola.
+                # Hacer vc = w
+                if arista_a_eliminar:
+                    w = arista_a_eliminar.destino
+                    self.eliminar_arista(vc.nombre, w.nombre)
+                    cola.encolar(w)
+                    vc = w
 
-            # Se iteran todos los nodos adyacentes al nodo inicial
-            for arista in self.__grafica[vc]:
-                nodo_adyacente = self.buscar_nodo(arista.destino)
-                if(self.obtener_grado(nodo_adyacente.nombre)>1):
-                    self.eliminar_arista(vc.nombre,nodo_adyacente.nombre,arista.etiqueta)
-                    vc = nodo_adyacente
-                    cola.encolar(vc)
-                    break
-            if(self.obtener_grado(vp.nombre)==1):
-                arista_adyacente = self.__grafica[vp][0]
-                self.eliminar_arista(vp.nombre,arista_adyacente.destino,arista_adyacente.etiqueta)
-                vp = self.buscar_nodo(arista_adyacente.destino)
-                pila.apilar(vp)
-
+            
+            # Si vp tiene grado 1, elegir la única arista (vp, k), eliminar (vp, k) de la gráfica y
+            # agregar ka a la pila. Hacer vp = k
+            if vp.grado == 1:
+                arista_a_eliminar = self.__grafica[vp][0]
+                k = arista_a_eliminar.destino
+                self.eliminar_arista(vp.nombre, k.nombre)
+                pila.apilar(k)
+                vp = k
         
-        pila.desapilar()
+        # ---------- RECUPERAMOS EL PASEO ----------
+
+        pila.desapilar() # Ignoramos el primero de la pila
         paseo = []
+
+        # Se desencolan todos los vértices de la cola
         while(not cola.es_vacia()):
             paseo.append(cola.desencolar().nombre)
-         
+        
+        # Se desapilan todos los vértices de la pila
         while not pila.es_vacia():
             paseo.append(pila.desapilar().nombre)
-         
+        
+        # Restauramos la gráfica
         self.__grafica = copia
+
         return paseo
     
+
     """
         Esta función ejecuta una búsqueda a profundidad en la gráfica para encontrar árboles de
         expansión.
@@ -530,22 +585,23 @@ class Grafica:
         bosque = [] 
 
         # Lista de los nodos que no han sido etiquetados por el algoritmo
-        nodos_sin_etiqueta = [nodo for nodo in self.__grafica if not nodo.etiqueta]
+        nodos_sin_etiqueta = [nodo for nodo in self.__grafica]
 
         # Pila auxiliar del algoritmo
         pila = Pila()
         
-        # Árbol en donde guardaremos las aristas del árbol de mínima expansión
-        arbol = []
 
         # Mientras existan nodos sin etiquetar se efectuará el algoritmo de 
         # búsqueda
         while True:
             # ----- ALGORITMO DE BÚSQUEDA A PROFUNDIDAD -----
+            
+            arbol = []
 
             # Se toma el primer vértice y se etiqueta
             v = nodos_sin_etiqueta.pop()
             v.etiqueta = 1
+
 
             # Mientras falte algún nodo por etiquetar en la gráfica, el algoritmo de búsqueda 
             # continúa          
@@ -553,7 +609,7 @@ class Grafica:
                 # Se busca alguna arista válida de v, es decir, que su destino no esté etiquetado
                 arista = None
                 for a in self.__grafica[v]:
-                    if not self.buscar_nodo(a.destino).etiqueta:
+                    if not a.destino.etiqueta:
                         arista = a 
                         break
                 
@@ -562,14 +618,14 @@ class Grafica:
                 # hasta este punto
                 if arista:
                     # Se obtiene w
-                    w = self.buscar_nodo(arista.destino)
+                    w = arista.destino
                     # Se etiqueta la arista válida de v a w
                     arista.etiqueta = 1
                     # Se añade la arista al árbol. También necesitamos guardar el nodo de origen
                     # (en este caso, v) para identificar más rápido la arista en el árbol
-                    arbol.append((v, arista))
+                    arbol.append(arista)
                     # También se etiqueta la misma arista válida pero de w a v
-                    self.buscar_arista(w.nombre, v.nombre).etiqueta = 1
+                    arista.etiqueta = 1
                     # Se etiqueta w y se saca de los nodos sin etiqueta
                     w.etiqueta = 1
                     nodos_sin_etiqueta.remove(w)
@@ -598,8 +654,6 @@ class Grafica:
             if not nodos_sin_etiqueta:
                 break
             
-            pila.vaciar()
-            arbol = []
         
         # Se limpian las etiquetas del árbol y se regresa el bosque
         self.__limpiar_etiquetas("todo")
@@ -630,14 +684,15 @@ class Grafica:
         # Cola auxiliar del algoritmo
         cola = Cola()
 
-        # Árbol en donde vamos a guardar el árbol de mínima expansión para la componente
-        # actual
-        arbol = []
 
         # Mientras existan nodos sin etiquetar se efectuará el algoritmo de 
         # búsqueda
         while True:
             # ----- ALGORITMO DE BÚSQUEDA A LO ANCHO -----
+            
+            # Árbol en donde vamos a guardar el árbol de mínima expansión para la componente
+            # actual
+            arbol = []
 
             # Se elige un vértice no etiquetado, se etiqueta y se encola
             v = nodos_sin_etiqueta.pop()
@@ -653,16 +708,16 @@ class Grafica:
                 # Se marcan todas las aristas de t tal que su otro extremo w
                 # no esté marcado; además, se encola a w
                 for arista in self.__grafica[t]:
-                    w = self.buscar_nodo(arista.destino)
+                    w = arista.destino
                     if not w.etiqueta:
                         # Se etiqueta el nodo
                         w.etiqueta = 1
                         # Se etiqueta la arista de v a w (arista) y también en sentido contrario
                         # (de w a v)
                         arista.etiqueta = 1
-                        self.buscar_arista(w.nombre, t.nombre).etiqueta = 1
+                        arista.etiqueta = 1
                         # Se añade la arista al árbol junto con su origen
-                        arbol.append((t, arista))
+                        arbol.append(arista)
                         # Se encola w y como ya está marcado, entonces se elimina de la lista de 
                         # nodos sin marcar
                         nodos_sin_etiqueta.remove(w)
@@ -681,7 +736,6 @@ class Grafica:
                 break
 
             cola.vaciar()
-            arbol = []
         
         # Se limpian las etiquetas del árbol y se regresa el bosque
         self.__limpiar_etiquetas("todo")
@@ -694,16 +748,16 @@ class Grafica:
         for nodo in self.__grafica:
             for arista in self.__grafica[nodo]:
                 if not arista.etiqueta:
-                    aristas.append((nodo, arista))
+                    aristas.append(arista)
                     arista.etiqueta = 1
-                    self.buscar_arista(arista.destino, nodo.nombre, arista.peso).etiqueta = 1
+                    self.buscar_arista(arista.destino.nombre, nodo.nombre, arista.peso).etiqueta = 1
 
         
         # Ordenar las aristas de mayor a menor de acuerdo a su peso
-        aristas.sort(key=lambda a:float(a[1].peso), reverse=True)
+        aristas.sort(key=lambda a:float(a.peso), reverse=True)
         
         # Inicializar la estructura Unión-Búsqueda
-        unionBusqueda = UnionBusqueda([n.nombre for n in self.__grafica])
+        unionBusqueda = UnionBusqueda([n for n in self.__grafica])
         
         # ----- ALGORITMO DE KRUSKAL -----
         # Arreglo en donde se almacenarán las aristas del árbol de mínima expansión
@@ -712,18 +766,19 @@ class Grafica:
         # El algoritmo se ejecuta hasta que el número de aristas del árbol
         # sea igual al númer de vértices - 1, además, deben existir aristas
         # no seleccionadas en caso de que la gráfica no sea conexa
-        while len(arbol) < len(self.__grafica) - 1 and aristas:
+        num_nodos = self.obtener_numero_nodos()
+        while len(arbol) < num_nodos - 1 and aristas:
             # Obtenemos una arista
             arista = aristas.pop()
             # Se busca el padre de cada arista. Si tienen padres distintos, 
             # entonces no se formará un ciclo y por lo tanto se agregan al árbol
             # y se unen
-            if unionBusqueda.busqueda(arista[0].nombre) != unionBusqueda.busqueda(arista[1].destino):
+            if unionBusqueda.busqueda(arista.origen) != unionBusqueda.busqueda(arista.destino):
                 arbol.append(arista)                                
-                unionBusqueda.union(arista[0].nombre, arista[1].destino)
+                unionBusqueda.union(arista.origen, arista.destino)
         
         
-        arbol.sort(key=lambda a:float(a[1].peso))
+        arbol.sort(key=lambda a:float(a.peso))
         self.__limpiar_etiquetas("aristas")
         return arbol
     
@@ -753,50 +808,35 @@ class Grafica:
                 # Se inicializan las variables 
                 peso_minimo = math.inf 
                 arista_minima = None
-                origen_arista_minima = None
-                nodo_destino = None # Nodo destino de la arista mínima
 
                 # Se recorren todas las aristas que iniciden en los nodos marcados, es decir, 
                 # los que ya están dentro del árbol de expansión
                 for nodo in nodos_marcados:
                     for arista in self.__grafica[nodo]:
-                        nodo_destino = self.buscar_nodo(arista.destino) # obtienes el nodo destino de la arista actual
                         # Si el peso de la arista es menor que el peso mínimo actual y el destino
                         # no tiene etiqueta, entonces esta arista es un candidato a arista mínima
-                        if float(arista.peso) < peso_minimo and not nodo_destino.etiqueta:
+                        if float(arista.peso) < peso_minimo and not arista.destino.etiqueta:
                             arista_minima = arista
-                            origen_arista_minima = nodo
                             peso_minimo = float(arista.peso)
                 
                 # Si al final existe una arista mínima se agrega al árbol
                 if arista_minima:
-                    arbol.append((origen_arista_minima, arista_minima))
+                    arbol.append(arista_minima)
                     # Se agrega el nodo destino de la arista mínima a la lista de nodos marcados
-                    destino_arista_minima = self.buscar_nodo(arista_minima.destino)
-                    destino_arista_minima.etiqueta = 1
-                    nodos_marcados.append(destino_arista_minima)
+                    arista_minima.destino.etiqueta = 1
+                    nodos_marcados.append(arista_minima.destino)
                     # El nodo destino de la arista mínima se elimina de la lista de nodos sin etiqueta
-                    nodos_sin_etiqueta.remove(destino_arista_minima)
+                    nodos_sin_etiqueta.remove(arista_minima.destino)
                 else:
                     break
             
             # Cuando ya no existe arista válida entonces hemos terminado de encontrar el árbol de
             # mínima expansión en la componente actual, por lo tanto, éste se agrega al bosque.
-            arbol.sort(key=lambda a:float(a[1].peso))
+            arbol.sort(key=lambda a:float(a.peso))
             bosque.append(arbol)
         
         self.__limpiar_etiquetas("nodos")
         return bosque
-
-                        
-
-
-
-
-
-
-            
-
 
     def __str__(self):
         resultado = ""
@@ -804,8 +844,8 @@ class Grafica:
             resultado += f"{nodo.nombre}: "
             for arista in self.__grafica[nodo]:
                 if arista.peso:
-                    resultado += f"({arista.destino}, {arista.peso}) "
+                    resultado += f"({arista.destino.nombre}, {arista.peso}) "
                 else:
-                    resultado += f"{arista.destino} "
+                    resultado += f"{arista.destino.nombre} "
             resultado += '\n'
         return resultado 
