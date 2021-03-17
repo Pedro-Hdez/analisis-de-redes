@@ -887,28 +887,40 @@ class Grafica:
         minimo = 9999
         
         while(X):
+            # ordenamos los aristas marcados temporalmente por peso
             X.sort(key=lambda x:float(x[1]), reverse=False)
+            #agarramos el elemento de la lista con los aristas etiquetados temporalmente
             x = X[0]
+            # lo sacamos de la lista de marcados temporal
             X.remove(X[0])
+            # le ponemos etiqueta a la aristas
             x[0].destino.etiqueta="1"
+            # lo agregamos a la lista de marcados permanentes
             Y.append(x)
+            
             booleano=False
    
-        
+            # recorremos los aristas del nodo recien marcado de forma permanente
             for arista in self.__grafica[x[0].destino]: 
                 booleano=False
+                # checamos si el nodo destino de la arista está marcado permanentemente
                 if(arista.destino.etiqueta != "1"):      
-                    for nodo in X:
-                        if(nodo[0].destino == arista.destino):
+                    for nodo in X: # recorremos los nodos marcados temporalmente
+                        # checamos si el nodo destino del arista recorrido ya está marcado temporalmente
+                        if(nodo[0].destino == arista.destino): 
                             booleano=True
-                            if(nodo[1] > float(arista.peso)+x[1]):                        
+                            # comparamos pesos entre la etiqueta actual del nodo y la posible nueva etiqueta
+                            if(nodo[1] > float(arista.peso)+x[1]):  
+                                # actualizamos la etiqueta                      
                                 nodo[0]=arista                                    
                                 nodo[1]=float(arista.peso)+x[1] 
-                                                                                     
+                    # si el nodo destino del arista no  estaba marcado, lo marcamos con etiqueta temporal.                                                              
                     if booleano==False:    
                         X.append([arista,float(arista.peso)+x[1]])
-    
+
+        # revisamos si todos nodos fueron marcados permanentemente
         if(len(Y)==len(self.__grafica)):
+            # regresamos la lista con las etiquetas permanentes encontradass
             return Y
         else:
             return False
