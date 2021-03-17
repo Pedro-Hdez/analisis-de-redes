@@ -1,18 +1,14 @@
-from grafica2 import *
+from grafica import *
 
+
+
+#Creamos una nueva gráfica donde guardaremos el arbol resultante para probar el algoritmo
 g = Grafica()
-g.leer_grafica("grafica.txt")
-
-bosque_prim = g.algoritmo_prim()
-bosque_kruskal = g.algoritmo_kruskal()
-
-print("ALGORITMO DE PRIM")
-for arbol in bosque_prim:
-    for arista in arbol:
-        print(arista.origen.nombre, arista.destino.nombre, arista.peso)
-    print("--------------------------")
-
-
-print("ALGORITMO DE KRUSKAL")
-for arista in bosque_kruskal:
-    print(arista.origen.nombre, arista.destino.nombre, arista.peso)
+g.leer_digrafica("grafica.txt")
+caminos = []
+caminos = g.dijkstra("a","z")
+if(caminos):
+    for nodo in caminos:
+        print(nodo[0].destino.nombre,": ",nodo[0].origen.nombre,nodo[1])
+else:
+    print("no hay arborecencia")

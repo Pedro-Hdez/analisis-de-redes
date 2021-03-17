@@ -182,12 +182,9 @@ class Grafica:
             # a con la etiqueta a su lista
             self.__grafica[nodo_b].append( Arista(nodo_b, nodo_a, peso) )
 
-            nodo_a.grado += 1
-            nodo_b.grado += 1
-        # Si se trata de un lazo, entonces no debemos agregar otra arista extra. Simplemente 
-        # aumentamos el grado de a en 2.
-        else:
-            nodo_a.grado += 2
+        nodo_a.grado += 1
+        nodo_b.grado += 1
+     
 
 
         # El contador de aristas se incrementa
@@ -195,6 +192,27 @@ class Grafica:
         
         return True
 
+    def agregar_arista_digrafica(self, a, b, peso=None):
+        self.agregar_nodo(a)
+        self.agregar_nodo(b)
+
+        nodo_a = self.buscar_nodo(a)
+        nodo_b = self.buscar_nodo(b)
+
+        self.__grafica[nodo_a].append( Arista(nodo_a, nodo_b, peso) )
+
+        # Si no se trata de un lazo, entonces la arista también se agrega en el nodo b
+        # y se aumenta en 1 el grado de a y el grado de b
+    
+
+        nodo_a.grado += 1
+           
+
+
+        # El contador de aristas se incrementa
+        self.__num_aristas += 1
+        
+        return True
     """
         Este método lee una gráfica desde un archivo
     """
@@ -212,6 +230,19 @@ class Grafica:
             elif length == 3:
                 self.agregar_arista(line[0], line[1], line[2])
 
+    def leer_digrafica(self, archivo):
+        file1 = open(archivo, 'r') 
+        Lines = file1.readlines() 
+
+        for line in Lines:
+            line = line.strip().split(",")
+            length = len(line)
+            if length == 1:
+                self.agregar_nodo(line[0])
+            elif length == 2:
+                self.agregar_arista(line[0], line[1])
+            elif length == 3:
+                self.agregar_arista_digrafica(line[0], line[1], line[2])
     """
         Este método busca una arista. En caso de que un nodo
         tenga varias aristas sin etiqueta hacia otro mismo nodo,
@@ -490,6 +521,14 @@ class Grafica:
         else: 
             return False
     
+    def imprimir_aristas(self):
+        aristas = []
+        for nodo in self.__grafica:
+            for arista in self.__grafica[nodo]:
+                aristas.append((arista.origen.nombre, arista.destino.nombre))
+
+        print(aristas)        
+
     def paseo_euler(self):
         if not self.es_conexa():
             return False
@@ -837,6 +876,43 @@ class Grafica:
         
         self.__limpiar_etiquetas("nodos")
         return bosque
+
+    def dijkstra(self, origen, destino):
+        X = []
+        
+        self.agregar_arista_digrafica(origen,origen,0)
+        v = self.buscar_arista(origen,origen,0)
+        X.append([v,0])
+        Y = []
+        minimo = 9999
+        
+        while(X):
+            X.sort(key=lambda x:float(x[1]), reverse=False)
+            x = X[0]
+            X.remove(X[0])
+            x[0].destino.etiqueta="1"
+            Y.append(x)
+            booleano=False
+   
+        
+            for arista in self.__grafica[x[0].destino]: 
+                booleano=False
+                if(arista.destino.etiqueta != "1"):      
+                    for nodo in X:
+                        if(nodo[0].destino == arista.destino):
+                            booleano=True
+                            if(nodo[1] > float(arista.peso)+x[1]):                        
+                                nodo[0]=arista                                    
+                                nodo[1]=float(arista.peso)+x[1] 
+                                                                                     
+                    if booleano==False:    
+                        X.append([arista,float(arista.peso)+x[1]])
+    
+        if(len(Y)==len(self.__grafica)):
+            return Y
+        else:
+            return False
+
 
     def __str__(self):
         resultado = ""

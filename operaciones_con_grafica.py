@@ -1,6 +1,6 @@
 from grafica import Grafica
 from os import system, name
-from grafica2 import Cola
+from grafica import Cola
 
 def validar(num):
     try:
