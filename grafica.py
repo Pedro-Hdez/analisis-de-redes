@@ -199,20 +199,13 @@ class Grafica:
         nodo_a = self.buscar_nodo(a)
         nodo_b = self.buscar_nodo(b)
 
-        self.__grafica[nodo_a].append( Arista(nodo_a, nodo_b, peso) )
-
-        # Si no se trata de un lazo, entonces la arista también se agrega en el nodo b
-        # y se aumenta en 1 el grado de a y el grado de b
-    
-
-        nodo_a.grado += 1
-           
-
-
-        # El contador de aristas se incrementa
-        self.__num_aristas += 1
+        if nodo_a and nodo_b:
+            self.__grafica[nodo_a].append( Arista(nodo_a, nodo_b, peso) )    
+            nodo_a.grado += 1
+            self.__num_aristas += 1
+            return True
         
-        return True
+        return False
     """
         Este método lee una gráfica desde un archivo
     """
@@ -884,7 +877,7 @@ class Grafica:
         v = self.buscar_arista(origen,origen,0)
         X.append([v,0])
         Y = []
-        minimo = 9999
+        minimo = -math.inf
         
         while(X):
             # ordenamos los aristas marcados temporalmente por peso
