@@ -39,10 +39,8 @@ class Grafica:
 
     """
         Este método busca un nodo en la gráfica.
-
         Parametros:
         nodo: Nodo a buscar
-
         Regresa:
         True si el nodo se encuentra en la gráfica.
         None si el nodo no se encuentra en la gráfica. 
@@ -55,11 +53,9 @@ class Grafica:
 
     """
         Este método agrega un nodo a la gráfica.
-
         Parámetros
         ----------
         nodo: Nodo que se desea agregar
-
     """
     def agregar_nodo(self, nombre):
         # Se busca el nodo en la gráfica, si no está, entonces
@@ -74,7 +70,6 @@ class Grafica:
 
     """
         Este método agrega una arista a la gráfica
-
         Parámetros
         ----------
         a: Nodo 1 de la arista.
@@ -159,11 +154,9 @@ class Grafica:
         Este método busca una arista. En caso de que un nodo
         tenga varias aristas sin etiqueta hacia otro mismo nodo,
         entonces únicamente se va a eliminar la primer ocurrencia.
-
         Parámetros
         ----------
         etiqueta: Etiqueta de la arista a buscar
-
         Regresa
         -------
         Si se encuentra la arista, regresa el nodo en donde se encontró
@@ -188,7 +181,6 @@ class Grafica:
     
     """
         Este método elimina una arista de la gráfica
-
         Parámetros
         ----------
         etiqueta: Etiqueta de la arista
@@ -240,7 +232,6 @@ class Grafica:
 
     """
         Este método elimina un nodo de la gráfica
-
         Parámetros
         ----------
         nodo: Nodo que se quiere eliminar
@@ -266,11 +257,9 @@ class Grafica:
     
     """
         Este método obtiene el grado de un nodo de la gráfica
-
         Parámetros
         ----------
         nodo: Nodo al que se le va a calcular el grado
-
         Regresa
         -------
         El grado del nodo
@@ -285,7 +274,6 @@ class Grafica:
     
     """
         Este método obtiene el número de nodos de la gráfica
-
         Regresa
         -------
         El número de nodos de la gráfica
@@ -296,7 +284,6 @@ class Grafica:
     
     """
         Este método obtiene el número de aristas de la gráfica
-
         Regresa
         -------
         El número de aristas de la gráfica
@@ -307,7 +294,6 @@ class Grafica:
     
     """
         Este método elimina todas las aristas de un nodo
-
         Parámetros
         ----------
         nodo: Nodo del cuál vamos a eliminar las aristas
@@ -522,10 +508,8 @@ class Grafica:
     """
         Esta función ejecuta una búsqueda a profundidad en la gráfica para encontrar árboles de
         expansión.
-
         Regresa
         -------
-
         bosque: lista de listas. Cada lista corresponde al árbol de expansión
                 de una componente de la gráfica. Cada arista de los árboles
                 de expansión se representan con una tupla.
@@ -615,10 +599,8 @@ class Grafica:
     """
         Esta función ejecuta una búsqueda a lo ancho en la gráfica para encontrar árboles de
         expansión.
-
         Regresa
         -------
-
         bosque: lista de listas. Cada lista corresponde al árbol de expansión
                 de una componente de la gráfica. Cada arista de los árboles
                 de expansión se representan con una tupla.

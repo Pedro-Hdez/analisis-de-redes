@@ -1,14 +1,26 @@
-from grafica import *
+from digrafica import Digrafica
 
-
-
-#Creamos una nueva gráfica donde guardaremos el arbol resultante para probar el algoritmo
-g = Grafica()
-g.leer_digrafica("grafica.txt")
-caminos = []
-caminos = g.dijkstra("a","z")
-if(caminos):
-    for nodo in caminos:
-        print(nodo[0].destino.nombre,": ",nodo[0].origen.nombre,nodo[1])
-else:
-    print("no hay arborecencia")
+d = Digrafica()
+d.leer_digrafica("digrafica.txt")
+print(d)
+print("---------------------")
+d.eliminar_nodo("c")
+print(d)
+print(d.eliminar_arco("a","b"))
+print(d.eliminar_arco("e","b"))
+print(d.obtener_numero_nodos())
+print(d.obtener_numero_arcos())
+print(d.obtener_grado("a", "positivo"))
+print(d.obtener_grado("a", "negativo"))
+print(d.obtener_grado("d", "positivo"))
+print(d.obtener_grado("d", "negativo"))
+print("------------------------------------")
+print("------------------------------------")
+d.vaciar_nodo("f")
+print(d.obtener_numero_arcos())
+print(d.obtener_numero_nodos())
+print(d)
+print(d.obtener_numero_arcos())
+print(d.obtener_numero_nodos())
+print(d.obtener_grado("e", "positivo"))
+print(d.obtener_grado("e", "negativo"))
