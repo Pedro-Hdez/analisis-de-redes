@@ -143,7 +143,7 @@ class Digrafica:
             elif length == 2:
                 self.agregar_arco(line[0], line[1])
             elif length == 3:
-                self.agregar_arco(line[0], line[1], line[2])
+                self.agregar_arco(line[0], line[1], float(line[2]))
 
     def buscar_arco(self, a, b, peso=None):
         """
@@ -393,8 +393,6 @@ class Digrafica:
                     arco.etiqueta = None
         else:
             raise ValueError(f"Error en el tipo dado ({tipo}). Valores aceptados: 'nodos', 'aristas', 'todos'")
-            
-    
 
     def __str__(self):
         """
@@ -422,3 +420,92 @@ class Digrafica:
         resultado = resultado[:-2]
 
         return resultado 
+    
+
+    def __recuperar_ruta(self, nodo_actual, nodo_inicial):
+        # Comenzamos la recuperación de la ruta en el nodo actual
+        ruta = []
+        # Recuperamos arcos mientras el nodo actual no sea el nodo inicial
+        while nodo_actual != nodo_inicial:
+            # Tomamos el antecesor del nodo actual mediante su etiqueta
+            antecesor = nodo_actual.etiqueta["antecesor"]
+            # Se busca el objeto Arco que va desde el antecesor hasta el nodo actual y 
+            # se agrega al principio de la lista, así terminaremos con la ruta ya ordenada
+            ruta.insert(0, self.buscar_arco(antecesor.nombre, nodo_actual.nombre))
+            # Se actualiza el nodo actual
+            nodo_actual = antecesor
+        # Una vez que alcancemos el nodo inicial en la recuperación de la ruta, ésta
+        # se regresa
+        return ruta
+
+
+    def dikjstra(self, nodo_inicial, nodo_final=None):
+        # Se obtienen los nodos inicial y final
+        a = self.buscar_nodo(nodo_inicial)
+        if not a:
+            raise ValueError(f"Error. El nodo inicial {nodo_inicial} no existe en la digráfica")
+
+        if nodo_final:
+            z = self.buscar_nodo(nodo_final)
+            if not z:
+                raise ValueError(f"Error. El nodo final {nodo_final} no existe en la digráfica" )
+        else:
+            z = None
+
+        # el nodo inicial se etiqueta como temporal, como antecesor de él mismo y con una longitud
+        # de ruta de 0, además se agrega a la lista de nodos etiquetados temporalmente
+        a.etiqueta = {"tipo_etiqueta":"temporal", "antecesor":a, "longitud_ruta":0}
+        X = [a]
+
+        # El algoritmo continúa hasta que se acaben los nodos etiquetados temporalmente
+        # o encontremos la ruta más corta hasta el nodo final z
+        while X:
+            # Se obtiene el nodo en X con la longitud de ruta más pequeña
+            x = min(X, key=lambda nodo: nodo.etiqueta["longitud_ruta"])
+
+            # x se elimina del conjunto de vértices marcados temporalmente y se marca de forma
+            # definitiva
+            X.remove(x)
+            x.etiqueta["tipo_etiqueta"] = "definitiva"
+
+            # Si x = z recuperamos la ruta y la regresamos. En caso de no especificar el nodo final
+            # el algoritmo va a continuar hasta agotar la lista de nodos etiquetados temporalmente
+            # para encontrar la ruta más corta desde el nodo inicial hacia todos los demás.
+            # En este último caso esta condición también nos sirve ya que z siempre será None y
+            # x nunca será None por lo tanto, siempre x != z
+            if x == z:
+                return self.__recuperar_ruta(x, a)
+            
+            # Si x != z, entonces se iteran los salientes de x:
+            for arco in self.__digrafica[x]["salientes"]:
+                # Se toma el destino del arco actual
+                v = arco.destino
+                # Si no tiene etiqueta, entonces se marca como temporal, con antecesor = x y
+                # longitud de L(x) + w(arco). Además, se agrega a la lista de nodos etiquetados
+                # temporalmente
+                if not v.etiqueta:
+                    v.etiqueta = {"tipo_etiqueta":"temporal", "antecesor":x, "longitud_ruta":x.etiqueta["longitud_ruta"] + arco.peso}
+                    X.append(v)
+
+                # Si v tiene etiqueta temporal, entonces se revisa si la ruta desde x es mejor que
+                # la que ya tenía
+                elif v.etiqueta["tipo_etiqueta"] == "temporal":
+                    # Si la longitud de la ruta viniendo desde x mejora la etiqueta de v, entonces
+                    # se actualiza esta longitud y su antecesor ahora será X.
+                    if x.etiqueta["longitud_ruta"] + arco.peso < v.etiqueta["longitud_ruta"]:
+                        v.etiqueta["longitud_ruta"] = x.etiqueta["longitud_ruta"] + arco.peso 
+                        v.etiqueta["antecesor"] = x
+        
+        # Si llegamos hasta este punto y el usuario había especificado un nodo final, entonces
+        # significa que no existe una ruta desde el nodo inicial hasta el nodo final, por lo tanto
+        # se regresa un None. En caso contrario, recuperamos las rutas desde el nodo inicial hacia
+        # todos los demás
+        if nodo_final:
+            return None
+        else:
+            rutas = []
+            for nodo in self.__digrafica:
+                if nodo != a:
+                    rutas.append(self.__recuperar_ruta(nodo, a))
+            return rutas
+
