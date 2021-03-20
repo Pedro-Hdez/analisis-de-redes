@@ -526,16 +526,13 @@ class Digrafica:
       
         i = 0
         while i < len(aristas_sin_usar)-1:
-          
-           
+                    
             a = aristas_sin_usar[i]
           
-            
-            
             # Comparamos la arista que no está con la de la arboresencia    
             
             if a.origen.etiqueta["longitud_ruta"] + a.peso < a.destino.etiqueta["longitud_ruta"]:
-         
+                print(a.origen.nombre, a.destino.nombre,a.origen.etiqueta["longitud_ruta"] + a.peso,a.destino.etiqueta["longitud_ruta"])
                 aristas_sin_usar.remove(a)
                 # si mejora la longitud, debemos checar que no se forme un ciclo negativo
                 # checaremos que el nodo destino no sea ancestro del nodo origen
@@ -559,7 +556,7 @@ class Digrafica:
                 a.destino.etiqueta["antecesor"] = a
                 arboresencia.append(a)
                 visited = []
-               
+                print("dfs")
                 self.dfs(a.destino,visited, arboresencia, delta)
 
                 i = 0
@@ -574,10 +571,10 @@ class Digrafica:
 
     def dfs(self,  node,visited, arborescencia, delta):
         if node not in visited:
-            visited.append(node)
-
-                
-            for saliente in self.__digrafica[node]["salientes"]:
-               if saliente in arborescencia: 
+            visited.append(node) 
+            node.etiqueta["longitud_ruta"] += delta
+            for saliente in self.__digrafica[node]["salientes"]:   
+               if saliente in arborescencia:  
                    saliente.destino.etiqueta["longitud_ruta"] += delta
+                   print(node.nombre, saliente.destino.nombre,saliente.destino.etiqueta["longitud_ruta"], delta)
                    self.dfs(saliente.destino,visited,arborescencia,delta)    
