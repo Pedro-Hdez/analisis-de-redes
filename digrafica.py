@@ -425,15 +425,17 @@ class Digrafica:
     def __recuperar_ruta(self, nodo_actual, nodo_inicial):
         # Comenzamos la recuperación de la ruta en el nodo actual
         ruta = []
+
+        arista_antecesor = nodo_actual.etiqueta["antecesor"]
         # Recuperamos arcos mientras el nodo actual no sea el nodo inicial
-        while nodo_actual != nodo_inicial:
+        while arista_antecesor != nodo_inicial:
             # Tomamos el antecesor del nodo actual mediante su etiqueta
-            antecesor = nodo_actual.etiqueta["antecesor"]
+            #antecesor = nodo_actual.etiqueta["antecesor"]
             # Se busca el objeto Arco que va desde el antecesor hasta el nodo actual y 
             # se agrega al principio de la lista, así terminaremos con la ruta ya ordenada
-            ruta.insert(0, self.buscar_arco(antecesor.nombre, nodo_actual.nombre))
+            ruta.insert(0, arista_antecesor)
             # Se actualiza el nodo actual
-            nodo_actual = antecesor
+            arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
         # Una vez que alcancemos el nodo inicial en la recuperación de la ruta, ésta
         # se regresa
         return ruta
@@ -484,7 +486,7 @@ class Digrafica:
                 # longitud de L(x) + w(arco). Además, se agrega a la lista de nodos etiquetados
                 # temporalmente
                 if not v.etiqueta:
-                    v.etiqueta = {"tipo_etiqueta":"temporal", "antecesor":x, "longitud_ruta":x.etiqueta["longitud_ruta"] + arco.peso}
+                    v.etiqueta = {"tipo_etiqueta":"temporal", "antecesor":arco, "longitud_ruta":x.etiqueta["longitud_ruta"] + arco.peso}
                     X.append(v)
 
                 # Si v tiene etiqueta temporal, entonces se revisa si la ruta desde x es mejor que
@@ -494,7 +496,7 @@ class Digrafica:
                     # se actualiza esta longitud y su antecesor ahora será X.
                     if x.etiqueta["longitud_ruta"] + arco.peso < v.etiqueta["longitud_ruta"]:
                         v.etiqueta["longitud_ruta"] = x.etiqueta["longitud_ruta"] + arco.peso 
-                        v.etiqueta["antecesor"] = x
+                        v.etiqueta["antecesor"] = arco
         
         # Si llegamos hasta este punto y el usuario había especificado un nodo final, entonces
         # significa que no existe una ruta desde el nodo inicial hasta el nodo final, por lo tanto
@@ -506,6 +508,76 @@ class Digrafica:
             rutas = []
             for nodo in self.__digrafica:
                 if nodo != a:
-                    rutas.append(self.__recuperar_ruta(nodo, a))
+                    rutas =list(set().union(rutas,self.__recuperar_ruta(nodo, a)))
             return rutas
 
+
+    def dikjstra_general(self, nodo_inicial, nodo_final=None):
+        nodo_inicial = self.buscar_nodo(nodo_inicial)
+        arboresencia = self.dikjstra( nodo_inicial.nombre, nodo_final)
+
+        aristas_sin_usar = []
+        
+        for nodo in self.__digrafica:
+            for arco in self.__digrafica[nodo]["salientes"]:
+                if arco not in arboresencia:
+                    aristas_sin_usar.append(arco)
+           
+      
+        i = 0
+        while i < len(aristas_sin_usar)-1:
+          
+           
+            a = aristas_sin_usar[i]
+          
+            
+            
+            # Comparamos la arista que no está con la de la arboresencia    
+            
+            if a.origen.etiqueta["longitud_ruta"] + a.peso < a.destino.etiqueta["longitud_ruta"]:
+         
+                aristas_sin_usar.remove(a)
+                # si mejora la longitud, debemos checar que no se forme un ciclo negativo
+                # checaremos que el nodo destino no sea ancestro del nodo origen
+                # Comenzamos la recuperación de la ruta en el nodo actual
+
+                arista_antecesor = a.origen.etiqueta["antecesor"]               
+
+                if arista_antecesor == nodo_inicial:
+                    return False
+
+                while arista_antecesor != nodo_inicial:
+                    if arista_antecesor.origen ==  a.destino :
+                        return False
+                    arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
+                    
+                
+
+                delta = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
+                arboresencia.remove(a.destino.etiqueta["antecesor"])
+                aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
+                a.destino.etiqueta["antecesor"] = a
+                arboresencia.append(a)
+                visited = []
+               
+                self.dfs(a.destino,visited, arboresencia, delta)
+
+                i = 0
+            else:
+                i+=1
+
+       
+        return arboresencia
+
+
+
+
+    def dfs(self,  node,visited, arborescencia, delta):
+        if node not in visited:
+            visited.append(node)
+
+                
+            for saliente in self.__digrafica[node]["salientes"]:
+               if saliente in arborescencia: 
+                   saliente.destino.etiqueta["longitud_ruta"] += delta
+                   self.dfs(saliente.destino,visited,arborescencia,delta)    
