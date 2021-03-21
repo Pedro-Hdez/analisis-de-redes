@@ -500,10 +500,9 @@ class Digrafica:
         
         # Si llegamos hasta este punto y el usuario había especificado un nodo final, entonces
         # significa que no existe una ruta desde el nodo inicial hasta el nodo final, por lo tanto
-        # se regresa un None. En caso contrario, recuperamos las rutas desde el nodo inicial hacia
-        # todos los demás
+        # se regresa una ruta vacía. En caso contrario, recuperamos el sistema de rutas más cortas
         if nodo_final:
-            return None
+            return []
         else:
             rutas = []
             for nodo in self.__digrafica:
@@ -513,14 +512,23 @@ class Digrafica:
 
 
     def dikjstra_general(self, nodo_inicial, nodo_final=None):
+        # Se buscan los dos nodos
         nodo_inicial = self.buscar_nodo(nodo_inicial)
-        arboresencia = self.dikjstra( nodo_inicial.nombre, nodo_final)
+        n_final = self.buscar_nodo(nodo_final)
 
+        # Si se especificó un nodo final, pero no existe, entonces regresamos
+        if nodo_inicial and not n_final:
+            raise ValueError(f"Error. El nodo final {nodo_final} no existe en la digráfica" )
+        
+        # Se encuentra la arborescencia temporal con dikjstra normal
+        arborescencia = self.dikjstra( nodo_inicial.nombre, None)
+
+        # Obtenemos las aristas sin usar
         aristas_sin_usar = []
         
         for nodo in self.__digrafica:
             for arco in self.__digrafica[nodo]["salientes"]:
-                if arco not in arboresencia:
+                if arco not in arborescencia:
                     aristas_sin_usar.append(arco)
            
       
@@ -529,7 +537,7 @@ class Digrafica:
                     
             a = aristas_sin_usar[i]
           
-            # Comparamos la arista que no está con la de la arboresencia    
+            # Comparamos la arista que no está con la de la arborescencia    
             
             if a.origen.etiqueta["longitud_ruta"] + a.peso < a.destino.etiqueta["longitud_ruta"]:
                 print(a.origen.nombre, a.destino.nombre,a.origen.etiqueta["longitud_ruta"] + a.peso,a.destino.etiqueta["longitud_ruta"])
@@ -551,20 +559,25 @@ class Digrafica:
                 
 
                 delta = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
-                arboresencia.remove(a.destino.etiqueta["antecesor"])
+                arborescencia.remove(a.destino.etiqueta["antecesor"])
                 aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
                 a.destino.etiqueta["antecesor"] = a
-                arboresencia.append(a)
+                arborescencia.append(a)
                 visited = []
                 print("dfs")
-                self.dfs(a.destino,visited, arboresencia, delta)
+                self.dfs(a.destino,visited, arborescencia, delta)
 
                 i = 0
             else:
                 i+=1
+        
+        if n_final:
+            if not n_final.etiqueta:
+                return []
+            else:
+                return self.__recuperar_ruta(nodo_inicial, n_final)
 
-       
-        return arboresencia
+        return arborescencia
 
 
 
