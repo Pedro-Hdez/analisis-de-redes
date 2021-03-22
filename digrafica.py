@@ -534,18 +534,14 @@ class Digrafica:
       
         i = 0
         while i < len(aristas_sin_usar)-1:
-                    
+            # Tomamos la i-ésima arista sin usar
             a = aristas_sin_usar[i]
           
-            # Comparamos la arista que no está con la de la arborescencia    
-            
+            # Comparamos si la arista sin usar mejora la arborescencia
             if a.origen.etiqueta["longitud_ruta"] + a.peso < a.destino.etiqueta["longitud_ruta"]:
                 print(a.origen.nombre, a.destino.nombre,a.origen.etiqueta["longitud_ruta"] + a.peso,a.destino.etiqueta["longitud_ruta"])
-                aristas_sin_usar.remove(a)
-                # si mejora la longitud, debemos checar que no se forme un ciclo negativo
-                # checaremos que el nodo destino no sea ancestro del nodo origen
-                # Comenzamos la recuperación de la ruta en el nodo actual
-
+                
+                # Si la arista sin usar mejora la ruta, primero checamos si no forma un ciclo negativo
                 arista_antecesor = a.origen.etiqueta["antecesor"]               
 
                 if arista_antecesor == nodo_inicial:
@@ -557,20 +553,37 @@ class Digrafica:
                     arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
                     
                 
-
-                delta = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
-                arborescencia.remove(a.destino.etiqueta["antecesor"])
-                aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
-                a.destino.etiqueta["antecesor"] = a
+                # Si no se formó ningún ciclo negativo, entonces eliminamos la nueva arista de 
+                # las aristas sin usar y la agregamos a la arborescencia. Además, la arista 
+                # mejorada se elimina de la arborescencia y se agrega a las aristas sin usar.
+                aristas_sin_usar.remove(a)
                 arborescencia.append(a)
-                visited = []
-                print("dfs")
-                self.dfs(a.destino,visited, arborescencia, delta)
 
+                aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
+                arborescencia.remove(a.destino.etiqueta["antecesor"])
+
+                # Se actualiza el antecesor del destino de la nueva arista
+                a.destino.etiqueta["antecesor"] = a
+
+                # Se calcula el valor con el cuál se van a actualizar las etiquetas de los 
+                # descendientes del nodo actualizado
+                delta = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
+
+                # Se ejecuta una búsqueda a profundidad para actualizar a los descendientes
+                visitados = []
+                print("dfs")
+                self.dfs(a.destino,visitados, arborescencia, delta)
+                
+                # Como ahora existe una nueva arista sin usar, entonces volvemos a recorrer la
+                # lista de aristas sin usar desde el principio
                 i = 0
             else:
+                # Si la arista sin usar elegida no mejora la arborescencia, entonces pasamos a 
+                # revisar la arista que sigue en la lista de arcos sin usar
                 i+=1
         
+        # Si se ha especificado un nodo final, entonces se regresa la ruta desde el nodo inicial
+        # hacia dicho nodo final. En caso contrario se regresa la arborescencia completa
         if n_final:
             if not n_final.etiqueta:
                 return []
