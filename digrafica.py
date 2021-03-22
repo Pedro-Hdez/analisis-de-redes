@@ -517,7 +517,7 @@ class Digrafica:
         n_final = self.buscar_nodo(nodo_final)
 
         # Si se especificó un nodo final, pero no existe, entonces regresamos
-        if nodo_inicial and not n_final:
+        if nodo_final and not n_final:
             raise ValueError(f"Error. El nodo final {nodo_final} no existe en la digráfica" )
         
         # Se encuentra la arborescencia temporal con dikjstra normal
