@@ -4,9 +4,9 @@ d = Digrafica()
 d.leer_digrafica("digrafica.txt")
 
 nodo1 = "a"
-nodo2 = "g"
+nodo2 = None
 
-ruta_mas_corta = d.dikjstra_general(nodo1)
+ruta_mas_corta = d.dikjstra_general(nodo1, nodo2)
 
 if ruta_mas_corta:
     if isinstance(ruta_mas_corta[0], list):

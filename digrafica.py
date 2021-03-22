@@ -521,7 +521,7 @@ class Digrafica:
             raise ValueError(f"Error. El nodo final {nodo_final} no existe en la digráfica" )
         
         # Se encuentra la arborescencia temporal con dikjstra normal
-        arborescencia = self.dikjstra( nodo_inicial.nombre, None)
+        arborescencia = self.dikjstra(nodo_inicial.nombre, None)
 
         # Obtenemos las aristas sin usar
         aristas_sin_usar = []
@@ -533,7 +533,7 @@ class Digrafica:
            
       
         i = 0
-        while i < len(aristas_sin_usar)-1:
+        while i < len(aristas_sin_usar):
             # Tomamos la i-ésima arista sin usar
             a = aristas_sin_usar[i]
           
@@ -588,14 +588,14 @@ class Digrafica:
             if not n_final.etiqueta:
                 return []
             else:
-                return self.__recuperar_ruta(nodo_inicial, n_final)
+                return self.__recuperar_ruta(n_final, nodo_inicial)
 
         return arborescencia
 
 
 
 
-    def dfs(self,  node,visited, arborescencia, delta):
+    def dfs(self, node,visited, arborescencia, delta):
         if node not in visited:
             visited.append(node) 
             node.etiqueta["longitud_ruta"] += delta
