@@ -425,7 +425,6 @@ class Digrafica:
     def __recuperar_ruta(self, nodo_actual, nodo_inicial):
         # Comenzamos la recuperación de la ruta en el nodo actual
         ruta = []
-
         arista_antecesor = nodo_actual.etiqueta["antecesor"]
         # Recuperamos arcos mientras el nodo actual no sea el nodo inicial
         while arista_antecesor != nodo_inicial:
@@ -501,12 +500,16 @@ class Digrafica:
         # Si llegamos hasta este punto y el usuario había especificado un nodo final, entonces
         # significa que no existe una ruta desde el nodo inicial hasta el nodo final, por lo tanto
         # se regresa una ruta vacía. En caso contrario, recuperamos el sistema de rutas más cortas
+
         if nodo_final:
             return []
         else:
             rutas = []
             for nodo in self.__digrafica:
-                if nodo != a:
+                # Buscaremos rutas siempre y cuando el nodo tenga etiqueta, de lo contrario
+                # no fue marcado por el algoritmo ya que no existe algúna trayectoria desde el
+                # vértice inicial hasta este nodo
+                if nodo != a and nodo.etiqueta:
                     rutas =list(set().union(rutas,self.__recuperar_ruta(nodo, a)))
             return rutas
 
@@ -528,7 +531,10 @@ class Digrafica:
         
         for nodo in self.__digrafica:
             for arco in self.__digrafica[nodo]["salientes"]:
-                if arco not in arborescencia:
+                # únicamente tomaremos en cuenta los arcos cuyos extremos tengan etiqueta porque
+                # en caso contrario, significa que no existe ruta desde el vértice inicial hasta
+                # el nodo sin etiqueta
+                if arco not in arborescencia and arco.origen.etiqueta and arco.destino.etiqueta:
                     aristas_sin_usar.append(arco)
            
       
@@ -584,6 +590,7 @@ class Digrafica:
         
         # Si se ha especificado un nodo final, entonces se regresa la ruta desde el nodo inicial
         # hacia dicho nodo final. En caso contrario se regresa la arborescencia completa
+
         if n_final:
             if not n_final.etiqueta:
                 return []
