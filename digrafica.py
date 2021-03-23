@@ -525,7 +525,7 @@ class Digrafica:
         
         # Se encuentra la arborescencia temporal con dikjstra normal
         arborescencia = self.dikjstra(nodo_inicial.nombre, None)
-
+        
         # Obtenemos las aristas sin usar
         aristas_sin_usar = []
         
@@ -545,18 +545,31 @@ class Digrafica:
           
             # Comparamos si la arista sin usar mejora la arborescencia
             if a.origen.etiqueta["longitud_ruta"] + a.peso < a.destino.etiqueta["longitud_ruta"]:
-                print(a.origen.nombre, a.destino.nombre,a.origen.etiqueta["longitud_ruta"] + a.peso,a.destino.etiqueta["longitud_ruta"])
+                
                 
                 # Si la arista sin usar mejora la ruta, primero checamos si no forma un ciclo negativo
-                arista_antecesor = a.origen.etiqueta["antecesor"]               
+                arista_antecesor = a.origen.etiqueta["antecesor"] 
+                # lista donde guardaremos las aristas del ciclo, en caso de que se encuentre uno              
+                ciclo = []
+                # elemento para identificar si se regresa un ciclo
+                ciclo.append('ciclo')
+                # agregamos la arista a al ciclo prvisionalmente
+                ciclo.append(a)
 
-                if arista_antecesor == nodo_inicial:
-                    return False
-
+                # ciclo para revisar ancestros y detectar ciclos
                 while arista_antecesor != nodo_inicial:
+                    ciclo.append(arista_antecesor)
+                    
+                    # If que revisa si los nodos del arista son ancestros
                     if arista_antecesor.origen ==  a.destino :
-                        return False
+                        # calculamos la longitud del ciclo
+                        longitud_ciclo = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
+                        # agreamos la longitud del ciclo como último elemento de la lista
+                        ciclo.append(longitud_ciclo)
+                        return ciclo
+                        
                     arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
+                    
                     
                 
                 # Si no se formó ningún ciclo negativo, entonces eliminamos la nueva arista de 
@@ -577,7 +590,7 @@ class Digrafica:
 
                 # Se ejecuta una búsqueda a profundidad para actualizar a los descendientes
                 visitados = []
-                print("dfs")
+  
                 self.dfs(a.destino,visitados, arborescencia, delta)
                 
                 # Como ahora existe una nueva arista sin usar, entonces volvemos a recorrer la
@@ -609,5 +622,4 @@ class Digrafica:
             for saliente in self.__digrafica[node]["salientes"]:   
                if saliente in arborescencia:  
                    saliente.destino.etiqueta["longitud_ruta"] += delta
-                   print(node.nombre, saliente.destino.nombre,saliente.destino.etiqueta["longitud_ruta"], delta)
                    self.dfs(saliente.destino,visited,arborescencia,delta)    
