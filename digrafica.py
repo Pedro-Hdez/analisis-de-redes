@@ -705,8 +705,13 @@ class Digrafica:
                         lista_matriz[i][j][1]= min(lista_matriz[i][j][1],lista_matriz[i][k][1] + lista_matriz[k][j][1])
                         if(ciclo):
                             ruta_ciclo = []
+                            # agregamos un identificador para detectar que se regresó un ciclo y agregamos la longitud del ciclo (dupla)
                             ruta_ciclo.append(['ciclo',lista_matriz[i][j][1]])
+
+                            # columna inicial del cilo
                             posicion_nodo1 = j
+
+                            # nodo inicial donde se encontró el ciclo
                             nodo_ciclo = lista_matriz[i][j][0].origen
 
                             # ciclo para recuperar arcos del ciclo negativo
@@ -722,11 +727,12 @@ class Digrafica:
                                 # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
                                 posicion_nodo1 = nodos.index(lista_matriz[i][posicion_nodo1][0].origen)
                                 
+                                # cuando volvemos al origen, ya tenemos el ciclo completo
                                 if(lista_matriz[i][posicion_nodo1][0].origen == nodo_ciclo):
+                                    # ordenamos los arcos
                                     ruta_ciclo.reverse()
                                     break
 
-                            
                             return ruta_ciclo
 
         
