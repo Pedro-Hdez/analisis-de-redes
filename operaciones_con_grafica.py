@@ -25,7 +25,7 @@ g.leer_grafica("grafica.txt")
 copia = Grafica()
 seleccion = ""
 
-while (seleccion != "17"):
+while (seleccion != "22"):
     clear()
     print("Menu")
     print("1) Agregar arista")
@@ -44,11 +44,15 @@ while (seleccion != "17"):
     print("14) Ver copia de la grafica")
     print("15) Verificar si la grafica es bipartita")
     print("16) paseo euler")
-    print("17) Salir")
+    print("17) Busqueda a lo ancho")
+    print("18) Busqueda a profundidad")
+    print("19) Algoritmo de kruskal")
+    print("20) Algoritmo de prim")
+    print("21) Dijkstra general")
 
     seleccion = input()
     if validar(seleccion):
-        if (int(seleccion) < 1 or int(seleccion) > 17):
+        if (int(seleccion) < 1 or int(seleccion) > 22):
             input("Error. Opción inválida. Presione Enter para intentarlo de nuevo...")
         else:
             if (seleccion == "1"):
@@ -202,7 +206,86 @@ while (seleccion != "17"):
                 
              
                 input("\nPresione Enter para continuar...")
+            
+            if (seleccion == "17"):  
+                bosque = g.busqueda_a_lo_ancho()
+                if bosque:
+                    print("Se encontraron los siguietens árboles de expansión:")
+                    print(bosque)
+                else:
+                    print("La gráfica no contiene árboles de expansiór")
+                
+             
+                input("\nPresione Enter para continuar...")
+
+            if (seleccion == "18"):  
+                bosque = g.busqueda_a_profundidad()
+                if bosque:
+                    print("Se encontraron los siguietens árboles de expansión:")
+                    print(bosque)
+                else:
+                    print("La gráfica no contiene árboles de expansió")
+                
+             
+                input("\nPresione Enter para continuar...")
+
+            if (seleccion == "19"):  
+                bosque = g.algoritmo_kruskal()
+                if bosque:
+                    print("Se encontraron los siguietens árboles de mininma expansión:")
+                    print(bosque)
+                else:
+                    print("La gráfica no contiene árboles de minima expansión")
+                
+             
+                input("\nPresione Enter para continuar...")
+            
+            if (seleccion == "20"):  
+                bosque_prim = g.algoritmo_prim()
+                if bosque_prim:
+                    print("Se encontraron los siguietens árboles de mininma expansión:")
+                    for arbol in bosque_prim:
+                        for arista in arbol:
+                            print(arista[0].nombre, arista[1].destino, arista[1].peso)
+                        print("--------------------------")
+                else:
+                    print("La gráfica no contiene árboles de minima expansión")
+                
+             
+                input("\nPresione Enter para continuar...")
+
+            if (seleccion == "21"):  
+                from digrafica import *
+
+                d = Digrafica()
+                d.leer_digrafica("digrafica.txt")
+
+                nodo1 = "a"
+                nodo2 = "e" 
+
+                normal = []
+                ruta_mas_corta = d.dikjstra_general(nodo1)
+
+                if ruta_mas_corta:
+                    if ruta_mas_corta[0]=='ciclo':
+                        ruta_mas_corta.pop(0)
+                        longitud_ciclo = ruta_mas_corta.pop(len(ruta_mas_corta)-1)
+                        print("Se encontró un ciclo de longitud ",longitud_ciclo, " con los aristas: ")
+                        for arco in ruta_mas_corta:
+                            print("(",arco.origen.nombre,",",arco.destino.nombre,") ")
+                    else:    
+                        print(f"De {nodo1} hasta {nodo2}")
+                        print("SOLUCION TEMPORAL")
+                        for arco in ruta_mas_corta:
+                            print(f"({arco.origen.nombre}, {arco.destino.nombre}, {arco.peso})")
+                        print("--------------------")
+                        print("DIKJSTRA GENERAL")
+                        longitud_total = 0
+                        for arco in ruta_mas_corta:
+                            print(f"({arco.origen.nombre}, {arco.destino.nombre}, {arco.peso})")
+                    
+                input("\nPresione Enter para continuar...")
                 
 
     else:
-        input("Error. Ingrese un número entre 1 y 15. Presione Enter para intentarlo de nuevo...")   
+        input("Error. Ingrese un número entre 1 y 22. Presione Enter para intentarlo de nuevo...")   

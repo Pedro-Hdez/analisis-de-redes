@@ -1,6 +1,7 @@
 import copy
 import operator
 import math
+from typing import MappingView
 from estructuras_datos import *
 
 class Arco:
@@ -170,21 +171,29 @@ class Digrafica:
             return False
         
         # Si el nodo de origen sí existe, entonces se busca el arco en sus salientes
-        for arco in self.__digrafica[nodo_a]["salientes"]:
-            # Si no se ha especificado un peso, entonces solamente se compara el 
-            # nombre del nodo destino
-            if peso == None:
-                if arco.destino.nombre == b:
-                    return arco
-            # Si el peso se ha especificado, entonces se compara el nombre del nodo 
-            # destino y el peso del arco
-            else:
+        
+        if peso == None:
+            peso_minimo = math.inf
+            arco_minimo = None
+            for arco in self.__digrafica[nodo_a]["salientes"]:
+                # Si no se ha especificado un peso, entonces solamente se compara el 
+                # nombre del nodo destino y buscamos el de peso menor
+                if arco.destino.nombre == b and arco.peso < peso_minimo:
+                        arco_minimo = arco
+      
+            return arco_minimo
+              
+        else:
+            for arco in self.__digrafica[nodo_a]["salientes"]:
+                # Si el peso se ha especificado, entonces se compara el nombre del nodo 
+                # destino y el peso del arco
                 if arco.destino.nombre == b and arco.peso == peso:
-                    return arco 
+                    return arco
         
         # Si se recorrieron todos los salientes del nodo de origen y no se encontró
         # el arco buscado, entonces se regresa False
         return False
+    
     
     def eliminar_arco(self, a, b, peso=None):
         """
@@ -622,4 +631,174 @@ class Digrafica:
             for saliente in self.__digrafica[node]["salientes"]:   
                if saliente in arborescencia:  
                    saliente.destino.etiqueta["longitud_ruta"] += delta
-                   self.dfs(saliente.destino,visited,arborescencia,delta)    
+                   self.dfs(saliente.destino,visited,arborescencia,delta) 
+    
+    def genera_matriz(self,nodos): 
+        # Lista de listas donde guardaremos los elementos de la matriz
+        lista_matriz = []
+
+        # Recorremos los nodos de la lista de nodos
+        for nodo in nodos:
+            # Lista que corresponde a los renglones de la matriz del algoritmo
+            # donde guardaremos los elementos (aristas y pesos) correspondientes a cada nodo
+            lista_nodo = []
+            # Recorremos los nodos para buscar si hay un arco del nodo(nodos de los renglones de la matriz) al nodo2(nodos de las columnas)
+            for nodo2 in nodos:
+                arista_minima = None   
+                # si el nodo de origen es igual al nodo destino (elementos de la diagonal de la matriz)
+                # agregamos el nodo con longitud 0 (camino de un nodo a si mismo)
+                if(nodo2==nodo):
+                    lista_nodo.append([nodo,0])
+                # otros casos
+                else:
+                    # si existe un arco entre el nodo1 y nodo2, recuperamos el de peso minimo y lo metemos a la matriz
+                    arista_minima = self.buscar_arco(nodo.nombre,nodo2.nombre)
+                    # revisamos si se encontró dicho arco
+                    if (arista_minima):
+                        lista_nodo.append([arista_minima,arista_minima.peso])
+
+                    # si no existe un arco entre el par nodos, agregamos privisionalmente valores basura
+                    else:
+                        lista_nodo.append(['-',math.inf])
+
+            # agregamos la lista correspondiente a cada nodo a matriz 
+            # dicha lista corresponde a los renglones de la matriz
+            lista_matriz.append(lista_nodo)
+        return lista_matriz
+
+        
+
+    def floyd(self,nodo_origen = None):
+        # buscamos el nodo de origen y nodo destino 
+        origen = self.buscar_nodo(nodo_origen)
+        
+        if nodo_origen == None:
+            return None
+        
+        # Creamos una lista con los nodos de la gráfica
+        nodos = []
+        for nodo in self.__digrafica:
+            nodos.append(nodo)
+        # Ordenamos los nodos de acuerdo a sus nombres
+        nodos.sort(key=lambda a:a.nombre)
+
+        # Generamos la matriz inicial del algoritmo
+        lista_matriz = self.genera_matriz(nodos)
+
+        # Obtenemos la cantidad de nodos de la gráfica
+        num_nodos = len(nodos)
+
+        # Hacemos las iteraciones del algoritmos
+        ciclo = False
+        for k in range(num_nodos):
+            for i in range(num_nodos):
+                for j in range(num_nodos):
+                    # Revisamos que no haya infinitos
+                    if((lista_matriz[i][k][1] != math.inf) and (lista_matriz[k][j][1] != math.inf) ):
+                        # Si el nuevo peso es menor al actual, actualizamos el peso y el nodo de origen 
+                        if (lista_matriz[i][j][1]) > (lista_matriz[i][k][1] + lista_matriz[k][j][1]):
+                            if(type(lista_matriz[i][j][0])==Nodo):
+                                ciclo = True
+                            lista_matriz[i][j][0] = self.buscar_arco(lista_matriz[k][j][0].origen.nombre,nodos[j].nombre)
+                            
+                        # Si el nuevo peso es menor actualizamos le peso del elemento ij
+                        lista_matriz[i][j][1]= min(lista_matriz[i][j][1],lista_matriz[i][k][1] + lista_matriz[k][j][1])
+                        if(ciclo):
+                            ruta_ciclo = []
+                            ruta_ciclo.append(['ciclo',lista_matriz[i][j][1]])
+                            posicion_nodo1 = j
+                            nodo_ciclo = lista_matriz[i][j][0].origen
+
+                            # ciclo para recuperar arcos del ciclo negativo
+                            while(True):
+                                # si encontramos un elemento con peso infinito o un nodo, detenemos el ciclo
+                                # condicional que se cumplirá cuando ya no haya más camino que recuperar
+                                if lista_matriz[i][posicion_nodo1][1] == math.inf or type(lista_matriz[i][posicion_nodo1][0])== Nodo:
+                                    break   
+
+                                # agregamos el arco a la ruta             
+                                ruta_ciclo.append(lista_matriz[i][posicion_nodo1])
+
+                                # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
+                                posicion_nodo1 = nodos.index(lista_matriz[i][posicion_nodo1][0].origen)
+                                
+                                if(lista_matriz[i][posicion_nodo1][0].origen == nodo_ciclo):
+                                    ruta_ciclo.reverse()
+                                    break
+
+                            
+                            return ruta_ciclo
+
+        
+        # recuperamos la ruta
+        ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos)
+
+        return ruta_corta
+
+    
+    def recuperar_ruta_floyd(self,matriz,nodo,lista_nodos):
+        # Obtenemos la posición del nodo de origen dentro de la lista de nodos, 
+        # para saber de que renglon de la matriz obtendremos las rutas
+        posicion_nodo = lista_nodos.index(nodo)
+
+        # lista de rutas desde el nodo origen hasta los demas nodos
+        rutas = []
+
+        # recorremos los nodos de la gráfica, correspondiente a las columnas de la matriz
+        for nodo1 in lista_nodos:
+            # ruta individual desde el origen hasta determinado nodo
+            ruta_hacia_nodo = []
+            # Agregamos el nodo a la lista para identificar el nodo destino de la ruta
+            ruta_hacia_nodo.append(nodo1)
+
+            # si el nodo de origen es igual al nodo destino, solo agregaremos el elemento correspondiente a ese nodo en la diagonal
+            # caso donde el nodo de origen y nodo destino son el mismo
+            if nodo == nodo1:
+                ruta_hacia_nodo.append(matriz[posicion_nodo][posicion_nodo][0])
+                rutas.append(ruta_hacia_nodo)
+            # caso donde obtendremos la ruta del nodo origen a los demas    
+            else:
+                # obtenemos la posición del nodo destino
+                posicion_nodo1 = lista_nodos.index(nodo1)
+
+                # ciclo para recuperar ruta del origen al nodo correspondiente (destino)
+                while(True):
+                    # si encontramos un elemento con peso infinito o un nodo, detenemos el ciclo
+                    # condicional que se cumplirá cuando ya no haya más camino que recuperar
+                    if matriz[posicion_nodo][posicion_nodo1][1] == math.inf or type(matriz[posicion_nodo][posicion_nodo1][0])== Nodo:
+                        break   
+
+                    # agregamos el arco a la ruta             
+                    ruta_hacia_nodo.append(matriz[posicion_nodo][posicion_nodo1])
+
+                    # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
+                    posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
+
+                # invertimos la lista para ordenar los arcos
+                ruta_hacia_nodo.reverse()
+
+                # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
+                rutas.append(ruta_hacia_nodo)  
+
+
+        return rutas
+
+    def imprimir_rutas_floyd(self,nodo1,matriz):
+        print('Rutas mas cortas desde el nodo ',nodo1, ' :')
+        print("")
+        for x in matriz:
+            print("Ruta más corta hacia el nodo ",x[len(x)-1].nombre,': ', end="")
+            longitud_ruta = math.inf
+            if(nodo1 == x[len(x)-1].nombre):
+                longitud_ruta = 0
+            for y in x:
+                if(type(y)!= Nodo):
+                    if type(y[0])== Arco:
+                        print('(',y[0].origen.nombre,', ', y[0].destino.nombre,')', end="")
+                        if(y[0].destino == x[len(x)-1]):
+                            longitud_ruta = y[1]
+            
+                        
+            if(longitud_ruta == math.inf):
+                print(" No hay ruta más corta :(")
+            else: print(', Longitud: ', longitud_ruta)
