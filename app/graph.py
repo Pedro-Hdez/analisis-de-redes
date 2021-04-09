@@ -194,7 +194,7 @@ layout = html.Div(children=[
             dbc.Row([
                 dcc.Upload([
                     dbc.Button("Upload graph from file", className="mr-1", color="success"),
-                ])
+                ], id="upload-graph-obj")
                 
             ], justify="center")
         ], md=6),
@@ -295,12 +295,14 @@ layout = html.Div(children=[
 @app.callback(
     [Output("graph", "elements"), Output("nodes-degrees-table", "children"), 
      Output("number-of-nodes-label", "children"), Output("alert-info", "data"), 
-     Output("number-of-edges-label", "children"), Output('nodes-info', 'data')],
+     Output("number-of-edges-label", "children"), Output('nodes-info', 'data'), 
+     Output('upload-graph-obj', 'contents')],
 
     [Input("add-node-btn", "n_clicks"), Input("done-btn-edit-nodes-modal", "n_clicks"),
      Input("remove-nodes-btn", "n_clicks"), Input("edit-nodes-btn", "n_clicks"),
      Input("add-edge-btn", "n_clicks"), Input("done-btn-edit-edges-modal", "n_clicks"),
-     Input("edit-edges-btn", "n_clicks"), Input('remove-edges-btn', 'n_clicks')],
+     Input("edit-edges-btn", "n_clicks"), Input('remove-edges-btn', 'n_clicks'), 
+     Input('upload-graph-obj', 'contents')],
     
     [State("graph", "elements"), State("nodes-degrees-table", "children"), 
      State("number-of-nodes-label", "children"), State("edit-nodes-modal-body", "children"), 
@@ -308,9 +310,9 @@ layout = html.Div(children=[
      State("edit-edges-modal-body", "children"), State("graph", "selectedEdgeData"), State('nodes-info', 'data')]
 )
 def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_btn, edit_nodes_btn,
-    add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, remove_edges_btn, graph_elements, nodes_degrees_table_children, 
-    number_of_nodes, edit_nodes_modal_body_childrens, selected_node_data, number_of_edges, 
-    edit_edges_modal_body_childrens, selected_edge_data, nodes_info):
+    add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, remove_edges_btn, upload_graph_contents,
+    graph_elements, nodes_degrees_table_children, number_of_nodes, edit_nodes_modal_body_childrens, 
+    selected_node_data, number_of_edges, edit_edges_modal_body_childrens, selected_edge_data, nodes_info):
     # Getting the callback context to know which input triggered this callback
     ctx = dash.callback_context
 
@@ -326,8 +328,8 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 node_name = nodes_info[0][0] * nodes_info[0][1]
                 repeated_name = False
 
-                for node in nodes_info[1:]:
-                    if node[0] == node_name:
+                for node in graph_elements['nodes']:
+                    if node['data']['label'] == node_name:
                         repeated_name = True
                         # Updating the node label if it's necesary
                         if node_name[-1] == 'z':    
@@ -371,7 +373,7 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, ""
         
         # ----- Edit nodes case -----
         elif btn_triggered == "done-btn-edit-nodes-modal":
@@ -432,14 +434,14 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, ""
         
         # ---- Edit nodes button alert handle -----
         elif btn_triggered == "edit-nodes-btn":
             alert = None
             if not selected_node_data:
                 alert = 1
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
 
         # ----- Remove nodes case ------
         elif btn_triggered == "remove-nodes-btn":
@@ -482,7 +484,7 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
         
         # ----- Add Edge case -----
         elif btn_triggered == "add-edge-btn":
@@ -546,7 +548,7 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
         
         # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal":
@@ -583,7 +585,7 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, ""
         
         # ---- Edit edges button alert handle -----
         elif btn_triggered == "edit-edges-btn":
@@ -592,7 +594,7 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 alert = 5
             
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
         
         # ----- Remove edges case -----
         elif btn_triggered == "remove-edges-btn":
@@ -619,11 +621,158 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 for c in nodes_degrees_table_children:
                     node_name = c['props']['children'][0]['props']['children'] 
                     c['props']['children'][1]['props']['children'] = str(degrees[node_name])
+            
+            print("REMOVE EDGE CASE")
+            print("Nodes")
+            for n in graph_elements['nodes']:
+                print(n)
+            print("\n\nEdges")
+            for e in graph_elements['edges']:
+                print(e)
+            print("------------------------------\n")
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+    
+        # ----- Upload Graph Case -----
+        elif btn_triggered == 'upload-graph-obj':
+            # Read the file and convert it to list of elements
+            content_type, content_string = upload_graph_contents.split(',')
+            graph = [x.replace(" ", "").split(",") for x in base64.b64decode(content_string).decode('ascii').strip().split("\n") if x] 
+            print(graph)
 
+            alert = None
+            # Validate the data format
+            for element in graph:
+                # Just accept edges (a,b) or single nodes (a)
+                if len(element) > 3:
+                    alert = 7
+                    break
+                # validate if  weight is a number in case the element is an edge
+                if len(element) == 3:
+                    try:
+                        float(element[2])
+                    except:
+                        alert = 7
+                        break
+
+            
+            # If file format is ok, then we proceed to create the graph in the interface
+            if not alert:
+                # Resetting all variables
+                new_nodes = []
+                new_edges = []
+                number_of_edges = 0
+                number_of_nodes = 0
+                data_info = ['a', 1]
+
+                # To store nodes degrees and then create the table
+                nodes_degrees = {}
+
+                # Check if the elements are nodes or edges and add it to UI and data structure
+                for element in graph:
+                    element_splitted = element
+                    # When it's a single node
+                    if len(element_splitted) == 1:
+                        # Check if node name is already in use
+                        for node in new_nodes:
+                            if element_splitted[0] == node['data']['label']:
+                                continue
+                        
+                        # If node doesn't exist, then add it to the new nodes
+                        node = {'data': {'id': str(uuid.uuid1()), 'label': element_splitted[0]},
+                                         'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                        new_nodes.append(node)
+
+                        # Adding the node to the degrees dict
+                        nodes_degrees[element_splitted[0]] = 0
+                        number_of_nodes += 1
+
+                    # When it's an edge
+                    else:
+                        # To store nodes ids
+                        node1_id = None
+                        node2_id = None
+
+                        # Check if node1 name is already in use
+                        node_already_exists = False
+                        for node in new_nodes:
+                            if node['data']['label'] == element_splitted[0]:
+                                node_already_exists = True
+                                node1_id = node['data']['id']
+                                break
+                        
+                        # If node 1 doesn't exists, then add it to the new nodes
+                        if not node_already_exists:
+                            node1_id = str(uuid.uuid1())
+                            node = {'data': {'id': node1_id, 'label': element_splitted[0]},
+                                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                            new_nodes.append(node)
+                            number_of_nodes += 1
+
+                            # Adding it to the degrees dict
+                            nodes_degrees[element_splitted[0]] = 0
+                        
+                        # Check if node2 name is already in use
+                        node_already_exists = False
+                        for node in new_nodes:
+                            if node['data']['label'] == element_splitted[1]:
+                                node_already_exists = True
+                                node2_id = node['data']['id']
+                                break
+                        
+                        # If node 1 doesn't exists, then add it to the new nodes
+                        if not node_already_exists:
+                            node2_id = str(uuid.uuid1())
+                            node = {'data': {'id': node2_id, 'label': element_splitted[1]},
+                                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                            new_nodes.append(node)
+                            number_of_nodes += 1
+
+                            # Adding it to the degrees dict
+                            nodes_degrees[element_splitted[1]] = 0
+                        
+                        # After nodes managing, add the edge between them
+                        edge_id = str(uuid.uuid1())
+                        try:
+                            weight = element_splitted[2]
+                        except:
+                            weight = 0
+
+                        edge = {'data': { 'source': node1_id, 
+                                'target': node2_id, 'weight': weight, 'id':edge_id, 
+                                'source_node':element_splitted[0], 'target_node':element_splitted[1]}}
+                        new_edges.append(edge)
+                        number_of_edges += 1
+
+                        # Update the edge nodes degrees
+                        nodes_degrees[element_splitted[0]] += 1
+                        nodes_degrees[element_splitted[1]] += 1
                 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
+                # Updating the graph elements
+                graph_elements['nodes'] = new_nodes
+                graph_elements['edges'] = new_edges
 
-        
+                # Creating the table
+                nodes_degrees_table_children = []
+                for node in nodes_degrees .items():   
+                    nodes_degrees_table_children.append(html.Tr(
+                        [
+                            html.Td(node[0], style={"text-align":"center"}), 
+                            html.Td(node[1],  style={"text-align":"center"})
+                        ], className="table-primary"))
+            
+            # Clean the upload content so we can upload a diferent file
+            upload_graph_contents = ""
+
+            print("READ GRAPH CASE")
+            print("Nodes")
+            for n in graph_elements['nodes']:
+                print(n)
+            print("\n\nEdges")
+            for e in graph_elements['edges']:
+                print(e)
+            print("------------------------------\n")
+
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
     else:
         return dash.no_update
 
@@ -741,5 +890,8 @@ def manageAlert(alert_info):
         show = True
     elif alert_info == 6:
         text = "No edge selected to remove. Please, select at least one edge and try again"
+        show = True
+    elif alert_info == 7:
+        text = "Error. Invalid file format. Please, check it and try again"
         show = True
     return text, show
