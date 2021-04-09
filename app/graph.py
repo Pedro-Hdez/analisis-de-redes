@@ -10,6 +10,7 @@ import random
 from grafica import *
 import base64
 import digraph
+import uuid
 
 from main import app
 
@@ -131,11 +132,13 @@ edit_edges_modal = html.Div(
 layout = html.Div(children=[
     # ----- Store objects to store nodes and edges information -----
     dcc.Store(
-        id='nodes-info', data=[]
+        id='nodes-info', data=[['a', 1]] # The first element is the first node name that we will use
     ),
     dcc.Store(
         id='edges-info', data=[]
     ),
+    
+
     # 1- No nodes selected when edit node button is clicked
     # 2- No nodes selected when remove node button is clicked
     # 3- No nodes selected when add edge button is clicked
@@ -288,100 +291,26 @@ layout = html.Div(children=[
     ]),    
 ])
 
-# ----- AUXILIAR FUNCTIONS -----
-def manage_nodes_table(table_childrens, action, values=None):
-    if action == "edit":
-        for value in values:
-            for children in table_childrens:
-                if children['props']['children'][0]['props']['children'] == value[0]:
-                    children['props']['children'][0]['props']['children'] = value[1]
-                    break
-    
-    elif action == "remove nodes":
-        table_childrens = [c for c in table_childrens if c['props']['children'][0]['props']['children'] not in values]
-    
-    elif action == "increment degree":
-        for value in values:
-            for children in table_childrens:
-                if children['props']['children'][0]['props']['children'] == value:
-                    current_degree = int(children['props']['children'][1]['props']['children'])
-                    children['props']['children'][1]['props']['children'] = str(current_degree + 1)
-                    break
-
-    elif action == "update degrees":
-        childrens = table_childrens[0]
-        graph_edges = table_childrens[1]
-
-        degrees = {children['props']['children'][0]['props']['children']:0 for children in childrens}
-
-        for edge in graph_edges:
-
-            degrees[edge['data']['source']] += 1
-            degrees[edge['data']['target']] += 1
-
-        for children in childrens:
-            node = children['props']['children'][0]['props']['children'] 
-            children['props']['children'][1]['props']['children'] = str(degrees[node])
-        
-        table_childrens = childrens
-            
-
-
-    return table_childrens
-
-def manage_graph_elements(graph_elements, action, values=None):
-    if action == "edit nodes":
-        for value in values:
-            for node in graph_elements['nodes']:
-                if node['data']['id'] == value[0]:
-                    node['data']['id'] = value[1]
-                    node['data']['label'] = value[1]
-                    break
-
-    elif action == "remove nodes":
-        graph_elements['nodes'] = [e for e in graph_elements['nodes'] if e['data']['id'] not in values]
-        graph_elements['edges'] = [e for e in graph_elements['edges'] if e['data']['source'] not in values and e['data']['target'] not in values]
-    
-    return graph_elements
-
-def manage_nodes_info(nodes_info, action, values=None):
-    if action == "edit":
-        for value in values:
-            nodes_info[nodes_info.index(value[0])] = value[1]
-
-    elif action == "remove":
-        nodes_info = [node for node in nodes_info if node not in values]
-    
-    return nodes_info
-
-def manage_edges_info(edges_info, action, values=None):
-    if action == "remove due nodes elimination":
-        edges_info = [e for e in edges_info if e[0] not in values and e[1] not in values]
-    return edges_info
-
 # ----- Callback to update the graph -----
 @app.callback(
-    [Output("graph", "elements"), Output("nodes-info", "data"), 
-     Output("nodes-degrees-table", "children"), Output("number-of-nodes-label", "children"),
-     Output("alert-info", "data"), Output("number-of-edges-label", "children"), 
-     Output("edges-info", "data")],
+    [Output("graph", "elements"), Output("nodes-degrees-table", "children"), 
+     Output("number-of-nodes-label", "children"), Output("alert-info", "data"), 
+     Output("number-of-edges-label", "children"), Output('nodes-info', 'data')],
 
     [Input("add-node-btn", "n_clicks"), Input("done-btn-edit-nodes-modal", "n_clicks"),
      Input("remove-nodes-btn", "n_clicks"), Input("edit-nodes-btn", "n_clicks"),
      Input("add-edge-btn", "n_clicks"), Input("done-btn-edit-edges-modal", "n_clicks"),
-     Input("edit-edges-btn", "n_clicks"),],
+     Input("edit-edges-btn", "n_clicks"), Input('remove-edges-btn', 'n_clicks')],
     
-    [State("graph", "elements"), State("nodes-info", "data"), 
-     State("nodes-degrees-table", "children"), State("number-of-nodes-label", "children"),
-     State("edit-nodes-modal-body", "children"), State("graph", "selectedNodeData"),
-     State("number-of-edges-label", "children"), State("edges-info", "data"),
-     State("edit-edges-modal-body", "children"), State("graph", "selectedEdgeData")]
+    [State("graph", "elements"), State("nodes-degrees-table", "children"), 
+     State("number-of-nodes-label", "children"), State("edit-nodes-modal-body", "children"), 
+     State("graph", "selectedNodeData"), State("number-of-edges-label", "children"), 
+     State("edit-edges-modal-body", "children"), State("graph", "selectedEdgeData"), State('nodes-info', 'data')]
 )
 def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_btn, edit_nodes_btn,
-    add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, graph_elements, nodes_info, 
-    nodes_degrees_table_children, number_of_nodes, edit_nodes_modal_body_childrens, 
-    selected_node_data, number_of_edges, edges_info, edit_edges_modal_body_childrens,
-    selected_edge_data):
+    add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, remove_edges_btn, graph_elements, nodes_degrees_table_children, 
+    number_of_nodes, edit_nodes_modal_body_childrens, selected_node_data, number_of_edges, 
+    edit_edges_modal_body_childrens, selected_edge_data, nodes_info):
     # Getting the callback context to know which input triggered this callback
     ctx = dash.callback_context
 
@@ -391,33 +320,62 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
 
         # ----- Add node case -----
         if btn_triggered == "add-node-btn":
-            # Adding the node to the graph_elements and to nodes_info data
-            node = {'data': {'id': add_node_btn_n_clicks, 'label': add_node_btn_n_clicks},
+
+            # Getting an unique initial name
+            while True:
+                node_name = nodes_info[0][0] * nodes_info[0][1]
+                repeated_name = False
+
+                for node in nodes_info[1:]:
+                    if node[0] == node_name:
+                        repeated_name = True
+                        # Updating the node label if it's necesary
+                        if node_name[-1] == 'z':    
+                            nodes_info[0][0] = 'a'
+                            nodes_info[0][1] += 1
+                        else:    
+                            nodes_info[0][0] = chr(ord(nodes_info[0][0]) + 1)
+                        break
+                
+                if not repeated_name:
+                    break
+            
+            # Getting a unique node id
+            node_id = str(uuid.uuid1())
+
+            # Adding the node to the graph_elements
+            node = {'data': {'id': node_id, 'label': node_name},
                     'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
             
             graph_elements['nodes'].append(node)
-            nodes_info.append(str(add_node_btn_n_clicks))
 
             # Adding the node to the node_degrees_table
             nodes_degrees_table_children.append(html.Tr([
-                html.Td(str(add_node_btn_n_clicks), style={"text-align":"center"}), 
+                html.Td(node_name, style={"text-align":"center"}), 
                 html.Td(0,  style={"text-align":"center"})
                 ], className="table-primary"))
+
+            # Updating the node label if it's necesary
+            if node_name[-1] == 'z':    
+                nodes_info[0][0] = 'a'
+                nodes_info[0][1] += 1
+            else:    
+                nodes_info[0][0] = chr(ord(nodes_info[0][0]) + 1)
+            
             print("ADD NODE CASE")
-            print("graph elements")
-            print(graph_elements)
-            print("\nNodes info")
-            print(nodes_info)
-            print("\nEdges info")
-            print(edges_info)
+            print("Nodes")
+            for n in graph_elements['nodes']:
+                print(n)
+            print("\n\nEdges")
+            for e in graph_elements['edges']:
+                print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_info, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, edges_info
+
+            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info
         
         # ----- Edit nodes case -----
         elif btn_triggered == "done-btn-edit-nodes-modal":
-            # If no node is selected, raise an error message
-            values = []
-            # Getting the new values
+
             for children in edit_nodes_modal_body_childrens:
                 # Getting the new label
                 try:
@@ -428,106 +386,103 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 # Getting the current label
                 current_label = children['props']['children'][0]['props']['children'][1]['props']['children']
 
-                print("new label", new_label)
-                print("current label", current_label)
-                # Do nothing if new label == current label or if the new label already exists
-                if new_label == current_label or new_label in nodes_info:
+                # Do nothing if new label == current label
+                if new_label == current_label:
                     continue
 
-                # Add the new label to the node info
-                nodes_info[nodes_info.index(current_label)] = new_label
-
-                values.append((current_label, new_label))
-                
-                # Editing nodes
+                # Checking if the new label is repeated or not
+                repeated_label = False
                 for node in graph_elements['nodes']:
-                    if node['data']['id'] == current_label:
-                        node['data']['id'] = new_label
+                    if node['data']['label'] == new_label:
+                        repeated_label = True
+                        break
+                if repeated_label:
+                    continue
+                
+                # Editing the node in graph_elements
+                for node in graph_elements['nodes']:
+                    if node['data']['label'] == current_label:
                         node['data']['label'] = new_label
                         break
                 
-                # Editing edges
-                old_edges = []
-                for edge, edge_info_element in zip(graph_elements['edges'], edges_info):
-                    new_source = None
-                    new_target = None
+                # Editing edges in graph_elements and edges_info
+                for edge in graph_elements['edges']:
+                    new_source_label = None
+                    new_target_label = None
                     # Editing edges elements
-                    if edge['data']['source'] == current_label or edge['data']['target'] == current_label:
-                        if edge['data']['source'] == current_label:
-                            new_source = new_label
-                        else:
-                            new_source = edge['data']['source']
+                    if edge['data']['source_node'] == current_label:
+                        edge['data']['source_node'] = new_label
                         
-                        if edge['data']['target'] == current_label:
-                            new_target = new_label
-                        else:
-                            new_target = edge['data']['target']
-                        
-                        graph_elements['edges'].append({'data': {'source': new_source, 'target': new_target, 'weight': edge['data']['weight']}})                
-                        old_edges.append(edge)
-                    
-                    # Editing edges_info
-                    if edge_info_element[0] == current_label:
-                        edge_info_element[0] = new_label
-                    if edge_info_element[1] == current_label:
-                        edge_info_element[1] = new_label
+                    if edge['data']['target_node'] == current_label:
+                        edge['data']['target_node'] = new_label
+
                 
-                graph_elements['edges'] = [e for e in graph_elements['edges'] if e not in old_edges]
-
-            
-            # Editing the nodes in the nodes degrees table
-            nodes_degrees_table_children = manage_nodes_table(nodes_degrees_table_children, "edit", values)
-
+                # Editing the nodes in the nodes degrees table
+                for children in nodes_degrees_table_children:
+                    if children['props']['children'][0]['props']['children'] == current_label:
+                        children['props']['children'][0]['props']['children'] = new_label
+                        break
 
             print("EDIT NODE CASE")
-            print("graph elements")
-            print(graph_elements)
-            print("\nNodes info")
-            print(nodes_info)
-            print("\nEdges info")
-            print(edges_info)
+            print("Nodes")
+            for n in graph_elements['nodes']:
+                print(n)
+            print("\n\nEdges")
+            for e in graph_elements['edges']:
+                print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_info, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, edges_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info
         
         # ---- Edit nodes button alert handle -----
         elif btn_triggered == "edit-nodes-btn":
             alert = None
             if not selected_node_data:
                 alert = 1
-            return graph_elements, nodes_info, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, edges_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
 
         # ----- Remove nodes case ------
         elif btn_triggered == "remove-nodes-btn":
             alert = None
             if selected_node_data:
-                # Getting the names of the nodes to remove
-                ids = [selectedNode['id'] for selectedNode in selected_node_data]
-                
-                # Updating remaining nodes and edges from graph elements
-                graph_elements = manage_graph_elements(graph_elements, "remove nodes", ids)
-                # Removing deleted nodes from the nodes info
-                nodes_info = manage_nodes_info(nodes_info, "remove", ids)
+                # The ids of the nodes to remove are in selected node data
+                selected_ids = [selectedNode['id'] for selectedNode in selected_node_data]
+                selected_labels = [selectedNode['label'] for selectedNode in selected_node_data]
+
+                # Keeping the non selected nodes in graph_elements['nodes']
+                graph_elements['nodes'] = [n for n in graph_elements['nodes'] if n['data']['id'] not in selected_ids]
+                # Removing all edges in graph_elements['edges'] if one of their vertices is a selected node
+                graph_elements['edges'] = [e for e in graph_elements['edges'] if e['data']['source'] not in selected_ids and e['data']['target'] not in selected_ids]
+
                 #Removing deleted nodes from nodes degrees table
-                nodes_degrees_table_children = manage_nodes_table(nodes_degrees_table_children, "remove nodes", ids)
-                nodes_degrees_table_children = manage_nodes_table((nodes_degrees_table_children, graph_elements['edges']), "update degrees")
-                # Removing deleted edges from edges_info
-                edges_info = manage_edges_info(edges_info, "remove due nodes elimination", ids)
+                nodes_degrees_table_children = [c for c in nodes_degrees_table_children if c['props']['children'][0]['props']['children'] not in selected_labels]
+
+                # Updating the degrees of remaining nodes in the nodes degrees table
+                degrees = {c['props']['children'][0]['props']['children']:0 for c in nodes_degrees_table_children}
+
+                for edge in graph_elements['edges']:
+                    degrees[edge['data']['source_node']] += 1
+                    degrees[edge['data']['target_node']] += 1
+
+                for c in nodes_degrees_table_children:
+                    node_name = c['props']['children'][0]['props']['children'] 
+                    c['props']['children'][1]['props']['children'] = str(degrees[node_name])
+
                 # Updating number of nodes and number of edges
-                number_of_nodes -= len(ids)
+                number_of_nodes -= len(selected_ids)
                 number_of_edges = len(graph_elements['edges'])
             else:
                 alert = 2
             
-            print("REMOVE NODES CASE")
-            print("graph elements")
-            print(graph_elements)
-            print("\nNodes info")
-            print(nodes_info)
-            print("\nEdges info")
-            print(edges_info)
+            print("REMOVE NODE CASE")
+            print("Nodes")
+            for n in graph_elements['nodes']:
+                print(n)
+            print("\n\nEdges")
+            for e in graph_elements['edges']:
+                print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_info, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, edges_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
         
         # ----- Add Edge case -----
         elif btn_triggered == "add-edge-btn":
@@ -541,48 +496,132 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
             # When exactly one node is selected (loop)
             elif len(selected_node_data) == 1:
                 node = selected_node_data[0]['id']
+                node_label = selected_node_data[0]['label']
+                loop_id = str(uuid.uuid1())
+
                 loop = {'data': {'source': node, 
-                            'target': node, 'weight': "0"}}
+                            'target': node, 'weight': "0", 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
                 graph_elements['edges'].append(loop)
 
                 # Updating the node degree in the nodes degrees table
-                nodes_degrees_table_children = manage_nodes_table(nodes_degrees_table_children, "increment degree", [node, node])
+                for children in nodes_degrees_table_children:
+                    if children['props']['children'][0]['props']['children'] == node_label:
+                        current_degree = int(children['props']['children'][1]['props']['children'])
+                        children['props']['children'][1]['props']['children'] = str(current_degree + 2)
+                        break
+
                 number_of_edges += 1
-                edges_info.append([node, node, "0"])
             # When exactly two nodes are selected (edge)
             elif len(selected_node_data) == 2:
                 node1 = selected_node_data[0]['id']
                 node2 = selected_node_data[1]['id']
+
+                node1_label = selected_node_data[0]['label']
+                node2_label = selected_node_data[1]['label']
+
+                edge_id = str(uuid.uuid1())
                 edge = {'data': { 'source': node1, 
-                                'target': node2, 'weight': "0"}}
+                                'target': node2, 'weight': "0", 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
                 graph_elements['edges'].append(edge)
 
                 # Updating the node degree in the nodes degrees table
-                nodes_degrees_table_children = manage_nodes_table(nodes_degrees_table_children, "increment degree", [node1, node2])
-                number_of_edges += 1
-                edges_info.append([node1, node2, "0"])
+                n_edited_nodes = 0
+                for children in nodes_degrees_table_children:
+                    if children['props']['children'][0]['props']['children'] == node1_label or children['props']['children'][0]['props']['children'] == node2_label:
+                        current_degree = int(children['props']['children'][1]['props']['children'])
+                        children['props']['children'][1]['props']['children'] = str(current_degree + 1)
+                        n_edited_nodes += 1
+                    
+                    if n_edited_nodes == 2:
+                        break
 
-            print("ADD EDGES CASE")
-            print("graph elements")
-            print(graph_elements)
-            print("\nNodes info")
-            print(nodes_info)
-            print("\nEdges info")
-            print(edges_info)
+                number_of_edges += 1
+
+            print("ADD EDGE CASE")
+            print("Nodes")
+            for n in graph_elements['nodes']:
+                print(n)
+            print("\n\nEdges")
+            for e in graph_elements['edges']:
+                print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_info, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, edges_info
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
         
+        # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal":
+            for c in edit_edges_modal_body_childrens:
+                # Getting the info of the edges
+                # First node
+                node1 = c['props']['children'][0]['props']['children'][1]['props']['children'][:-1]
+                # Second node
+                node2 = c['props']['children'][0]['props']['children'][2]['props']['children'][:-1]
+                # Edge id
+                edge_id = c['props']['children'][0]['props']['children'][3]['props']['value']
 
-            return graph_elements, nodes_info, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, edges_info
+                # Trying to get a new weight and validate if it is a number
+                try:
+                    new_weight = c['props']['children'][1]['props']['children'][1]['props']['value']
+                    float(new_weight)
+                except:
+                    continue
+
+                # If everything goes correctly, then proceed to update the edges
+                
+                # Update the edge in graph elements:
+                for edge in graph_elements['edges']:
+                    if edge['data']['id'] == edge_id:
+                        edge['data']['weight'] = new_weight
+
+
+            print("EDIT EDGE CASE")
+            print("Nodes")
+            for n in graph_elements['nodes']:
+                print(n)
+            print("\n\nEdges")
+            for e in graph_elements['edges']:
+                print(e)
+            print("------------------------------\n")
+
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info
         
         # ---- Edit edges button alert handle -----
         elif btn_triggered == "edit-edges-btn":
             alert = None
             if not selected_edge_data:
                 alert = 5
-            return graph_elements, nodes_info, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, edges_info
+            
+            
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
+        
+        # ----- Remove edges case -----
+        elif btn_triggered == "remove-edges-btn":
+            alert = None
+            if not selected_edge_data:
+                alert = 6
+            else:
+                # Getting ids of selected edges
+                ids = [e['id'] for e in selected_edge_data]
+
+                # Keeping only the unselected edges in graph_elements
+                graph_elements['edges'] = [e for e in graph_elements['edges'] if e['data']['id'] not in ids]
+
+                # Updating the number of edges
+                number_of_edges -= len(ids)
+
+                # Updating the degrees of remaining nodes in the nodes degrees table
+                degrees = {c['props']['children'][0]['props']['children']: int(c['props']['children'][1]['props']['children']) for c in nodes_degrees_table_children}
+
+                for edge in selected_edge_data:
+                    degrees[edge['source_node']] -= 1
+                    degrees[edge['target_node']] -= 1
+
+                for c in nodes_degrees_table_children:
+                    node_name = c['props']['children'][0]['props']['children'] 
+                    c['props']['children'][1]['props']['children'] = str(degrees[node_name])
+
+                
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info
 
         
     else:
@@ -603,14 +642,14 @@ def toggleModal(edit_nodes_btn, cancel_btn_edit_nodes_modal, done_btn_edit_nodes
         else:
             node_forms = []
             for node in selected_node_data:
-                current_id = node['id']
+                node_label = node['label']
                 node_forms.append(
                     dbc.Form(
                         [
                             dbc.FormGroup(
                                 [
                                     dbc.Label("Current label: ", style={"padding":"1em"}),
-                                    dbc.Label(current_id, id=str(current_id))
+                                    dbc.Label(node_label)
                                 ]
                             ),
 
@@ -644,14 +683,18 @@ def toggleModal(edit_edges_btn, cancel_btn_edit_edges_modal, done_btn_edit_edges
         else:
             edges_forms = []
             for edge in selected_edge_data:
-                node1 = edge['source']
-                node2 = edge['target']
+                node1 = edge['source_node']
+                node2 = edge['target_node']
                 edges_forms.append(
                     dbc.Form(
                         [
                             dbc.FormGroup(
                                 [
-                                    dbc.Label(f"Edge ({node1},{node2}) current weight: ", style={"padding":"1em"}),
+                                    dbc.Label("Edge ("),
+                                    dbc.Label(f"{node1},"),
+                                    dbc.Label(f"{node2})"),
+                                    dbc.Input(type="hidden", value=edge['id']),
+                                    dbc.Label("current weight: ", style={"padding":"1em"}),
                                     dbc.Label(edge['weight'])
                                 ]
                             ),
@@ -696,5 +739,7 @@ def manageAlert(alert_info):
     elif alert_info == 5:
         text = "No edge selected to edit. Please, select at least one edge and try again"
         show = True
-    
+    elif alert_info == 6:
+        text = "No edge selected to remove. Please, select at least one edge and try again"
+        show = True
     return text, show
