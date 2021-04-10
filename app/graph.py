@@ -69,6 +69,19 @@ canvas = cyto.Cytoscape(
         )
 # -------------------------------------------------------
 
+# ----- Modals fixed position to allow the user to see the graph while he's updating it -----
+modals_position = {
+                    "position": "absolute",
+                    "top": "0",
+                    "right": "0",
+                    "bottom": "0",
+                    "left": "50%",
+                    "z-index": "10040",
+                    "overflow": "auto",
+                    "overflow-y": "auto"
+                }
+# -------------------------------------------------------
+
 # ----- Modal to edit nodes -----
 edit_nodes_modal = html.Div(
     [
@@ -93,8 +106,9 @@ edit_nodes_modal = html.Div(
             size="lg", #sm, lg, xl
             backdrop=True, # to be or not to be closed by clicking on backdrop
             scrollable=True, # Scrollable if modal has a lot of text
-            centered=True, 
-            fade=True
+            centered=False, 
+            fade=True,
+            style=modals_position
         )
     ]
 )
@@ -122,8 +136,9 @@ edit_edges_modal = html.Div(
             size="lg", #sm, lg, xl
             backdrop=True, # to be or not to be closed by clicking on backdrop
             scrollable=True, # Scrollable if modal has a lot of text
-            centered=True, 
-            fade=True
+            centered=False, 
+            fade=True,
+            style=modals_position
         )
     ]
 )
@@ -297,7 +312,6 @@ layout = html.Div(children=[
      Output("number-of-nodes-label", "children"), Output("alert-info", "data"), 
      Output("number-of-edges-label", "children"), Output('nodes-info', 'data'), 
      Output('upload-graph-obj', 'contents')],
-
     [Input("add-node-btn", "n_clicks"), Input("done-btn-edit-nodes-modal", "n_clicks"),
      Input("remove-nodes-btn", "n_clicks"), Input("edit-nodes-btn", "n_clicks"),
      Input("add-edge-btn", "n_clicks"), Input("done-btn-edit-edges-modal", "n_clicks"),
