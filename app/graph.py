@@ -61,8 +61,12 @@ canvas = cyto.Cytoscape(
 
                 {
                     'selector': 'node',
-                    'style':{
-                        'label': 'data(label)',
+                    'style': {
+                        'content': 'data(label)',
+                        'text-halign':'center',
+                        'text-valign':'center',
+                        'width':'30px',
+                        'height':'30px'
                     }
                 }
             ]

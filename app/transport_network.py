@@ -40,7 +40,7 @@ canvas = cyto.Cytoscape(
                     'style':{
                         'curve-style': 'bezier',
                         'target-arrow-shape': 'triangle',
-                        'label': 'data(restrictions)'
+                        'label': "data(restrictions)"
                     }
                 },
 
@@ -252,7 +252,7 @@ layout = html.Div(children=[
             html.Br(),
 
             dbc.Row([
-                html.H4("Nodes Degrees"),
+                html.H4("Nodes Information"),
             ], justify="center"),
 
             html.Div([
@@ -596,7 +596,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 loop_id = str(uuid.uuid1())
 
                 loop = {'data': {'source': node, 
-                            'target': node, 'weight': "0", 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
+                            'target': node, 'restrictions': [0,0,"Inf"], 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
                 graph_elements['edges'].append(loop)
 
                 # Updating the node degree in the nodes degrees table
@@ -622,7 +622,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
                 edge_id = str(uuid.uuid1())
                 edge = {'data': { 'source': node1, 
-                                'target': node2, 'weight': "0", 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
+                                'target': node2, 'restrictions': [0,0,"Inf"], 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
                 graph_elements['edges'].append(edge)
 
                 # Updating the node degree in the nodes degrees table
@@ -658,30 +658,90 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
         
         # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal-network":
-            for c in edit_edges_modal_body_childrens:
-                # Getting the info of the edges
+            radio_buttons = [c for c in edit_edges_modal_body_childrens if edit_edges_modal_body_childrens.index(c) % 2 == 0]
+            edit_edges_modal_body_childrens = [c for c in edit_edges_modal_body_childrens if c not in radio_buttons]
+            
+            for r in radio_buttons:
+                continue
+                # Button checked
                 
-                # First node (source)
-                node1 = c['props']['children'][0]['props']['children'][1]['props']['children'][:-1]
-                # Second node (target)
-                node2 = c['props']['children'][0]['props']['children'][2]['props']['children'][:-1]
-                # edge id
-                edge_id = c['props']['children'][0]['props']['children'][3]['props']['value']
+            
+            for c,r in zip(edit_edges_modal_body_childrens, radio_buttons):
+                print(c, "\n\n")
+                # Getting hidden input Object with edge data
+                edge_data = c['props']['children'][0]['props']['children'][0]['props']['value']
+                
+                #Getting the edge's id
+                edge_id = edge_data[0]
+                #Getting the edge's source node
+                node1 = edge_data[1]
+                #Getting the edge's target node
+                node2 = edge_data[2]
 
-                # Trying to get a new weight and validate if it is a number
+                # trying to get radio button value to know if we need to chenage edge's direction
                 try:
-                    new_weight = c['props']['children'][1]['props']['children'][1]['props']['value']
-                    float(new_weight)
-                except:
-                    new_weight = "Error"
-                
-                #  Check if we need to change the direction
-                try:
-                    change_direction = c['props']['children'][1]['props']['children'][2]['props']['checked']
+                    change_direction = r['props']['children'][1]['props']['checked']
                 except:
                     change_direction = False
                 
+                # Getting current min restriction
+                current_min_restriction = float(c['props']['children'][0]['props']['children'][2]['props']['children'])
+
+                # Trying to get new min restriction 
+                try:
+                    new_min_restriction = c['props']['children'][0]['props']['children'][4]['props']['value']
+                    # Validate if it is a number, not infinite and greater or equal than 0
+                    new_min_restriction = float(new_min_restriction)
+                    if new_min_restriction == math.inf or new_min_restriction < 0:
+                        raise Exception()
+                except:
+                    # If there isn't new min restriction, or new min restriction is not a number or
+                    # it's infinite, or is len than 0, then new min restriction = current min restriction
+                    new_min_restriction = current_min_restriction
                 
+                # Getting current flow
+                current_flow = float(c['props']['children'][1]['props']['children'][1]['props']['children'])
+
+                # Trying to get new flow
+                try:
+                    new_flow = c['props']['children'][1]['props']['children'][3]['props']['value']
+                    # Validate if it is a number, not infinite and greater or equal than 0
+                    new_flow = float(new_flow)
+                    if new_flow == math.inf or new_flow < 0:
+                        raise Exception()
+                except:
+                    # If there isn't new flow, or new flow is not a number or
+                    # it's infinite, or is less than 0, then new flow = current flow
+                    new_flow = current_flow
+                
+                # Getting current capacity
+                current_capacity = float(c['props']['children'][2]['props']['children'][1]['props']['children'])
+
+                # Trying to get new capacity
+                try:
+                    new_capacity = c['props']['children'][2]['props']['children'][3]['props']['value']
+                    # Validate if it's a number (can be infinite) and if it is greater than 0
+                    new_capacity = float(new_capacity)
+                    if new_capacity < 0:
+                        raise Exception()
+                except:
+                    # If there isn't new capacity, or new capactity is 
+                    # less than 0, then new capacity = current capacity
+                    new_capacity = current_capacity
+                
+                # Validate min_restriction
+                if new_min_restriction > new_capacity:
+                    new_min_restriction = current_min_restriction
+                
+                # Validate new flow
+                if new_flow > new_capacity:
+                    new_flow = current_flow
+                
+                # Validate new capacity
+                if new_capacity < new_min_restriction or new_capacity < new_flow:
+                    new_capacity = current_capacity
+                
+                # Change direction if it is needed
                 if change_direction:
                     # Swap source and target in the edge and update its weight
                     for edge in graph_elements['edges']:
@@ -695,10 +755,16 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             edge['data']['source_node'] = edge['data']['target_node']
                             edge['data']['target_node'] = tmp
 
-                            # If valid new weight exists, update it
-                            if new_weight != "Error":
-                                edge['data']['weight'] = new_weight
-                            
+                            # update restrictions
+                            # min restriction
+                            edge['data']['restrictions'][0] = new_min_restriction
+                            # flow
+                            edge['data']['restrictions'][1] = new_flow
+                            # capacity
+                            if new_capacity == math.inf:
+                                edge['data']['restrictions'][2] = "Inf"
+                            else:
+                                edge['data']['restrictions'][2] = new_capacity
                             break
                     
                     # Update the degrees of the nodes
@@ -740,12 +806,19 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             nodes_updated += 1
                             continue
                 
-                # If we dont need to change the direction of the edge, then just update its weight
-                if new_weight != "Error":
-                    for edge in graph_elements['edges']:
-                        if edge['data']['id'] == edge_id:
-                            edge['data']['weight'] = new_weight    
-                            break
+                # If we dont need to change the direction of the edge, then just update its restrictions
+                for edge in graph_elements['edges']:
+                    if edge['data']['id'] == edge_id:
+                        # min restriction
+                        edge['data']['restrictions'][0] = new_min_restriction
+                        # flow
+                        edge['data']['restrictions'][1] = new_flow
+                        # capacity
+                        if new_capacity == math.inf:
+                            edge['data']['restrictions'][2] = "Inf"
+                        else:
+                            edge['data']['restrictions'][2] = new_capacity
+                        break
 
             print("EDIT EDGE CASE")
             print("Nodes")
@@ -1035,28 +1108,43 @@ def toggleModal(edit_edges_btn, cancel_btn_edit_edges_modal, done_btn_edit_edges
                     radioButton = None
                     label_change_direction = None
 
+                
+                edges_forms.append(dbc.FormGroup([
+                                                    html.H3(f"Edge({node1},{node2})"),
+                                                    radioButton,
+                                                    label_change_direction                
+                                                ], style={"padding-left":"1em"})
+                                    )
+
                 edges_forms.append(
                     dbc.Form(
                         [
                             dbc.FormGroup(
                                 [
-                                    dbc.Label("Edge ("),
-                                    dbc.Label(f"{node1},"),
-                                    dbc.Label(f"{node2})"),
-                                    dbc.Input(type="hidden", value=edge['id']),
-                                    dbc.Label("current weight: ", style={"padding":"1em"}),
-                                    dbc.Label(edge['weight']),
+                                    dbc.Input(type="hidden", value=[edge['id'], node1, node2]),
+                                    dbc.Label("Current Min. Restriction: ", style={"padding":"1em"}),
+                                    dbc.Label(edge['restrictions'][0]),
+                                    dbc.Label("New Min. Restriction: ", className="mr-2", style={"padding":"2em"}),
+                                    dbc.Input(type="text"),
                                 ]
                             ),
 
                             dbc.FormGroup(
                                 [
-                                    dbc.Label("New weight: ", className="mr-2", style={"padding":"2em"}),
-                                    dbc.Input(type="text", placeholder="Type the new weight"),
-                                    radioButton,
-                                    label_change_direction                
-                                ],
-                                className="mr-3"
+                                    dbc.Label("Current Flow: ", style={"padding":"1em"}),
+                                    dbc.Label(edge['restrictions'][1]),
+                                    dbc.Label("New Flow: ", className="mr-2", style={"padding":"2em"}),
+                                    dbc.Input(type="text"),
+                                ]
+                            ),
+
+                            dbc.FormGroup(
+                                [
+                                    dbc.Label("Current Capacity: ", style={"padding":"1em"}),
+                                    dbc.Label(edge['restrictions'][2]),
+                                    dbc.Label("New Capacity: ", className="mr-2", style={"padding":"2em"}),
+                                    dbc.Input(type="text"),
+                                ]
                             )
                         ],
                         inline=True
