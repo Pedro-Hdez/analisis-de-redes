@@ -885,19 +885,82 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             print(graph)
 
             alert = None
-            # Validate the data format
-            for element in graph:
-                # Just accept edges (a,b) or single nodes (a)
-                if len(element) > 3:
-                    alert = 7
+            nodes = [e for e in graph if len(e) == 3]
+            edges = [e for e in graph if len(e) == 5]
+
+            # Validate non repetitions in nodes labels
+            labels = []
+            for n in nodes:
+                if n[0] not in labels:
+                    labels.append(n[0])
+                else:
+                    # Repetition in nodes label
+                    alert = 11
                     break
-                # validate if  weight is a number in case the element is an edge
-                if len(element) == 3:
-                    try:
-                        float(element[2])
-                    except:
+            # Validate if each node of an edge exists
+            if not alert:
+                for e in edges:
+                    if e[0] not in labels or e[1] not in labels:
+                        # Edge with nonexistent node
+                        alert = 12
+                        break
+
+            # Validate the data format
+            if not alert:
+                for element in graph:
+                    # Just accept edges: [a,b,min_res,flow,capacity]
+                    # or nodes: [a,min_res,max_res]
+                    if len(element) != 5 and len(element) != 3: 
                         alert = 7
                         break
+
+                    # Nodes validation
+                    if len(element) == 3:
+                        # Validate if node restrictions are non negative numbers
+                        try:
+                            for i in range(1,3):
+                                element[i] = float(element[i])
+                                if element[i] < 0:
+                                    raise Exception()
+                        except:
+                            # Restrictions aren't numbers or are negative numbers
+                            alert = 8 
+                            break
+                        # Validate min restriction. As max_restriction just need to be greater than min_restriction,
+                        # this case will also validate max_restriction
+                        if element[1] == math.inf or element[1] > element[2]:
+                            # Inconsistent node restrictions
+                            alert = 9 
+                            break
+
+                    # Edges validation
+                    if len(element) == 5:
+                        # Validate if node restrictions are non negative numbers
+                        try:
+                            for i in range(2,5):
+                                element[i] = float(element[i])
+                                if element[i] < 0:
+                                    raise Exception()
+                        except:
+                            # Restrictions aren't numbers or are negative numbers
+                            alert = 8 
+                            break
+
+                        # Validate min_restriction
+                        if element[2] > element[4]:
+                            # Inconsistent edges restrictions
+                            alert = 10
+                            break
+                        
+                        # Validate new flow
+                        if element[3] > element[4]:
+                            alert = 10
+                            break
+                        
+                        # Validate new capacity
+                        if element[4] < element[2] or element[4] < element[3]:
+                            alert = 10
+                            break
 
             
             # If file format is ok, then we proceed to create the graph in the interface
@@ -915,20 +978,23 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 # Check if the elements are nodes or edges and add it to UI and data structure
                 for element in graph:
                     element_splitted = element
-                    # When it's a single node
-                    if len(element_splitted) == 1:
-                        # Check if node name is already in use
-                        for node in new_nodes:
-                            if element_splitted[0] == node['data']['label']:
-                                continue
-                        
-                        # If node doesn't exist, then add it to the new nodes
-                        node = {'data': {'id': str(uuid.uuid1()), 'label': element_splitted[0], 'positive_degree':0,'negative_degree':0},
-                                         'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                    # When it's a node
+                    if len(element_splitted) == 3:
+                        # Check if max restriction is Inf to store it as string
+                        if element_splitted[2] == math.inf:
+                            element_splitted[2] = 'Inf'
+
+                        # Add it to the new nodes
+                        node = {'data': {'id': str(uuid.uuid1()), 'label': element_splitted[0], 'positive_degree':0, 'negative_degree':0,
+                                'min_restriction':element_splitted[1], 'max_restriction':element_splitted[2]},
+                                'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+
                         new_nodes.append(node)
 
                         # Adding the node to the degrees dict
-                        nodes_degrees[element_splitted[0]] = {'positive_degree':0, 'negative_degree':0}
+                        nodes_degrees[element_splitted[0]] = {'positive_degree':0, 'negative_degree':0, 
+                                                              'min_restriction':element_splitted[1],
+                                                              'max_restriction':element_splitted[2]}
                         number_of_nodes += 1
 
                     # When it's an edge
@@ -936,57 +1002,38 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         # To store nodes ids
                         node1_id = None
                         node2_id = None
+                        
+                        # add the edge between the nodes
 
-                        # Check if node1 name is already in use
-                        node_already_exists = False
-                        for node in new_nodes:
-                            if node['data']['label'] == element_splitted[0]:
-                                node_already_exists = True
-                                node1_id = node['data']['id']
+                        # Find the node1 id
+                        for n in new_nodes:
+                            if n['data']['label'] == element_splitted[0]:
+                                node1_id = n['data']['id']
                                 break
                         
-                        # If node 1 doesn't exists, then add it to the new nodes
-                        if not node_already_exists:
-                            node1_id = str(uuid.uuid1())
-                            node = {'data': {'id': node1_id, 'label': element_splitted[0], 'positive_degree':0, 'negative_degree':0},
-                                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
-                                    'positive_degree':0, 'negative_degree':0}
-                            new_nodes.append(node)
-                            number_of_nodes += 1
-
-                            # Adding it to the degrees dict
-                            nodes_degrees[element_splitted[0]] = {'positive_degree':0, 'negative_degree':0}
-                        
-                        # Check if node2 name is already in use
-                        node_already_exists = False
-                        for node in new_nodes:
-                            if node['data']['label'] == element_splitted[1]:
-                                node_already_exists = True
-                                node2_id = node['data']['id']
+                        # Find the node2 id
+                        for n in new_nodes:
+                            if n['data']['label'] == element_splitted[1]:
+                                node2_id = n['data']['id']
                                 break
-                        
-                        # If node 1 doesn't exists, then add it to the new nodes
-                        if not node_already_exists:
-                            node2_id = str(uuid.uuid1())
-                            node = {'data': {'id': node2_id, 'label': element_splitted[1], 'positive_degree':0, 'negative_degree':0},
-                                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
-                                    'positive_degree':0, 'negative_degree':0}
-                            new_nodes.append(node)
-                            number_of_nodes += 1
 
-                            # Adding it to the degrees dict
-                            nodes_degrees[element_splitted[1]] = {'positive_degree':0, 'negative_degree':0}
-                        
-                        # After nodes managing, add the edge between them
+                        # Create the edge
                         edge_id = str(uuid.uuid1())
-                        try:
-                            weight = element_splitted[2]
-                        except:
-                            weight = 0
-
+                        # Getting min restriction
+                        min_restriction = element_splitted[2]
+                        # Getting flow
+                        flow = element_splitted[3]
+                        # Getting max restriction
+                        if element_splitted[4] == math.inf:
+                            max_restriction = "Inf"
+                        else:
+                            max_restriction = element_splitted[4]
+                        
                         edge = {'data': { 'source': node1_id, 
-                                'target': node2_id, 'weight': weight, 'id':edge_id, 
-                                'source_node':element_splitted[0], 'target_node':element_splitted[1]}}
+                                'target': node2_id, 'restrictions': [min_restriction,flow,max_restriction], 
+                                'id':edge_id, 'source_node':element_splitted[0], 
+                                'target_node':element_splitted[1]}}
+
                         new_edges.append(edge)
                         number_of_edges += 1
 
@@ -1005,7 +1052,9 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         [
                             html.Td(node[0], style={"text-align":"center"}), 
                             html.Td(node[1]['positive_degree'],  style={"text-align":"center"}),
-                            html.Td(node[1]['negative_degree'],  style={"text-align":"center"})
+                            html.Td(node[1]['negative_degree'],  style={"text-align":"center"}),
+                            html.Td(node[1]['min_restriction'],  style={"text-align":"center"}),
+                            html.Td(node[1]['max_restriction'],  style={"text-align":"center"})
                         ], className="table-primary"))
             
             # Clean the upload content so we can upload a diferent file
@@ -1185,5 +1234,20 @@ def manageAlert(alert_info):
         show = True
     elif alert_info == 7:
         text = "Error. Invalid file format. Please, check it and try again"
+        show = True
+    elif alert_info == 8:
+        text = "Error. Some restrictions are not numbers, or negative numbers. Please, check it and try again"
+        show = True
+    elif alert_info == 9:
+        text = "Error. Inconsistency in some node restrictions. Please, check it and try again"
+        show = True
+    elif alert_info == 10:
+        text = "Error. Inconsistency in some edge restrictions. Please, check it and try again"
+        show = True
+    elif alert_info == 11:
+        text = "Error. There are some different nodes with same label. Please, check it and try again"
+        show = True
+    elif alert_info == 12:
+        text = "Error. There are some edge from/to nonexistent node. Please, check it and try again"
         show = True
     return text, show
