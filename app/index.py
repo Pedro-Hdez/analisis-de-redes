@@ -46,16 +46,10 @@ main_menu = html.Div([
 @app.callback(Output('page-content', 'children'),
               [Input('url', 'pathname')])
 def display_page(pathname):
-    if pathname == '/main_app':
-        return main_app.layout
-    elif pathname == '/digraphs':
-        nagui_d.current_digraph.clear()
-        return nagui_d.layout
-    elif pathname == '/networks':
-        nagui_n.current_network.clear()
-        return nagui_n.layout
-    elif pathname == '/':
+    if pathname == '/':
         return main_menu
+    elif pathname == '/main_app':
+        return main_app.layout
     else:
         return '404'
 

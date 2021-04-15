@@ -5,9 +5,10 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 import graph
 import digraph
+import transport_network
 
 # ----- Dropdown menu for 
-data_structures = ['Graph', "Directed Graph"]
+data_structures = ['Graph', "Directed Graph", "Transport Network"]
 select_data_structure_dropdown = dcc.Dropdown(
     id='select-data-structure-dropdown',
     value='Graph',
@@ -43,5 +44,7 @@ layout = html.Div([
 def x(select_data_structure_dropdown_value):
     if select_data_structure_dropdown_value == "Graph":
         return graph.layout, "Graph"
-    else:
+    elif select_data_structure_dropdown_value == "Directed Graph":
         return digraph.layout, "Directed Graph"
+    else:
+        return transport_network.layout, "Transport Network"
