@@ -27,7 +27,7 @@ select_data_structure_dropdown = dcc.Dropdown(
 # -------------------------------------------------------
 
 # ----- Dropdown menu for algorithm selection -----
-algorithms = ['Check if the graph is bipartite', 'Search for Eulerian walk', 
+algorithms = ['Check if the graph is bipartite', 'Search for Euler walks', 
               'Search for a spanning tree by Breadth First Search', 
               'Search for a spanning tree by Depth First Search', 
               "Search for a minimum spanning tree using Kruskal's algorithm",
@@ -60,19 +60,7 @@ default_stylesheet =[{
                     },
 
                     {
-                        'selector':'.partition1',
-                        'style':{
-                            'content': 'data(label)',
-                            'text-halign':'center',
-                            'text-valign':'center',
-                            'width':'30px',
-                            'height':'30px',
-                            'background-color': '#80B7FF'
-                        }
-                    },
-
-                    {
-                        'selector':'.partition2',
+                        'selector':'.red_nodes',
                         'style':{
                             'content': 'data(label)',
                             'text-halign':'center',
@@ -80,6 +68,18 @@ default_stylesheet =[{
                             'width':'30px',
                             'height':'30px',
                             'background-color': '#FF8080'
+                        }
+                    },
+
+                    {
+                        'selector':'.blue_nodes',
+                        'style':{
+                            'content': 'data(label)',
+                            'text-halign':'center',
+                            'text-valign':'center',
+                            'width':'30px',
+                            'height':'30px',
+                            'background-color': '#80B7FF'
                         }
                     }]
                 
@@ -178,7 +178,7 @@ layout = html.Div(children=[
         id='nodes-info', data=[['a', 1]] # The first element is the first node name that we will use
     ),
     dcc.Store(
-        id='graph-copy', data={'nodes':[], 'edges':[]}
+        id='graph-copy', data=None
     ),
     
 
@@ -381,7 +381,9 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
 
         # ----- Add node case -----
         if btn_triggered == "add-node-btn":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             # Getting an unique initial name
             while True:
                 node_name = nodes_info[0][0] * nodes_info[0][1]
@@ -433,11 +435,13 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Edit nodes case -----
         elif btn_triggered == "done-btn-edit-nodes-modal":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             for children in edit_nodes_modal_body_childrens:
                 # Getting the new label
                 try:
@@ -494,19 +498,23 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ---- Edit nodes button alert handle -----
         elif btn_triggered == "edit-nodes-btn":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if not selected_node_data:
                 alert = 1
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
 
         # ----- Remove nodes case ------
         elif btn_triggered == "remove-nodes-btn":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if selected_node_data:
                 # The ids of the nodes to remove are in selected node data
@@ -546,11 +554,13 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Add Edge case -----
         elif btn_triggered == "add-edge-btn":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             # When no node is selected
             if not selected_node_data:
@@ -611,11 +621,13 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             for c in edit_edges_modal_body_childrens:
                 # Getting the info of the edges
                 # First node
@@ -649,21 +661,25 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ---- Edit edges button alert handle -----
         elif btn_triggered == "edit-edges-btn":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if not selected_edge_data:
                 alert = 5
             
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Remove edges case -----
         elif btn_triggered == "remove-edges-btn":
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if not selected_edge_data:
                 alert = 6
@@ -696,11 +712,10 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
     
         # ----- Upload Graph Case -----
         elif btn_triggered == 'upload-graph-obj':
-            graph_elements = copy.deepcopy(graph_copy)
             # Read the file and convert it to list of elements
             content_type, content_string = upload_graph_contents.split(',')
             graph = [x.replace(" ", "").split(",") for x in base64.b64decode(content_string).decode('ascii').strip().split("\n") if x] 
@@ -842,12 +857,12 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, copy.deepcopy(graph_elements)
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, None
         
 
         # ************** RUN ALGORITHMS LOGIC *******************
         elif btn_triggered == 'run-algorithm-btn':
-            graph_elements = copy.deepcopy(graph_copy)
+            graph_elements_copy = copy.deepcopy(graph_elements)
             alert = None
             if len(graph_elements['nodes']) == 0 and len(graph_elements['edges']) == 0:
                 alert = 8
@@ -889,38 +904,72 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                         # Adding a class color to the nodes of each partition
                         for node in graph_elements['nodes']:
                             if node['data']['label'] in partition1:
-                                node['classes'] = 'partition1'
+                                node['classes'] = 'red_nodes'
                             elif node['data']['label'] in partition2:
-                                node['classes'] = 'partition2'
+                                node['classes'] = 'blue_nodes'
                         
                         txt = "Graph is bipartite. Following partitions were found:"
                         result_text_children = html.P([txt, html.Br(), f"Partition 1: {partition1}",
                                                        html.Br(), f"Partition 2: {partition2}"])
                 
                 # Find Eulerian Paths
-                elif select_algorithm_dropdown == 'Search for Eulerian walk':
+                elif select_algorithm_dropdown == 'Search for Euler walks':
                     # Running algorithm
                     eulerian_walk = g.paseo_euler()
 
                     if eulerian_walk == False:
                         result_text_children = html.P("No Eulerian walk found.")
                     else:
+                        # To avoid problems with edges labels, we do all weights == -1
+                        for e in graph_elements['edges']:
+                            e['data']['weight'] = -1
+
+                        # Labeling the edges according to their order in eulerian walk
                         for i in range(len(eulerian_walk) - 1):
                             node1 = eulerian_walk[i]
                             node2 = eulerian_walk[i+1]
                             for e in graph_elements['edges']:
-                                if ((e['data']['source_node'] == node1 and e['data']['target_node'] == node2) or
-                                   (e['data']['source_node'] == node2 and e['data']['target_node'] == node1)):
+                                if (((e['data']['source_node'] == node1 and e['data']['target_node'] == node2) or
+                                   (e['data']['source_node'] == node2 and e['data']['target_node'] == node1)) and
+                                   e['data']['weight'] == -1):
                                    e['data']['weight'] = i+1
                                    break
-
+                        
+                        # Coloring the first and last node of the path
+                        # Case when it's a circuid
+                        if eulerian_walk[0] == eulerian_walk[-1]:
+                            txt = "The following Euler Circuit has found:"
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == eulerian_walk[0]:
+                                    n['classes'] = 'red_nodes'
+                                    break
+                        # Case when it isn't a circuit
+                        else:
+                            txt = "The following Euler Path has found:"
+                            colored_nodes = 0
+                            for n in graph_elements['nodes']:
+                                if colored_nodes == 2:
+                                    break
+                                if n['data']['label'] == eulerian_walk[0]:
+                                    n['classes'] = 'red_nodes'
+                                    colored_nodes += 1
+                                    continue
+                                if n['data']['label'] == eulerian_walk[-1]:
+                                    n['classes'] = 'blue_nodes'
+                                    colored_nodes += 1
+                                    continue
+                        
+                        # Creating the result string
+                        result_text_children = html.P([txt, html.Br(), f"{eulerian_walk}"])
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
         
         # ----- Clear result case -----
         elif btn_triggered == 'clear-result-btn':
             alert = None
-            graph_elements = copy.deepcopy(graph_copy)
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             result_text_children = []
             result_div_style = {'display':'None'}
 
