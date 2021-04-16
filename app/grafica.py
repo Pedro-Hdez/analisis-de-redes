@@ -9,9 +9,10 @@ class Arista:
         y una etiqueta. De esta forma es más fácil agregar otros
         atributos, por ejemplo, un peso.
     """
-    def __init__(self, origen, destino, peso=None, etiqueta=None):
+    def __init__(self, origen, destino, Id, peso=0, etiqueta=None):
         self.origen = origen
         self.destino = destino
+        self.Id = Id
         self.peso = peso
         self.etiqueta = etiqueta
 #----------------------------------------------------------------
@@ -94,14 +95,14 @@ class Grafica:
         b: Nodo 2 de la arista.
         etiqueta: Etiqueta de la arista.
     """
-    def agregar_arista(self, a, b, peso=None):
+    def agregar_arista(self, a, b, Id, peso=None):
         self.agregar_nodo(a)
         self.agregar_nodo(b)
 
         nodo_a = self.buscar_nodo(a)
         nodo_b = self.buscar_nodo(b)
 
-        self.__grafica[nodo_a].append( Arista(nodo_a, nodo_b, peso) )
+        self.__grafica[nodo_a].append( Arista(nodo_a, nodo_b, Id, peso) )
 
         # Si no se trata de un lazo, entonces la arista también se agrega en el nodo b
         # y se aumenta en 1 el grado de a y el grado de b
@@ -112,7 +113,7 @@ class Grafica:
 
             # Se agrega el nodo b y después se agrega una arista hacia
             # a con la etiqueta a su lista
-            self.__grafica[nodo_b].append( Arista(nodo_b, nodo_a, peso) )
+            self.__grafica[nodo_b].append( Arista(nodo_b, nodo_a, Id, peso) )
 
         nodo_a.grado += 1
         nodo_b.grado += 1
@@ -360,6 +361,8 @@ class Grafica:
             
     
     def es_bipartita(self):
+        if not self.es_conexa():
+            return -1, -1
         # Cola auxiliar del algoritmo
         cola = Cola()
         
@@ -843,9 +846,6 @@ class Grafica:
         for nodo in self.__grafica:
             resultado += f"{nodo.nombre}: "
             for arista in self.__grafica[nodo]:
-                if arista.peso:
-                    resultado += f"({arista.destino.nombre}, {arista.peso}) "
-                else:
-                    resultado += f"{arista.destino.nombre} "
+                resultado += f"({arista.destino.nombre}, {arista.peso}) "
             resultado += '\n'
         return resultado 
