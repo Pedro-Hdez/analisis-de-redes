@@ -41,10 +41,28 @@ select_algorithm_dropdown = dcc.Dropdown(
 )
 # -------------------------------------------------------
 default_stylesheet =[{
-                        'selector': 'edge',
+                        'selector': '.edge',
                         'style':{
                             'curve-style': 'bezier',
                             'label': 'data(weight)',
+                        }
+                    },
+
+                    {
+                        'selector': '.red_edges',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(weight)',
+                            'line-color': '#FF8080'
+                        }
+                    },
+
+                    {
+                        'selector': '.blue_edges',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(weight)',
+                            'line-color': '#80B7FF'
                         }
                     },
 
@@ -575,7 +593,8 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                 loop_id = str(uuid.uuid1())
 
                 loop = {'data': {'source': node, 
-                            'target': node, 'weight': "0", 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
+                            'target': node, 'weight': "0", 'id':loop_id, 'source_node':node_label, 'target_node':node_label},
+                        'classes':'edge'}
                 graph_elements['edges'].append(loop)
 
                 # Updating the node degree in the nodes degrees table
@@ -596,7 +615,8 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
 
                 edge_id = str(uuid.uuid1())
                 edge = {'data': { 'source': node1, 
-                                'target': node2, 'weight': "0", 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
+                                'target': node2, 'weight': "0", 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label},
+                        'classes':'edge'}
                 graph_elements['edges'].append(edge)
 
                 # Updating the node degree in the nodes degrees table
@@ -824,7 +844,8 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
 
                         edge = {'data': { 'source': node1_id, 
                                 'target': node2_id, 'weight': weight, 'id':edge_id, 
-                                'source_node':element_splitted[0], 'target_node':element_splitted[1]}}
+                                'source_node':element_splitted[0], 'target_node':element_splitted[1]},
+                                'classes':'edge'}
                         new_edges.append(edge)
                         number_of_edges += 1
 
@@ -862,6 +883,9 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
 
         # ************** RUN ALGORITHMS LOGIC *******************
         elif btn_triggered == 'run-algorithm-btn':
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+
             graph_elements_copy = copy.deepcopy(graph_elements)
             alert = None
             if len(graph_elements['nodes']) == 0 and len(graph_elements['edges']) == 0:
@@ -938,14 +962,14 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                         # Coloring the first and last node of the path
                         # Case when it's a circuid
                         if eulerian_walk[0] == eulerian_walk[-1]:
-                            txt = "The following Euler Circuit has found:"
+                            txt = "The following Euler Circuit has been found:"
                             for n in graph_elements['nodes']:
                                 if n['data']['label'] == eulerian_walk[0]:
                                     n['classes'] = 'red_nodes'
                                     break
                         # Case when it isn't a circuit
                         else:
-                            txt = "The following Euler Path has found:"
+                            txt = "The following Euler Path has been found:"
                             colored_nodes = 0
                             for n in graph_elements['nodes']:
                                 if colored_nodes == 2:
@@ -958,9 +982,34 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                                     n['classes'] = 'blue_nodes'
                                     colored_nodes += 1
                                     continue
-                        
                         # Creating the result string
                         result_text_children = html.P([txt, html.Br(), f"{eulerian_walk}"])
+
+                elif select_algorithm_dropdown == 'Search for a spanning tree by Breadth First Search':
+                    # Running algorithm
+                    spanning_forest = g.busqueda_a_profundidad()
+
+                    # Checking if result is a forest or single tree
+                    if len(spanning_forest) == 1:
+                        result_text_children = html.P("A single spanning tree has been found.")
+                    else:
+                        result_text_children = html.P(f"A spanning forest with {len(spanning_forest)} spanning trees has been found.")
+                    
+                    # Check every single tree in the fores
+                    for tree in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if len(tree) == 1 and type(tree[0]) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == tree[0].nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for edge in tree:
+                                for e in graph_elements['edges']:
+                                    if e['data']['id'] == edge.Id:
+                                        e['classes'] = 'red_edges'
+                                        break
+
             
             return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
         
