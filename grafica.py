@@ -465,7 +465,9 @@ class Grafica:
             if self.__grafica[vc]:
                 # ... se elige cualquier arista (vc,w) tal que el grado de w no sea 1...
                 arista_a_eliminar = None
+                contador = 0
                 for arista in self.__grafica[vc]:
+                    contador+=1
                     if arista.destino.grado != 1 :
                         
                         arista_a_eliminar = arista
@@ -478,7 +480,7 @@ class Grafica:
                         
                         # revisamos que el arco a eliminar no sea puente
                         # si solo hay un arco disponible, lo borramos aunque sea puente
-                        if self.es_conexa() or vc.grado == 1 :
+                        if self.es_conexa() or vc.grado == contador:
                             break
                         else:
                             # en caso de que el arco sea puente, lo volvemos a agregar a la grafica
