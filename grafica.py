@@ -450,29 +450,43 @@ class Grafica:
         if nodos_iniciales:
             vp = nodos_iniciales[0]
             vc = nodos_iniciales[1]
-            print(vp.nombre, vc.nombre)
+            
+            
         else:
             vp = vc = list(self.__grafica.keys())[0]
         
         # Si no, tomamos por default el primer nodo (Paseo cerrado)
         cola.encolar(vc)
         pila.apilar(vp)
-        
+       
         while vp.grado>0 and vc.grado>0:
             # Si vc tiene aristas...
+           
             if self.__grafica[vc]:
                 # ... se elige cualquier arista (vc,w) tal que el grado de w no sea 1...
                 arista_a_eliminar = None
                 for arista in self.__grafica[vc]:
-                    if arista.destino.grado != 1:
+                    if arista.destino.grado != 1 :
+                        
                         arista_a_eliminar = arista
-                        break
+                        w = arista_a_eliminar.destino
+                        self.eliminar_arista(vc.nombre, w.nombre)
+
+                        # si un nodo queda con grado cero, lo eliminamos
+                        if(vc.grado == 0):
+                            self.eliminar_nodo(vc.nombre)
+                        
+                        # revisamos que el arco a eliminar no sea puente
+                        # si solo hay un arco disponible, lo borramos aunque sea puente
+                        if self.es_conexa() or vc.grado == 1 :
+                            break
+                        else:
+                            # en caso de que el arco sea puente, lo volvemos a agregar a la grafica
+                            self.agregar_arista(vc.nombre, w.nombre)
                 
                 # ... si tal arista existe, eliminar (vc,w) de la gráfica y agregar w a la cola.
                 # Hacer vc = w
                 if arista_a_eliminar:
-                    w = arista_a_eliminar.destino
-                    self.eliminar_arista(vc.nombre, w.nombre)
                     cola.encolar(w)
                     vc = w
 
@@ -483,11 +497,13 @@ class Grafica:
                 arista_a_eliminar = self.__grafica[vp][0]
                 k = arista_a_eliminar.destino
                 self.eliminar_arista(vp.nombre, k.nombre)
+                # si el nodo queda con grado cero, lo eliminamos
+                if(vp.grado == 0):
+                            self.eliminar_nodo(vp.nombre)
                 pila.apilar(k)
                 vp = k
         
         # ---------- RECUPERAMOS EL PASEO ----------
-
         pila.desapilar() # Ignoramos el primero de la pila
         paseo = []
 
