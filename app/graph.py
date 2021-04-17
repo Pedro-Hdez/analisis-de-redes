@@ -943,6 +943,9 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
 
                     if eulerian_walk == False:
                         result_text_children = html.P("No Eulerian walk found.")
+                    elif eulerian_walk == -1:
+                            result_text_children = html.P("Graph is disconnected. No Eulerian walk found.")
+
                     else:
                         # To avoid problems with edges labels, we do all weights == -1
                         for e in graph_elements['edges']:
@@ -984,8 +987,35 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                                     continue
                         # Creating the result string
                         result_text_children = html.P([txt, html.Br(), f"{eulerian_walk}"])
-
+                
+                # Spanning tree with BFS
                 elif select_algorithm_dropdown == 'Search for a spanning tree by Breadth First Search':
+                    # Running algorithm
+                    spanning_forest = g.busqueda_a_lo_ancho()
+
+                    # Checking if result is a forest or single tree
+                    if len(spanning_forest) == 1:
+                        result_text_children = html.P("A single spanning tree has been found.")
+                    else:
+                        result_text_children = html.P(f"A spanning forest with {len(spanning_forest)} spanning trees has been found.")
+                    
+                    # Check every single tree in the fores
+                    for tree in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if len(tree) == 1 and type(tree[0]) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == tree[0].nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for edge in tree:
+                                for e in graph_elements['edges']:
+                                    if e['data']['id'] == edge.Id:
+                                        e['classes'] = 'red_edges'
+                                        break
+                
+                # Spanning tree with DFS
+                elif select_algorithm_dropdown == 'Search for a spanning tree by Depth First Search':
                     # Running algorithm
                     spanning_forest = g.busqueda_a_profundidad()
 
@@ -1009,7 +1039,66 @@ def updateGraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_b
                                     if e['data']['id'] == edge.Id:
                                         e['classes'] = 'red_edges'
                                         break
+                
+                elif select_algorithm_dropdown == "Search for a minimum spanning tree using Kruskal's algorithm":
+                    # Running algorithm
+                    spanning_forest = g.algoritmo_kruskal()
+                    # Checking if result is a forest or single tree
+                     
+                    if g.es_conexa():
+                        txt = "A minimum spanning tree with weight"
+                    else:
+                        txt ="A minimum spanning forest with weight"
+                    
+                    # Check every edge in spanning forest and getting the weight
+                    weight = 0
+                    for edge in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if type(edge) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == edge.nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for e in graph_elements['edges']:
+                                if e['data']['id'] == edge.Id:
+                                    e['classes'] = 'red_edges'
+                                    weight += float(e['data']['weight'])
+                                    break
+                    
+                    txt += f" {weight} has been found."
+                    result_text_children = html.P(txt)
+                
+                # PRIM'S ALGORITHM
+                else:
+                    # Running algorithm
+                    spanning_forest = g.algoritmo_prim()
 
+                    # Checking if result is a forest or single tree
+                    if len(spanning_forest) == 1:
+                        txt = "A minimum spanning tree with weight"
+                    else:
+                        txt = f"A minimum spanning forest with {len(spanning_forest)} spanning trees and weight"
+                    
+                    # Check every single tree in the fores
+                    weight = 0
+                    for tree in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if len(tree) == 1 and type(tree[0]) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == tree[0].nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for edge in tree:
+                                for e in graph_elements['edges']:
+                                    if e['data']['id'] == edge.Id:
+                                        e['classes'] = 'red_edges'
+                                        weight += float(e['data']['weight'])
+                                        break
+                    
+                    txt += f" {weight} has been found."
+                    result_text_children = html.P(txt)
             
             return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
         

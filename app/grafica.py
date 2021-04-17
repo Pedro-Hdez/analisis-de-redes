@@ -95,7 +95,7 @@ class Grafica:
         b: Nodo 2 de la arista.
         etiqueta: Etiqueta de la arista.
     """
-    def agregar_arista(self, a, b, Id, peso=None):
+    def agregar_arista(self, a, b, Id=None, peso=None):
         self.agregar_nodo(a)
         self.agregar_nodo(b)
 
@@ -125,20 +125,6 @@ class Grafica:
         
         return True
 
-    def agregar_arista_digrafica(self, a, b, peso=None):
-        self.agregar_nodo(a)
-        self.agregar_nodo(b)
-
-        nodo_a = self.buscar_nodo(a)
-        nodo_b = self.buscar_nodo(b)
-
-        if nodo_a and nodo_b:
-            self.__grafica[nodo_a].append( Arista(nodo_a, nodo_b, peso) )    
-            nodo_a.grado += 1
-            self.__num_aristas += 1
-            return True
-        
-        return False
     """
         Este método lee una gráfica desde un archivo
     """
@@ -156,19 +142,6 @@ class Grafica:
             elif length == 3:
                 self.agregar_arista(line[0], line[1], line[2])
 
-    def leer_digrafica(self, archivo):
-        file1 = open(archivo, 'r') 
-        Lines = file1.readlines() 
-
-        for line in Lines:
-            line = line.strip().split(",")
-            length = len(line)
-            if length == 1:
-                self.agregar_nodo(line[0])
-            elif length == 2:
-                self.agregar_arista(line[0], line[1])
-            elif length == 3:
-                self.agregar_arista_digrafica(line[0], line[1], line[2])
     """
         Este método busca una arista. En caso de que un nodo
         tenga varias aristas sin etiqueta hacia otro mismo nodo,
@@ -423,7 +396,10 @@ class Grafica:
         # Algoritmo de búsqueda
         visitados = []
         pila = Pila()
-        pila.apilar(list(self.__grafica.items())[0][0])
+        try:
+            pila.apilar(list(self.__grafica.items())[0][0])
+        except:
+            return True
         while not pila.es_vacia():
             nodo_actual = pila.desapilar()
             for arista in self.__grafica[nodo_actual]:
@@ -449,8 +425,9 @@ class Grafica:
         print(aristas)        
 
     def paseo_euler(self):
+        
         if not self.es_conexa():
-            return False
+            return -1
 
         nodos_iniciales = []
         copia = self.copiar().diccionario()
@@ -471,29 +448,46 @@ class Grafica:
         if nodos_iniciales:
             vp = nodos_iniciales[0]
             vc = nodos_iniciales[1]
-            print(vp.nombre, vc.nombre)
+            
+            
         else:
             vp = vc = list(self.__grafica.keys())[0]
         
         # Si no, tomamos por default el primer nodo (Paseo cerrado)
         cola.encolar(vc)
         pila.apilar(vp)
-        
+       
         while vp.grado>0 and vc.grado>0:
             # Si vc tiene aristas...
+           
             if self.__grafica[vc]:
                 # ... se elige cualquier arista (vc,w) tal que el grado de w no sea 1...
                 arista_a_eliminar = None
+                contador = 0
                 for arista in self.__grafica[vc]:
-                    if arista.destino.grado != 1:
+                    contador+=1
+                    if arista.destino.grado != 1 :
+                        
                         arista_a_eliminar = arista
-                        break
+                        w = arista_a_eliminar.destino
+                        id_arista = arista_a_eliminar.Id
+                        self.eliminar_arista(vc.nombre, w.nombre)
+
+                        # si un nodo queda con grado cero, lo eliminamos
+                        if(vc.grado == 0):
+                            self.eliminar_nodo(vc.nombre)
+                        
+                        # revisamos que el arco a eliminar no sea puente
+                        # si solo hay un arco disponible, lo borramos aunque sea puente
+                        if self.es_conexa() or vc.grado == contador:
+                            break
+                        else:
+                            # en caso de que el arco sea puente, lo volvemos a agregar a la grafica
+                            self.agregar_arista(vc.nombre, w.nombre)
                 
                 # ... si tal arista existe, eliminar (vc,w) de la gráfica y agregar w a la cola.
                 # Hacer vc = w
                 if arista_a_eliminar:
-                    w = arista_a_eliminar.destino
-                    self.eliminar_arista(vc.nombre, w.nombre)
                     cola.encolar(w)
                     vc = w
 
@@ -504,11 +498,13 @@ class Grafica:
                 arista_a_eliminar = self.__grafica[vp][0]
                 k = arista_a_eliminar.destino
                 self.eliminar_arista(vp.nombre, k.nombre)
+                # si el nodo queda con grado cero, lo eliminamos
+                if(vp.grado == 0):
+                            self.eliminar_nodo(vp.nombre)
                 pila.apilar(k)
                 vp = k
         
         # ---------- RECUPERAMOS EL PASEO ----------
-
         pila.desapilar() # Ignoramos el primero de la pila
         paseo = []
 
@@ -734,6 +730,20 @@ class Grafica:
         
         arbol.sort(key=lambda a:float(a.peso))
         self.__limpiar_etiquetas("aristas")
+
+        # Tomamos todos los nodos que no tengan aristas
+        arbol = arbol + [n for n in self.__grafica if n.grado == 0]
+
+        # Tomamos todos los nodos aislados que tengan solo ciclos
+        nodos_aislados_con_ciclos = []
+        for n in self.__grafica:
+            if n.grado != 0:
+                if n.grado / len(self.__grafica[n]) == 2:
+                    nodos_aislados_con_ciclos.append(n)
+
+        arbol = arbol + nodos_aislados_con_ciclos
+
+
         return arbol
     
     def algoritmo_prim(self):
@@ -790,6 +800,18 @@ class Grafica:
             bosque.append(arbol)
         
         self.__limpiar_etiquetas("nodos")
+
+        # Tomamos todos los nodos que no tengan aristas
+        bosque[-1] += [n for n in self.__grafica if n.grado == 0]
+
+        # Tomamos todos los nodos aislados que tengan solo ciclos
+        nodos_aislados_con_ciclos = []
+        for n in self.__grafica:
+            if n.grado != 0:
+                if n.grado / len(self.__grafica[n]) == 2:
+                    nodos_aislados_con_ciclos.append(n)
+
+        bosque[-1] += nodos_aislados_con_ciclos
         return bosque
 
     def dijkstra(self, origen, destino):
