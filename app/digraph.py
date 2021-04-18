@@ -7,7 +7,7 @@ from dash.dependencies import Output, Input, State
 import pandas as pd  # pip install pandas
 import plotly.express as px
 import random
-from grafica import *
+from digrafica import *
 import base64
 import digraph
 import uuid
@@ -26,6 +26,67 @@ select_algorithm_dropdown = dcc.Dropdown(
     style={"width":"32em"}
 )
 # -------------------------------------------------------
+default_stylesheet =[{
+                        'selector': '.edge',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(weight)',
+                            'target-arrow-shape': 'triangle',
+                        }
+                    },
+
+                    {
+                        'selector': '.red_edges',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(weight)',
+                            'line-color': '#FF8080'
+                        }
+                    },
+
+                    {
+                        'selector': '.blue_edges',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(weight)',
+                            'line-color': '#80B7FF'
+                        }
+                    },
+
+                    {
+                        'selector': '.node',
+                        'style': {
+                            'content': 'data(label)',
+                            'text-halign':'center',
+                            'text-valign':'center',
+                            'width':'30px',
+                            'height':'30px'
+                        }
+                    },
+
+                    {
+                        'selector':'.red_nodes',
+                        'style':{
+                            'content': 'data(label)',
+                            'text-halign':'center',
+                            'text-valign':'center',
+                            'width':'30px',
+                            'height':'30px',
+                            'background-color': '#FF8080'
+                        }
+                    },
+
+                    {
+                        'selector':'.blue_nodes',
+                        'style':{
+                            'content': 'data(label)',
+                            'text-halign':'center',
+                            'text-valign':'center',
+                            'width':'30px',
+                            'height':'30px',
+                            'background-color': '#80B7FF'
+                        }
+                    }]
 
 # ----- Dash Cytoscape instance to display data structures -----
 canvas = cyto.Cytoscape(
@@ -36,27 +97,7 @@ canvas = cyto.Cytoscape(
             boxSelectionEnabled = True,
             style={'width': '100%', 'height': '500px'},
             elements={'nodes': [], 'edges': []},
-            stylesheet=[
-                {
-                    'selector': 'edge',
-                    'style':{
-                        'curve-style': 'bezier',
-                        'target-arrow-shape': 'triangle',
-                        'label': 'data(weight)',
-                    }
-                },
-
-                {
-                    'selector': 'node',
-                    'style': {
-                        'content': 'data(label)',
-                        'text-halign':'center',
-                        'text-valign':'center',
-                        'width':'30px',
-                        'height':'30px'
-                    }
-                }
-            ]
+            stylesheet=default_stylesheet
         )
 # -------------------------------------------------------
 
@@ -104,6 +145,7 @@ edit_nodes_modal = html.Div(
     ]
 )
 # -------------------------------------------------------
+
 edit_edges_modal = html.Div(
     [
         dbc.Modal(
@@ -139,6 +181,9 @@ layout = html.Div(children=[
     # ----- Store objects to store nodes and edges information -----
     dcc.Store(
         id='nodes-info-digraph', data=[['a', 1]] # The first element is the first node name that we will use
+    ),
+    dcc.Store(
+        id='digraph-copy', data=None
     ),
  
     # 1- No nodes selected when edit node button is clicked
@@ -212,12 +257,20 @@ layout = html.Div(children=[
                             select_algorithm_dropdown
                         ]),
                         html.Td([
-                            dbc.Button("Run", size="sm", className="btn btn-warning"),
+                            dbc.Button("Run", id="run-algorithm-btn-digraph",size="sm", className="btn btn-warning mr-1"),
+                            dbc.Button("Clear", id="clear-result-btn-digraph",size="sm", className="btn btn-success mr-1"),
                         ], style={"padding":"1em"}),
                         
                     ])
                 ]), 
             ]),
+
+            html.Br(),
+
+            html.Div([
+                    html.H4('Result'),
+                    html.P(id="result-text-digraph")
+            ], id="result-div-digraph", style={'display':'None'}),
 
             html.Br(),
             html.Br(),
@@ -302,23 +355,30 @@ layout = html.Div(children=[
     [Output("digraph", "elements"), Output("nodes-degrees-table-digraph", "children"), 
      Output("number-of-nodes-label-digraph", "children"), Output("alert-info-digraph", "data"), 
      Output("number-of-edges-label-digraph", "children"), Output('nodes-info-digraph', 'data'), 
-     Output('upload-digraph-obj', 'contents')],
+     Output('upload-digraph-obj', 'contents'),
+     Output('result-text-digraph', 'children'), Output('result-div-digraph', 'style'),
+     Output('digraph-copy', 'data')],
 
     [Input("add-node-btn-digraph", "n_clicks"), Input("done-btn-edit-nodes-modal-digraph", "n_clicks"),
      Input("remove-nodes-btn-digraph", "n_clicks"), Input("edit-nodes-btn-digraph", "n_clicks"),
      Input("add-edge-btn-digraph", "n_clicks"), Input("done-btn-edit-edges-modal-digraph", "n_clicks"),
      Input("edit-edges-btn-digraph", "n_clicks"), Input('remove-edges-btn-digraph', 'n_clicks'), 
-     Input('upload-digraph-obj', 'contents')],
+     Input('upload-digraph-obj', 'contents'), Input('run-algorithm-btn-digraph', 'n_clicks'),
+     Input('clear-result-btn-digraph', 'n_clicks')],
     
     [State("digraph", "elements"), State("nodes-degrees-table-digraph", "children"), 
      State("number-of-nodes-label-digraph", "children"), State("edit-nodes-modal-body-digraph", "children"), 
      State("digraph", "selectedNodeData"), State("number-of-edges-label-digraph", "children"), 
-     State("edit-edges-modal-body-digraph", "children"), State("digraph", "selectedEdgeData"), State('nodes-info-digraph', 'data')]
+     State("edit-edges-modal-body-digraph", "children"), State("digraph", "selectedEdgeData"), 
+     State('nodes-info-digraph', 'data'), State('select-algorithm-dropown-digraph', 'value'), 
+     State('result-text-digraph', 'children'), State('result-div-digraph', 'style'), 
+     State('digraph-copy', 'data')]
 )
 def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_btn, edit_nodes_btn,
     add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, remove_edges_btn, upload_graph_contents,
-    graph_elements, nodes_degrees_table_children, number_of_nodes, edit_nodes_modal_body_childrens, 
-    selected_node_data, number_of_edges, edit_edges_modal_body_childrens, selected_edge_data, nodes_info):
+    run_algorithm_btn, clear_result_btn, graph_elements, nodes_degrees_table_children, number_of_nodes, 
+    edit_nodes_modal_body_childrens, selected_node_data, number_of_edges, edit_edges_modal_body_childrens, 
+    selected_edge_data, nodes_info, select_algorithm_dropdown, result_text_children, result_div_style, graph_copy):
     # Getting the callback context to know which input triggered this callback
     ctx = dash.callback_context
 
@@ -328,6 +388,9 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
         # ----- Add node case -----
         if btn_triggered == "add-node-btn-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
 
             # Getting an unique initial name
             while True:
@@ -353,7 +416,8 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
             # Adding the node to the graph_elements
             node = {'data': {'id': node_id, 'label': node_name, 'positive_degree':0, 'negative_degree':0},
-                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
+                    'classes':'node'}
             
             graph_elements['nodes'].append(node)
 
@@ -381,10 +445,13 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Edit nodes case -----
         elif btn_triggered == "done-btn-edit-nodes-modal-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
 
             for children in edit_nodes_modal_body_childrens:
                 # Getting the new label
@@ -440,20 +507,26 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ---- Edit nodes button alert handle -----
         elif btn_triggered == "edit-nodes-btn-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             print("Selected node data")
             print(selected_node_data)
             if not selected_node_data:
                 alert = 1
                 print("NADA SELECCIONADO")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
 
         # ----- Remove nodes case ------
         elif btn_triggered == "remove-nodes-btn-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if selected_node_data:
                 # The ids of the nodes to remove are in selected node data
@@ -495,10 +568,13 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Add Edge case -----
         elif btn_triggered == "add-edge-btn-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             # When no node is selected
             if not selected_node_data:
@@ -513,7 +589,8 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 loop_id = str(uuid.uuid1())
 
                 loop = {'data': {'source': node, 
-                            'target': node, 'weight': "0", 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
+                            'target': node, 'weight': "0", 'id':loop_id, 'source_node':node_label, 'target_node':node_label},
+                            'classes':'edge'}
                 graph_elements['edges'].append(loop)
 
                 # Updating the node degree in the nodes degrees table
@@ -539,7 +616,8 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
                 edge_id = str(uuid.uuid1())
                 edge = {'data': { 'source': node1, 
-                                'target': node2, 'weight': "0", 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
+                                'target': node2, 'weight': "0", 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label},
+                                'classes':'edge'}
                 graph_elements['edges'].append(edge)
 
                 # Updating the node degree in the nodes degrees table
@@ -571,10 +649,13 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             for c in edit_edges_modal_body_childrens:
                 # Getting the info of the edges
                 
@@ -673,19 +754,25 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ---- Edit edges button alert handle -----
         elif btn_triggered == "edit-edges-btn-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if not selected_edge_data:
                 alert = 5
             
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Remove edges case -----
         elif btn_triggered == "remove-edges-btn-digraph":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if not selected_edge_data:
                 alert = 6
@@ -719,7 +806,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
     
         # ----- Upload Graph Case -----
         elif btn_triggered == 'upload-digraph-obj':
@@ -768,7 +855,8 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         
                         # If node doesn't exist, then add it to the new nodes
                         node = {'data': {'id': str(uuid.uuid1()), 'label': element_splitted[0], 'positive_degree':0,'negative_degree':0},
-                                         'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                                         'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
+                                         'classes':'node'}
                         new_nodes.append(node)
 
                         # Adding the node to the degrees dict
@@ -794,7 +882,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             node1_id = str(uuid.uuid1())
                             node = {'data': {'id': node1_id, 'label': element_splitted[0], 'positive_degree':0, 'negative_degree':0},
                                     'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
-                                    'positive_degree':0, 'negative_degree':0}
+                                    'classes':'node'}
                             new_nodes.append(node)
                             number_of_nodes += 1
 
@@ -814,7 +902,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             node2_id = str(uuid.uuid1())
                             node = {'data': {'id': node2_id, 'label': element_splitted[1], 'positive_degree':0, 'negative_degree':0},
                                     'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
-                                    'positive_degree':0, 'negative_degree':0}
+                                    'classes':'node'}
                             new_nodes.append(node)
                             number_of_nodes += 1
 
@@ -830,7 +918,8 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
                         edge = {'data': { 'source': node1_id, 
                                 'target': node2_id, 'weight': weight, 'id':edge_id, 
-                                'source_node':element_splitted[0], 'target_node':element_splitted[1]}}
+                                'source_node':element_splitted[0], 'target_node':element_splitted[1]},
+                                'classes':'edge'}
                         new_edges.append(edge)
                         number_of_edges += 1
 
@@ -864,7 +953,252 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, None
+        
+        # ************** RUN ALGORITHMS LOGIC *******************
+        elif btn_triggered == 'run-algorithm-btn-digraph':
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+
+            graph_elements_copy = copy.deepcopy(graph_elements)
+            alert = None
+
+            if len(graph_elements['nodes']) == 0 and len(graph_elements['edges']) == 0:
+                alert = 8
+                
+
+            if not alert:    
+
+                # Creat a Grafica object
+                g = Digrafica()
+                # Adding all nodes
+                for node in graph_elements['nodes']:
+                    g.agregar_nodo(node['data']['label'])
+                # Adding all edges
+                for edge in graph_elements['edges']:
+                    g.agregar_arco(edge['data']['source_node'], edge['data']['target_node'],
+                                    edge['data']['id'], float(edge['data']['weight']))
+                
+                # ----- ALGORITHM TO RUN -----
+                # DIjkstra between two nodes
+                if select_algorithm_dropdown == "Find shortest path between two nodes using Dijkstra's algorithm":
+                    # Validate if the number of selected nodes is correct
+                    if len(selected_node_data) != 2:
+                        # The algorithm expects exactly two nodes. Please select them and try again
+                        alert = 9
+                    
+                    # If number of selected nodes is correct, run the algorithm
+                    if not alert:
+                        result_div_style = {'display':''}
+                        # Running the algorithm
+                        path = g.dijkstra(selected_node_data[0]['label'], selected_node_data[1]['label'])
+                        
+                        # Check if path exists
+                        if not path:
+                            result_text_children = html.P(f"There is no route between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}.")
+                        else:
+                                # Adding a class color to the source and target node
+                                updated_nodes = 0
+                                for node in graph_elements['nodes']:
+                                    if updated_nodes == 2:
+                                        break
+                                    if node['data']['label'] == selected_node_data[0]['label']:
+                                        node['classes'] = 'red_nodes'
+                                        updated_nodes += 1
+                                        continue
+                                    elif node['data']['label'] == selected_node_data[1]['label']:
+                                        node['classes'] = 'blue_nodes'
+                                        updated_nodes += 1
+                                        continue
+                                
+                                # Coloring all the route edges
+                                length = 0
+                                for edge in path:
+                                    for e in graph_elements['edges']:
+                                        if edge.Id == e['data']['id']:
+                                            e['classes'] == 'red_edges'
+                                            length += float(e['data']['weight'])
+                                            break
+                                
+                                result_text_children = html.P(f"The shortest path between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}. has length {length}")
+                        
+                # Find Eulerian Paths
+                elif select_algorithm_dropdown == 'Search for Euler walks':
+                    # Running algorithm
+                    eulerian_walk = g.paseo_euler()
+
+                    if eulerian_walk == False:
+                        result_text_children = html.P("No Eulerian walk found.")
+                    elif eulerian_walk == -1:
+                            result_text_children = html.P("Graph is disconnected. No Eulerian walk found.")
+
+                    else:
+                        # To avoid problems with edges labels, we do all weights == -1
+                        for e in graph_elements['edges']:
+                            e['data']['weight'] = -1
+
+                        # Labeling the edges according to their order in eulerian walk
+                        for i in range(len(eulerian_walk) - 1):
+                            node1 = eulerian_walk[i]
+                            node2 = eulerian_walk[i+1]
+                            for e in graph_elements['edges']:
+                                if (((e['data']['source_node'] == node1 and e['data']['target_node'] == node2) or
+                                   (e['data']['source_node'] == node2 and e['data']['target_node'] == node1)) and
+                                   e['data']['weight'] == -1):
+                                   e['data']['weight'] = i+1
+                                   break
+                        
+                        # Coloring the first and last node of the path
+                        # Case when it's a circuid
+                        if eulerian_walk[0] == eulerian_walk[-1]:
+                            txt = "The following Euler Circuit has been found:"
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == eulerian_walk[0]:
+                                    n['classes'] = 'red_nodes'
+                                    break
+                        # Case when it isn't a circuit
+                        else:
+                            txt = "The following Euler Path has been found:"
+                            colored_nodes = 0
+                            for n in graph_elements['nodes']:
+                                if colored_nodes == 2:
+                                    break
+                                if n['data']['label'] == eulerian_walk[0]:
+                                    n['classes'] = 'red_nodes'
+                                    colored_nodes += 1
+                                    continue
+                                if n['data']['label'] == eulerian_walk[-1]:
+                                    n['classes'] = 'blue_nodes'
+                                    colored_nodes += 1
+                                    continue
+                        # Creating the result string
+                        result_text_children = html.P([txt, html.Br(), f"{eulerian_walk}"])
+                
+                # Spanning tree with BFS
+                elif select_algorithm_dropdown == 'Search for a spanning tree by Breadth First Search':
+                    # Running algorithm
+                    spanning_forest = g.busqueda_a_lo_ancho()
+
+                    # Checking if result is a forest or single tree
+                    if len(spanning_forest) == 1:
+                        result_text_children = html.P("A single spanning tree has been found.")
+                    else:
+                        result_text_children = html.P(f"A spanning forest with {len(spanning_forest)} spanning trees has been found.")
+                    
+                    # Check every single tree in the fores
+                    for tree in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if len(tree) == 1 and type(tree[0]) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == tree[0].nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for edge in tree:
+                                for e in graph_elements['edges']:
+                                    if e['data']['id'] == edge.Id:
+                                        e['classes'] = 'red_edges'
+                                        break
+                
+                # Spanning tree with DFS
+                elif select_algorithm_dropdown == 'Search for a spanning tree by Depth First Search':
+                    # Running algorithm
+                    spanning_forest = g.busqueda_a_profundidad()
+
+                    # Checking if result is a forest or single tree
+                    if len(spanning_forest) == 1:
+                        result_text_children = html.P("A single spanning tree has been found.")
+                    else:
+                        result_text_children = html.P(f"A spanning forest with {len(spanning_forest)} spanning trees has been found.")
+                    
+                    # Check every single tree in the fores
+                    for tree in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if len(tree) == 1 and type(tree[0]) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == tree[0].nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for edge in tree:
+                                for e in graph_elements['edges']:
+                                    if e['data']['id'] == edge.Id:
+                                        e['classes'] = 'red_edges'
+                                        break
+                
+                elif select_algorithm_dropdown == "Search for a minimum spanning tree using Kruskal's algorithm":
+                    # Running algorithm
+                    spanning_forest = g.algoritmo_kruskal()
+                    # Checking if result is a forest or single tree
+                     
+                    if g.es_conexa():
+                        txt = "A minimum spanning tree with weight"
+                    else:
+                        txt ="A minimum spanning forest with weight"
+                    
+                    # Check every edge in spanning forest and getting the weight
+                    weight = 0
+                    for edge in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if type(edge) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == edge.nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for e in graph_elements['edges']:
+                                if e['data']['id'] == edge.Id:
+                                    e['classes'] = 'red_edges'
+                                    weight += float(e['data']['weight'])
+                                    break
+                    
+                    txt += f" {weight} has been found."
+                    result_text_children = html.P(txt)
+                
+                # PRIM'S ALGORITHM
+                else:
+                    # Running algorithm
+                    spanning_forest = g.algoritmo_prim()
+
+                    # Checking if result is a forest or single tree
+                    if len(spanning_forest) == 1:
+                        txt = "A minimum spanning tree with weight"
+                    else:
+                        txt = f"A minimum spanning forest with {len(spanning_forest)} spanning trees and weight"
+                    
+                    # Check every single tree in the fores
+                    weight = 0
+                    for tree in spanning_forest:
+                        # Check if it is an empty tree (just one node) and coloring it with blue
+                        if len(tree) == 1 and type(tree[0]) == Nodo:
+                            for n in graph_elements['nodes']:
+                                if n['data']['label'] == tree[0].nombre:
+                                    n['classes'] = 'blue_nodes'
+                                    break
+                        else:
+                            for edge in tree:
+                                for e in graph_elements['edges']:
+                                    if e['data']['id'] == edge.Id:
+                                        e['classes'] = 'red_edges'
+                                        weight += float(e['data']['weight'])
+                                        break
+                    
+                    txt += f" {weight} has been found."
+                    result_text_children = html.P(txt)
+            
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
+        
+        # ----- Clear result case -----
+        elif btn_triggered == 'clear-result-btn-digraph':
+            alert = None
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
+            result_text_children = []
+            result_div_style = {'display':'None'}
+
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+
     else:
         return dash.no_update
 
