@@ -3,6 +3,8 @@ import operator
 import math
 from typing import MappingView
 from estructuras_datos import *
+import sys
+sys.setrecursionlimit(5000)
 
 class Arco:
     """
@@ -29,7 +31,7 @@ class Nodo:
         self.res_max=res_max
         self.etiqueta = None
         self.grado_positivo = 0
-        self.grado_negativo = 0,
+        self.grado_negativo = 0
         self.id_gui = id_gui
 
 #----------------------------------------------------------------
@@ -145,7 +147,7 @@ class Red:
                 self.agregar_nodo(line[0])
             elif length == 3:
                 self.agregar_nodo(line[0], float(line[1]), float(line[2]))
-            elif length == 4:
+            elif length == 5:
                 self.agregar_arco(line[0], line[1], float(line[2]), float(line[3]), float(line[4]))
     
     def buscar_arco(self, a, b, res_min=0, flujo=0, capacidad=0):
@@ -375,10 +377,259 @@ class Red:
                 for arco in self.__digrafica[nodo]["salientes"]:
                     arco.etiqueta = None
         elif tipo == "todo":
-            for nodo in self.__digrafica:
+            for nodo in self.__red:
                 for arco in self.__red[nodo]["entrantes"]:
                     arco.etiqueta = None
                 for arco in self.__red[nodo]["salientes"]:
                     arco.etiqueta = None
         else:
             raise ValueError(f"Error en el tipo dado ({tipo}). Valores aceptados: 'nodos', 'aristas', 'todos'")
+
+    def imprimir_arcos(self):
+        for nodo in self.__red:
+                for arco in self.__red[nodo]["salientes"]:
+                    print("(",arco.origen.nombre,', ',arco.destino.nombre,', ',arco.res_min,', ',arco.flujo,', ',arco.capacidad,')')
+
+    def fulkerson(self,fuente,sumidero):
+            arcos_visitados = []
+            cadena = []
+           
+            # buscamos cadenas aumentantes con busqueda a lo profundo
+            self.dfs(fuente,fuente,sumidero,cadena,arcos_visitados)
+
+            # ciclo donde actualizaremos el flujo de las cadenas aumentantes, mientras existan estas cadenas
+            while True:
+                flujo_cadena = math.inf
+
+                # calculamos el flujo con el que actualizarmos el flujo de la cadena aumentante
+                for arco in cadena:       
+                    if(arco.etiqueta == "sentidoPropio"):
+                         # caso donde el arco va en sentido propio
+                        if((arco.capacidad - arco.flujo) < flujo_cadena):
+                            flujo_cadena = arco.capacidad - arco.flujo
+                    else:
+                        # caso donde el arco va en sentido impropio
+                        if(arco.etiqueta == "sentidoImpropio"):
+                            if(arco.flujo <= flujo_cadena and arco.flujo > arco.res_min):
+                                flujo_cadena = arco.flujo - arco.res_min
+                
+                # actualizamos el flujo de los arcos de la cadena aumentante
+                for arco in cadena:
+                    # caso donde el arco va en sentido propio, sumamos flujo
+                    if(arco.etiqueta == "sentidoPropio"):
+                        arco.flujo += flujo_cadena
+
+                    # caso donde el arco va en sentido impropio, restamos flujo
+                    if(arco.etiqueta == "sentidoImpropio"):
+                        arco.flujo -= flujo_cadena
+                   
+                cadena= []
+                arcos_visitados = []
+                # reseteamos las etiquetas de los nodos
+                for nodo in self.__red:
+                    nodo.etiqueta = None
+                # buscamos una nueva cadena aumentante
+                self.dfs(fuente,fuente,sumidero,cadena,arcos_visitados)
+
+                # si ya no hay cadenas aumentantes, nos detenemos
+                if not cadena:
+                    break
+
+    def flujo_maximo(self,fuentes,sumideros):
+
+        # revisaremos cuantos nodos fuentes y sumideros hay 
+        # si hay mas de un sumireo o mas de un nodo fuente, crearemos un super fuente o un super sumidero
+        if len(fuentes) > 1:
+            self.agregar_nodo('A+')
+            fuente = self.buscar_nodo('A+')
+            for nodo in fuentes:
+                self.agregar_arco(fuente.nombre, nodo,0,0,math.inf)
+
+        if len(sumideros) > 1:
+            self.agregar_nodo('Z-')
+            sumidero = self.buscar_nodo('Z-')
+            for nodo in sumideros:
+                self.agregar_arco(nodo, sumidero.nombre,0,0,math.inf)
+
+        # si solo hay un sumidero o un solo fuente, los definimos
+        if(len(fuentes)==1 ):
+            fuente = self.buscar_nodo(fuentes[0])
+        if(len(sumideros)==1 ):
+            sumidero = self.buscar_nodo(sumideros[0])
+
+        # revisaremos el caso donde hay restricciones en uno o mas nodos
+        nodos_ficticios = []
+        lista_nodos = []
+        # lista con los nodos originales de la lista
+        for nodo in self.__red:
+            lista_nodos.append(nodo)
+        
+      
+        # iteramos los nodos para revisar si tienen restricciones
+        for nodo in lista_nodos:
+            if nodo.res_min > 0 or nodo.res_max != math.inf:
+                # si el nodo tiene restricción, agregamos un nodo ficticio
+                self.agregar_nodo(nodo.nombre+ '"')
+                # metemos el nodo ficticio creado en una lista
+                nodos_ficticios.append(nodo)
+
+                # creamos una lista de los arcos salientes del nodo que tiene restricciones
+                lista_arcos = []
+                for arco in self.__red[nodo]["salientes"]:
+                    lista_arcos.append(arco)
+
+                # creamos un arco ficticio entre el nodo con restricciones y en nuevo nodo ficticio creado
+                self.agregar_arco(nodo.nombre, nodo.nombre+ '"',nodo.res_min,0,nodo.res_max)
+
+                for arco in lista_arcos:   
+                    # los arcos salientes del nodo con restricciones ahora serán los arcos salientes del nuevo nodo ficticios           
+                    self.agregar_arco(nodo.nombre+ '"', arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
+                    # eliminamos momentaneamente los arcos salientes del nodo que tiene restricciones
+                    self.eliminar_arco(nodo.nombre,arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
+
+        # revisamos los arcos que tienen restriccion y los metemos a una lista
+        arcos_con_restriccion = []            
+        for nodo in self.__red:
+            for arco in self.__red[nodo]["salientes"]:
+                if(arco.res_min > 0):
+                    arcos_con_restriccion.append(arco)
+
+        # caso donde existen arcos con restriccion
+        if(len(arcos_con_restriccion)> 0):
+            # lista donde guardaremos las restricciones de los arcos con restriccion minima
+            restricciones_minimas = []
+           
+            # para cada arco con restriccion, creamos un arco ficticio desde el origen de ese arco hacia un sumidero ficticio
+            # tambien creamos un arco ficticio desde un fuente ficticio hacia el nodo destino del arco con restricción
+            for arco in arcos_con_restriccion:
+                restricciones_minimas.append(arco.res_min)
+                # creamos los arcos ficticios para los arcos que tiene restricción
+                self.agregar_arco(arco.origen.nombre, "SumideroFicticio",0,0,arco.res_min)
+                self.agregar_arco("FuenteFicticio", arco.destino.nombre,0,0,arco.res_min)
+
+                # actualizamos la capacidad y restricción minima del arco provisionalmente, para que todo los arcos tengan restricción minima de 0
+                arco.capacidad = arco.capacidad - arco.res_min
+                arco.res_min = 0
+            
+            # agreamos dos arcos ficticiones que conecten al nodo fuente y al nodo sumidero con capacidad infinita
+            self.agregar_arco(fuente.nombre, sumidero.nombre,0,0,math.inf)
+            self.agregar_arco(sumidero.nombre, fuente.nombre,0,0,math.inf)
+
+            # guardamos los arcos ficticios en una lista para eliminarlos después
+            arcos_fuente_sumidero = []
+            arcos_fuente_sumidero.append(self.buscar_arco(fuente.nombre, sumidero.nombre,0,0,math.inf))
+            arcos_fuente_sumidero.append(self.buscar_arco(sumidero.nombre, fuente.nombre,0,0,math.inf))
+            
+            # buscamos los nodos fuete y sumidero ficticios creados para el caso donde hay arcos con restricciones
+            fuenteFicticio = self.buscar_nodo("FuenteFicticio")
+            sumideroFicticio = self.buscar_nodo("SumideroFicticio")
+            
+            # aplicamos ford fulkerson a la red, con los nodos fuente y sumidero ficticios
+            self.fulkerson(fuenteFicticio,sumideroFicticio)
+        
+            # regresamos a la normalidad los arcos que tenian reestriccion minima
+            arcos_sumideroFicticio = []
+            for arco in self.__red[sumideroFicticio]['entrantes']:
+                arcos_sumideroFicticio.append(arco)
+            for arco in arcos_con_restriccion:
+                res_min = restricciones_minimas.pop(0)
+                # recuperamos la restriccion y capacidad originales de los arcos
+                arco.res_min = res_min
+                arco.flujo += arcos_sumideroFicticio.pop(0).flujo
+                arco.capacidad = arco.capacidad + res_min
+            # eliminamos los nodos ficticios creados para el caso donde hay arcos con reestriccion minima
+            self.eliminar_nodo(fuenteFicticio.nombre)
+            self.eliminar_nodo(sumideroFicticio.nombre)
+          
+
+            
+            for arco in arcos_fuente_sumidero:
+                self.eliminar_arco(arco.origen.nombre,arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
+            
+        
+       
+        # aplicamos for fulkerson a la red
+        self.fulkerson(fuente,sumidero)
+
+
+        # regresamos los nodos con reestriccion particionados a la normalidad
+        for nodo in nodos_ficticios:
+            nodo_ficticio = self.buscar_nodo(nodo.nombre+ '"')
+            lista_arcos_ficticios = []
+            for arco in self.__red[nodo_ficticio]["salientes"]:
+                lista_arcos_ficticios.append(arco)
+            
+            for arco in lista_arcos_ficticios:
+                self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
+            self.eliminar_nodo(nodo.nombre+ '"')
+
+        # eliminamos los nodos super fuente y super sumidero en caso de que fueran requeridos
+        # para el caso donde hay mas de un sumidero o mas de una fuente        
+        if(len(fuentes)>1):
+            self.eliminar_nodo('A+')
+        if(len(sumideros)>1):
+            self.eliminar_nodo('Z-')
+
+
+        # calculamos el flujo final que reciben los sumideros
+        flujo_final = 0
+        for nodo in sumideros:
+            for arco in self.__red[self.buscar_nodo(nodo)]["entrantes"]:
+                flujo_final += arco.flujo
+            for arco in self.__red[self.buscar_nodo(nodo)]["salientes"]:
+                flujo_final -= arco.flujo
+
+        return flujo_final
+
+    def dfs(self, node,fuente, sumidero, cadena,arcos_visitados):
+        bool = False
+        node.etiqueta == "marcado"
+        for saliente in self.__red[node]["salientes"]: 
+            if(saliente.flujo < saliente.capacidad and saliente not in arcos_visitados and saliente.destino.etiqueta != "marcado"): 
+      
+                bool = True
+                arcos_visitados.append(saliente)
+                cadena.append(saliente) 
+                saliente.etiqueta = "sentidoPropio"
+                if(saliente.destino == sumidero):
+
+                    return cadena
+                self.dfs(saliente.destino,fuente,sumidero,cadena,arcos_visitados)
+                break
+
+        if(bool == False):
+            for entrante in self.__red[node]["entrantes"]: 
+                if(entrante.flujo > 0 and entrante.flujo > entrante.res_min and entrante not in arcos_visitados and entrante.origen.etiqueta != "marcado"): 
+                    bool = True
+                    arcos_visitados.append(entrante)
+                    cadena.append(entrante) 
+                    entrante.etiqueta = "sentidoImpropio"
+                    if(entrante.origen == sumidero):
+                        return cadena
+                    self.dfs(entrante.origen,fuente,sumidero,cadena,arcos_visitados)
+                    break
+        
+        
+
+        if(bool == False):     
+            if(len(cadena)>=1):
+                if(cadena[len(cadena)-1].etiqueta == "sentidoPropio"):      
+                    nodo = cadena[len(cadena)-1].origen
+                    cadena.pop(len(cadena)-1)
+                    node.etiqueta = None
+                    self.dfs(nodo,fuente,sumidero,cadena,arcos_visitados)
+                    return None
+                elif(cadena[len(cadena)-1].etiqueta == "sentidoImpropio"):
+                    nodo = cadena[len(cadena)-1].destino
+                    cadena.pop(len(cadena)-1)
+                    node.etiqueta = None
+                    self.dfs(nodo,fuente,sumidero,cadena,arcos_visitados)
+                    return None
+        
+      
+        
+
+      
+             
+            
+        
