@@ -40,7 +40,8 @@ default_stylesheet =[{
                         'style':{
                             'curve-style': 'bezier',
                             'label': 'data(weight)',
-                            'line-color': '#FF8080'
+                            'line-color': '#FF8080',
+                            'target-arrow-shape': 'triangle'
                         }
                     },
 
@@ -49,7 +50,8 @@ default_stylesheet =[{
                         'style':{
                             'curve-style': 'bezier',
                             'label': 'data(weight)',
-                            'line-color': '#80B7FF'
+                            'line-color': '#80B7FF',
+                            'target-arrow-shape': 'triangle',
                         }
                     },
 
@@ -991,12 +993,18 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                     if not alert:
                         result_div_style = {'display':''}
                         # Running the algorithm
-                        path = g.dijkstra(selected_node_data[0]['label'], selected_node_data[1]['label'])
+                        path = g.dijkstra_general(selected_node_data[0]['label'], selected_node_data[1]['label'])
                         
                         # Check if path exists
                         if not path:
                             result_text_children = html.P(f"There is no route between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}.")
                         else:
+                                # Check if we have a cycle
+                                cycle = False
+                                if path[0] == "ciclo":
+                                    path = path[1:-1]
+                                    cycle = True
+
                                 # Adding a class color to the source and target node
                                 updated_nodes = 0
                                 for node in graph_elements['nodes']:
@@ -1011,180 +1019,75 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                         updated_nodes += 1
                                         continue
                                 
-                                # Coloring all the route edges
+                                # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
                                 length = 0
                                 for edge in path:
                                     for e in graph_elements['edges']:
+                                        print(edge.Id, e['data']['id'])
                                         if edge.Id == e['data']['id']:
-                                            e['classes'] == 'red_edges'
+                                            if cycle:
+                                                e['classes'] = 'red_edges'
+                                            else:
+                                                e['classes'] = 'blue_edges'
                                             length += float(e['data']['weight'])
                                             break
                                 
-                                result_text_children = html.P(f"The shortest path between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}. has length {length}")
+                                if not cycle:
+                                    result_text_children = html.P(f"The shortest path between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']} has length {length}")
+                                else:
+                                    result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
                         
-                # Find Eulerian Paths
-                elif select_algorithm_dropdown == 'Search for Euler walks':
-                    # Running algorithm
-                    eulerian_walk = g.paseo_euler()
-
-                    if eulerian_walk == False:
-                        result_text_children = html.P("No Eulerian walk found.")
-                    elif eulerian_walk == -1:
-                            result_text_children = html.P("Graph is disconnected. No Eulerian walk found.")
-
-                    else:
-                        # To avoid problems with edges labels, we do all weights == -1
-                        for e in graph_elements['edges']:
-                            e['data']['weight'] = -1
-
-                        # Labeling the edges according to their order in eulerian walk
-                        for i in range(len(eulerian_walk) - 1):
-                            node1 = eulerian_walk[i]
-                            node2 = eulerian_walk[i+1]
-                            for e in graph_elements['edges']:
-                                if (((e['data']['source_node'] == node1 and e['data']['target_node'] == node2) or
-                                   (e['data']['source_node'] == node2 and e['data']['target_node'] == node1)) and
-                                   e['data']['weight'] == -1):
-                                   e['data']['weight'] = i+1
-                                   break
+                # Shortest path from one node to all others with Dijkstra's Algorithm
+                elif select_algorithm_dropdown == "Find shortest paths from one node to all others using Dijkstra's algorithm":
+                    # Validate if the number of selected nodes is correct
+                    if len(selected_node_data) != 1:
+                        # The algorithm expects exactly one node. Please select them and try again
+                        alert = 10
+                    
+                    # If number of selected nodes is correct, run the algorithm
+                    if not alert:
+                        result_div_style = {'display':''}
+                        # Running the algorithm
+                        path = g.dijkstra_general(selected_node_data[0]['label'])
                         
-                        # Coloring the first and last node of the path
-                        # Case when it's a circuid
-                        if eulerian_walk[0] == eulerian_walk[-1]:
-                            txt = "The following Euler Circuit has been found:"
-                            for n in graph_elements['nodes']:
-                                if n['data']['label'] == eulerian_walk[0]:
-                                    n['classes'] = 'red_nodes'
-                                    break
-                        # Case when it isn't a circuit
+                        # Check if path exists
+                        if not path:
+                            result_text_children = html.P(f"There is no route between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}.")
                         else:
-                            txt = "The following Euler Path has been found:"
-                            colored_nodes = 0
-                            for n in graph_elements['nodes']:
-                                if colored_nodes == 2:
-                                    break
-                                if n['data']['label'] == eulerian_walk[0]:
-                                    n['classes'] = 'red_nodes'
-                                    colored_nodes += 1
-                                    continue
-                                if n['data']['label'] == eulerian_walk[-1]:
-                                    n['classes'] = 'blue_nodes'
-                                    colored_nodes += 1
-                                    continue
-                        # Creating the result string
-                        result_text_children = html.P([txt, html.Br(), f"{eulerian_walk}"])
-                
-                # Spanning tree with BFS
-                elif select_algorithm_dropdown == 'Search for a spanning tree by Breadth First Search':
-                    # Running algorithm
-                    spanning_forest = g.busqueda_a_lo_ancho()
-
-                    # Checking if result is a forest or single tree
-                    if len(spanning_forest) == 1:
-                        result_text_children = html.P("A single spanning tree has been found.")
-                    else:
-                        result_text_children = html.P(f"A spanning forest with {len(spanning_forest)} spanning trees has been found.")
-                    
-                    # Check every single tree in the fores
-                    for tree in spanning_forest:
-                        # Check if it is an empty tree (just one node) and coloring it with blue
-                        if len(tree) == 1 and type(tree[0]) == Nodo:
-                            for n in graph_elements['nodes']:
-                                if n['data']['label'] == tree[0].nombre:
-                                    n['classes'] = 'blue_nodes'
-                                    break
-                        else:
-                            for edge in tree:
-                                for e in graph_elements['edges']:
-                                    if e['data']['id'] == edge.Id:
-                                        e['classes'] = 'red_edges'
-                                        break
-                
-                # Spanning tree with DFS
-                elif select_algorithm_dropdown == 'Search for a spanning tree by Depth First Search':
-                    # Running algorithm
-                    spanning_forest = g.busqueda_a_profundidad()
-
-                    # Checking if result is a forest or single tree
-                    if len(spanning_forest) == 1:
-                        result_text_children = html.P("A single spanning tree has been found.")
-                    else:
-                        result_text_children = html.P(f"A spanning forest with {len(spanning_forest)} spanning trees has been found.")
-                    
-                    # Check every single tree in the fores
-                    for tree in spanning_forest:
-                        # Check if it is an empty tree (just one node) and coloring it with blue
-                        if len(tree) == 1 and type(tree[0]) == Nodo:
-                            for n in graph_elements['nodes']:
-                                if n['data']['label'] == tree[0].nombre:
-                                    n['classes'] = 'blue_nodes'
-                                    break
-                        else:
-                            for edge in tree:
-                                for e in graph_elements['edges']:
-                                    if e['data']['id'] == edge.Id:
-                                        e['classes'] = 'red_edges'
-                                        break
-                
-                elif select_algorithm_dropdown == "Search for a minimum spanning tree using Kruskal's algorithm":
-                    # Running algorithm
-                    spanning_forest = g.algoritmo_kruskal()
-                    # Checking if result is a forest or single tree
-                     
-                    if g.es_conexa():
-                        txt = "A minimum spanning tree with weight"
-                    else:
-                        txt ="A minimum spanning forest with weight"
-                    
-                    # Check every edge in spanning forest and getting the weight
-                    weight = 0
-                    for edge in spanning_forest:
-                        # Check if it is an empty tree (just one node) and coloring it with blue
-                        if type(edge) == Nodo:
-                            for n in graph_elements['nodes']:
-                                if n['data']['label'] == edge.nombre:
-                                    n['classes'] = 'blue_nodes'
-                                    break
-                        else:
-                            for e in graph_elements['edges']:
-                                if e['data']['id'] == edge.Id:
-                                    e['classes'] = 'red_edges'
-                                    weight += float(e['data']['weight'])
-                                    break
-                    
-                    txt += f" {weight} has been found."
-                    result_text_children = html.P(txt)
-                
-                # PRIM'S ALGORITHM
-                else:
-                    # Running algorithm
-                    spanning_forest = g.algoritmo_prim()
-
-                    # Checking if result is a forest or single tree
-                    if len(spanning_forest) == 1:
-                        txt = "A minimum spanning tree with weight"
-                    else:
-                        txt = f"A minimum spanning forest with {len(spanning_forest)} spanning trees and weight"
-                    
-                    # Check every single tree in the fores
-                    weight = 0
-                    for tree in spanning_forest:
-                        # Check if it is an empty tree (just one node) and coloring it with blue
-                        if len(tree) == 1 and type(tree[0]) == Nodo:
-                            for n in graph_elements['nodes']:
-                                if n['data']['label'] == tree[0].nombre:
-                                    n['classes'] = 'blue_nodes'
-                                    break
-                        else:
-                            for edge in tree:
-                                for e in graph_elements['edges']:
-                                    if e['data']['id'] == edge.Id:
-                                        e['classes'] = 'red_edges'
-                                        weight += float(e['data']['weight'])
-                                        break
-                    
-                    txt += f" {weight} has been found."
-                    result_text_children = html.P(txt)
+                                # Check if we have a cycle
+                                cycle = False
+                                if path[0] == "ciclo":
+                                    path = path[1:-1]
+                                    cycle = True
+                                
+                                if len(path) == len(graph_elements['nodes'])-1:
+                                    # Adding a class color to the source node
+                                    for node in graph_elements['nodes']:
+                                        if node['data']['label'] == selected_node_data[0]['label']:
+                                            node['classes'] = 'red_nodes'
+                                            break
+                                    
+                                    # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                                    length = 0
+                                    for edge in path:
+                                        for e in graph_elements['edges']:
+                                            print(edge.Id, e['data']['id'])
+                                            if edge.Id == e['data']['id']:
+                                                if cycle:
+                                                    e['classes'] = 'red_edges'
+                                                else:
+                                                    e['classes'] = 'blue_edges'
+                                                length += float(e['data']['weight'])
+                                                break
+                                    
+                                    if not cycle:
+                                        if len(path) == len(graph_elements['nodes']) - 1:
+                                            result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
+                                    else:
+                                        result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                                else:
+                                    result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
+                   
             
             return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
         
@@ -1209,7 +1112,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
     [Input("edit-nodes-btn-digraph", "n_clicks"), Input("cancel-btn-edit-nodes-modal-digraph", "n_clicks"), 
      Input('done-btn-edit-nodes-modal-digraph', 'n_clicks')],
     [State("digraph", "selectedNodeData"), State("edit-nodes-modal-digraph", "is_open")]
-)
+) 
 def toggleModal(edit_nodes_btn, cancel_btn_edit_nodes_modal, done_btn_edit_nodes_modal, 
     selected_node_data, is_modal_open):
     if edit_nodes_btn:
@@ -1330,5 +1233,14 @@ def manageAlert(alert_info):
         show = True
     elif alert_info == 7:
         text = "Error. Invalid file format. Please, check it and try again"
+        show = True
+    elif alert_info == 8:
+        text = "Error. No directed graph. Please, create or upload a directed graph and try again"
+        show = True
+    elif alert_info == 9:
+        text = "Error. Algorithm expects one source node and one target node. Please, select just two nodes and try again"
+        show = True
+    elif alert_info == 10:
+        text = "Error. Algorithm expects just one source node. Please, select only one node and try again"
         show = True
     return text, show
