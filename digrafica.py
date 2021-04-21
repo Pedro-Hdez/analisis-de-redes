@@ -776,7 +776,14 @@ class Digrafica:
 
                 # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
                 rutas.append(ruta_hacia_nodo)  
-
+        
+        arcos = set()
+        for ruta in matriz:
+            for arco in ruta:
+                if(type(arco)!= Nodo):
+                    if type(arco[0])== Arco:
+                        arcos.add(arco[0])
+        
 
         return rutas
     
@@ -809,7 +816,7 @@ class Digrafica:
                 # ordenamos los arcos
                 ruta_ciclo.reverse()
                 break
-
+                
         return ruta_ciclo
 
     def imprimir_rutas_floyd(self,nodo1,matriz):
@@ -831,3 +838,13 @@ class Digrafica:
             if(longitud_ruta == math.inf):
                 print(" No hay ruta más corta :(")
             else: print(', Longitud: ', longitud_ruta)
+     
+        
+    def arcos_floyd(self,rutas): 
+        arcos = set()
+        for ruta in rutas:
+            for arco in ruta:
+                if(type(arco)!= Nodo):
+                    if type(arco[0])== Arco:
+                        arcos.add(arco[0]) 
+        return arcos

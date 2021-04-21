@@ -1,6 +1,7 @@
 from grafica import Grafica
 from os import system, name
 from grafica import Cola
+from digrafica import *
 
 def validar(num):
     try:
@@ -22,10 +23,12 @@ def clear():
 
 g = Grafica()
 g.leer_grafica("grafica.txt")
+d = Digrafica()
+d.leer_digrafica("digrafica.txt")
 copia = Grafica()
 seleccion = ""
 
-while (seleccion != "22"):
+while (seleccion != "23"):
     clear()
     print("Menu")
     print("1) Agregar arista")
@@ -49,10 +52,12 @@ while (seleccion != "22"):
     print("19) Algoritmo de kruskal")
     print("20) Algoritmo de prim")
     print("21) Dijkstra general")
+    print("22) Floyd")
+    print("23) Salir")
 
     seleccion = input()
     if validar(seleccion):
-        if (int(seleccion) < 1 or int(seleccion) > 22):
+        if (int(seleccion) < 1 or int(seleccion) > 23):
             input("Error. Opción inválida. Presione Enter para intentarlo de nuevo...")
         else:
             if (seleccion == "1"):
@@ -255,16 +260,11 @@ while (seleccion != "22"):
                 input("\nPresione Enter para continuar...")
 
             if (seleccion == "21"):  
-                from digrafica import *
-
-                d = Digrafica()
-                d.leer_digrafica("digrafica.txt")
-
+                
                 nodo1 = "a"
-                nodo2 = "e" 
-
-                normal = []
+                nodo2 = "b"
                 ruta_mas_corta = d.dikjstra_general(nodo1)
+
 
                 if ruta_mas_corta:
                     if ruta_mas_corta[0]=='ciclo':
@@ -283,9 +283,29 @@ while (seleccion != "22"):
                         longitud_total = 0
                         for arco in ruta_mas_corta:
                             print(f"({arco.origen.nombre}, {arco.destino.nombre}, {arco.peso})")
-                    
+                
+                input("\nPresione Enter para continuar...")
+
+            if (seleccion == "22"):  
+
+                nodo = input("Ingrese el nombre del nodo que desea encontrar las rutas mas cortas: ")
+                
+                rutas = d.floyd(nodo)
+                if rutas[len(rutas)-1][0] == 'ciclo':
+                    print("Se encontró un ciclo negativo de longitud ",rutas[len(rutas)-1][1],' con los siguientes arcos: ')
+                    for arco in rutas:
+                        if(type(arco[0]) == Arco):
+                            print('(',arco[0].origen.nombre,', ',arco[0].destino.nombre,')',end="")
+                else: 
+                    if (rutas):
+                        arcos = d.arcos_floyd(rutas)
+                        for arco in arcos:
+                            print(arco.origen.nombre,arco.destino.nombre)
+                    else:
+                        print("Error")
+             
                 input("\nPresione Enter para continuar...")
                 
 
     else:
-        input("Error. Ingrese un número entre 1 y 22. Presione Enter para intentarlo de nuevo...")   
+        input("Error. Ingrese un número entre 1 y 23. Presione Enter para intentarlo de nuevo...")   
