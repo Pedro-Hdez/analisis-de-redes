@@ -1380,9 +1380,9 @@ def manageAlert(alert_info):
 # ----- callback to display 
 @app.callback(
     Output('matrix-modal', "is_open"),
-    Input('show-matrix-btn', 'n_clicks'),
+    [Input('show-matrix-btn', 'n_clicks'), Input('done-btn-matrix-modal', 'n_clicks')],
     State('matrix-modal', 'is_open')
 )
-def showMatrix(show_matrix_btn, matrix_modal_is_open):
-    if show_matrix_btn:
+def showMatrix(show_matrix_btn, done_btn_matrix_modal, matrix_modal_is_open):
+    if show_matrix_btn or done_btn_matrix_modal:
         return not matrix_modal_is_open

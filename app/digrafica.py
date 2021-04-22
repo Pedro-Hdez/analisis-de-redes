@@ -183,6 +183,7 @@ class Digrafica:
                 # nombre del nodo destino y buscamos el de peso menor
                 if arco.destino.nombre == b and arco.peso < peso_minimo:
                         arco_minimo = arco
+                        peso_minimo = arco.peso
       
             return arco_minimo
               
