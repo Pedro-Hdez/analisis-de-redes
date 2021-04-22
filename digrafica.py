@@ -180,6 +180,7 @@ class Digrafica:
                 # nombre del nodo destino y buscamos el de peso menor
                 if arco.destino.nombre == b and arco.peso < peso_minimo:
                         arco_minimo = arco
+                        peso_minimo = arco.peso
       
             return arco_minimo
               
@@ -776,14 +777,7 @@ class Digrafica:
 
                 # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
                 rutas.append(ruta_hacia_nodo)  
-        
-        arcos = set()
-        for ruta in matriz:
-            for arco in ruta:
-                if(type(arco)!= Nodo):
-                    if type(arco[0])== Arco:
-                        arcos.add(arco[0])
-        
+          
 
         return rutas
     
