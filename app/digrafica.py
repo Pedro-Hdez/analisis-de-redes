@@ -146,6 +146,8 @@ class Digrafica:
                 self.agregar_arco(line[0], line[1])
             elif length == 3:
                 self.agregar_arco(line[0], line[1], float(line[2]))
+            elif length == 4:
+                self.agregar_arco(line[0], line[1], line[2], float(line[3]))
 
     def buscar_arco(self, a, b, peso=None):
         """

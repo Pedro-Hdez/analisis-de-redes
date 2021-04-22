@@ -178,6 +178,46 @@ edit_edges_modal = html.Div(
     ]
 )
 
+# Modal to Floyd-Warshall Algorithm Matrix
+matrix_modal = html.Div(
+    [
+        dbc.Modal(
+            [
+                dbc.ModalHeader("Floyd-Warshall Algorithm Resultant Matrix"),
+
+                dbc.ModalBody(
+                   id="matrix-modal-body",
+                   children = html.Div([
+                                    dbc.Table([
+                                        # Body of the table
+                                        html.Tbody(id="matrix-table", children=[])
+                                    ],bordered=True, responsive=False),
+                        
+
+                    ], style={"position":"relative", "height":"100%", "overflow":"auto", "display":"block", "justify":"center"}),
+                ),
+
+                dbc.ModalFooter(
+                    html.Div(
+                        [
+                            dbc.Button("Done", id="done-btn-matrix-modal", color="primary", 
+                                    style={'margin':"1em"},), 
+                        ]
+                    )
+                )
+            ],
+            id="matrix-modal",
+            is_open=False,
+            size="lg", #sm, lg, xl
+            backdrop=True, # to be or not to be closed by clicking on backdrop
+            scrollable=True, # Scrollable if modal has a lot of text
+            centered=False, 
+            fade=True,
+            style=modals_position
+        )
+    ]
+)
+
 # ----- MAIN LAYOUT -----
 layout = html.Div(children=[
     # ----- Store objects to store nodes and edges information -----
@@ -202,6 +242,8 @@ layout = html.Div(children=[
     edit_nodes_modal,
     
     edit_edges_modal,
+    
+    matrix_modal,
 
     dbc.Row([
         # Left column
@@ -271,8 +313,10 @@ layout = html.Div(children=[
 
             html.Div([
                     html.H4('Result'),
-                    html.P(id="result-text-digraph")
+                    html.P(id="result-text-digraph"),
             ], id="result-div-digraph", style={'display':'None'}),
+
+            dbc.Button("Show resultant matrix", id="show-matrix-btn",size="sm", className="btn btn-primary mr-1", style={'display':'None'}),
 
             html.Br(),
             html.Br(),
@@ -359,7 +403,7 @@ layout = html.Div(children=[
      Output("number-of-edges-label-digraph", "children"), Output('nodes-info-digraph', 'data'), 
      Output('upload-digraph-obj', 'contents'),
      Output('result-text-digraph', 'children'), Output('result-div-digraph', 'style'),
-     Output('digraph-copy', 'data')],
+     Output('digraph-copy', 'data'), Output('show-matrix-btn', 'style'), Output('matrix-table', 'children')],
 
     [Input("add-node-btn-digraph", "n_clicks"), Input("done-btn-edit-nodes-modal-digraph", "n_clicks"),
      Input("remove-nodes-btn-digraph", "n_clicks"), Input("edit-nodes-btn-digraph", "n_clicks"),
@@ -374,13 +418,14 @@ layout = html.Div(children=[
      State("edit-edges-modal-body-digraph", "children"), State("digraph", "selectedEdgeData"), 
      State('nodes-info-digraph', 'data'), State('select-algorithm-dropown-digraph', 'value'), 
      State('result-text-digraph', 'children'), State('result-div-digraph', 'style'), 
-     State('digraph-copy', 'data')]
+     State('digraph-copy', 'data'), State('matrix-modal-body', 'children')]
 )
 def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_btn, edit_nodes_btn,
     add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, remove_edges_btn, upload_graph_contents,
     run_algorithm_btn, clear_result_btn, graph_elements, nodes_degrees_table_children, number_of_nodes, 
     edit_nodes_modal_body_childrens, selected_node_data, number_of_edges, edit_edges_modal_body_childrens, 
-    selected_edge_data, nodes_info, select_algorithm_dropdown, result_text_children, result_div_style, graph_copy):
+    selected_edge_data, nodes_info, select_algorithm_dropdown, result_text_children, result_div_style, 
+    graph_copy, matrix_modal_body_children):
     # Getting the callback context to know which input triggered this callback
     ctx = dash.callback_context
 
@@ -447,7 +492,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
         
         # ----- Edit nodes case -----
         elif btn_triggered == "done-btn-edit-nodes-modal-digraph":
@@ -509,7 +554,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
         
         # ---- Edit nodes button alert handle -----
         elif btn_triggered == "edit-nodes-btn-digraph":
@@ -522,7 +567,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             if not selected_node_data:
                 alert = 1
                 print("NADA SELECCIONADO")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
 
         # ----- Remove nodes case ------
         elif btn_triggered == "remove-nodes-btn-digraph":
@@ -570,7 +615,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
         
         # ----- Add Edge case -----
         elif btn_triggered == "add-edge-btn-digraph":
@@ -651,7 +696,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
         
         # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal-digraph":
@@ -756,7 +801,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
         
         # ---- Edit edges button alert handle -----
         elif btn_triggered == "edit-edges-btn-digraph":
@@ -768,7 +813,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 alert = 5
             
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
         
         # ----- Remove edges case -----
         elif btn_triggered == "remove-edges-btn-digraph":
@@ -808,7 +853,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
     
         # ----- Upload Graph Case -----
         elif btn_triggered == 'upload-digraph-obj':
@@ -955,10 +1000,14 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, None
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, None, {'display':'None'}, []
         
         # ************** RUN ALGORITHMS LOGIC *******************
         elif btn_triggered == 'run-algorithm-btn-digraph':
+            
+            show_matrix_btn_style = {'display':'None'}
+            matrix_modal_body_children = []
+
             if graph_copy:
                 graph_elements = copy.deepcopy(graph_copy)
 
@@ -1095,6 +1144,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                     # If number of selected nodes is correct, run the algorithm
                     if not alert:
                         result_div_style = {'display':''}
+                        show_matrix_btn_style = {'display':''}
                         # Running the algorithm
                         path, matrix = g.floyd(selected_node_data[0]['label'])
                         
@@ -1130,14 +1180,47 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             if not cycle:
                                 if len(path) == len(graph_elements['nodes']) - 1:
                                     result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
+                                
+                                elif len(path) != len(graph_elements['nodes'])-1:
+                                    result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
                             else:
                                 result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
-                            
-                            if len(path) != len(graph_elements['nodes'])-1:
-                                result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
+                    
+                        # Getting matrix information
+                        # Sacamos el orden de los elementos (la diagonal)(
+                        orden = [n['data']['label'] for n in graph_elements['nodes']]
+                        orden.sort()
+                        orden.insert(0, " ")
+
+                        # armamos la matriz
+                        matriz = [orden]
+                        for ren, nodo in zip(matrix, orden[1:]):
+                            row = [nodo]
+                            for i in range(len(ren)):
+                                if type(ren[i][0]) is Nodo:
+                                    row.append(f"{ren[i][0].nombre} / {ren[i][1]}" )
+                                elif type(ren[i][0]) is Arco:
+                                    row.append(f"{ren[i][0].origen.nombre} / {ren[i][1]}" )
+                                else:
+                                    row.append(f"{ren[i][0]} / {ren[i][1]}" )
+
+                            matriz.append(row)
+
+                        # Reemplazamos los "inf "
+                        for ren in matriz:
+                            for j in range(len(ren)):
+                                if ren[j] == math.inf:
+                                    ren[j] = "Inf"
+                        
+                        for ren in matriz:
+                            table_row = []
+                            for col in ren:
+                                table_row.append(html.Td(col, style={"text-align":"center"}))
+                            matrix_modal_body_children.append(html.Tr(table_row))
+
                         
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy, show_matrix_btn_style, matrix_modal_body_children
 
         
         # ----- Clear result case -----
@@ -1149,7 +1232,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             result_text_children = []
             result_div_style = {'display':'None'}
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
 
     else:
         return dash.no_update
@@ -1293,3 +1376,13 @@ def manageAlert(alert_info):
         text = "Error. Algorithm expects just one source node. Please, select only one node and try again"
         show = True
     return text, show
+
+# ----- callback to display 
+@app.callback(
+    Output('matrix-modal', "is_open"),
+    Input('show-matrix-btn', 'n_clicks'),
+    State('matrix-modal', 'is_open')
+)
+def showMatrix(show_matrix_btn, matrix_modal_is_open):
+    if show_matrix_btn:
+        return not matrix_modal_is_open
