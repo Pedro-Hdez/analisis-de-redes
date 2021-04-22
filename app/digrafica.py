@@ -717,7 +717,7 @@ class Digrafica:
                                 ruta_ciclo = []
                                 ruta_ciclo = self.regresar_ruta_ciclo(i,j,lista_matriz,nodos)
 
-                                return ruta_ciclo
+                                return ruta_ciclo, lista_matriz
 
 
                             # si el nuevo peso es menor, actualizamos el arco del elemento ij de la matriz    
@@ -731,7 +731,7 @@ class Digrafica:
         # recuperamos la ruta
         ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos)
 
-        return ruta_corta
+        return ruta_corta, lista_matriz
 
     
     def recuperar_ruta_floyd(self,matriz,nodo,lista_nodos):
@@ -777,7 +777,14 @@ class Digrafica:
 
                 # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
                 rutas.append(ruta_hacia_nodo)  
-
+        
+        arcos = set()
+        for ruta in matriz:
+            for arco in ruta:
+                if(type(arco)!= Nodo):
+                    if type(arco[0])== Arco:
+                        arcos.add(arco[0])
+        
 
         return rutas
     
@@ -810,7 +817,7 @@ class Digrafica:
                 # ordenamos los arcos
                 ruta_ciclo.reverse()
                 break
-
+                
         return ruta_ciclo
 
     def imprimir_rutas_floyd(self,nodo1,matriz):
@@ -832,3 +839,14 @@ class Digrafica:
             if(longitud_ruta == math.inf):
                 print(" No hay ruta más corta :(")
             else: print(', Longitud: ', longitud_ruta)
+     
+        
+    def arcos_floyd(self,rutas): 
+        arcos = set()
+        for ruta in rutas:
+            for arco in ruta:
+                if(type(arco)!= Nodo):
+                    if type(arco[0])== Arco:
+                        arcos.add(arco[0]) 
+        return list(arcos)
+    

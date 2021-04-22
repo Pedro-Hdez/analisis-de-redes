@@ -17,7 +17,7 @@ from main import app
 # ----- Dropdown menu for algorithm selection -----
 algorithms = ["Find shortest path between two nodes using Dijkstra's algorithm",
               "Find shortest paths from one node to all others using Dijkstra's algorithm",
-              "Find shortest paths from each node to all others using Floyd-Warshall algorithm"]
+              "Find shortest paths from one node to all others using Floyd-Warshall algorithm"]
 select_algorithm_dropdown = dcc.Dropdown(
     id='select-algorithm-dropown-digraph',
     value="Find shortest path between two nodes using Dijkstra's algorithm",
@@ -1052,7 +1052,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         
                         # Check if path exists
                         if not path:
-                            result_text_children = html.P(f"There is no route between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}.")
+                            result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
                         else:
                                 # Check if we have a cycle
                                 cycle = False
@@ -1060,36 +1060,85 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                     path = path[1:-1]
                                     cycle = True
                                 
-                                if len(path) == len(graph_elements['nodes'])-1:
-                                    # Adding a class color to the source node
-                                    for node in graph_elements['nodes']:
-                                        if node['data']['label'] == selected_node_data[0]['label']:
-                                            node['classes'] = 'red_nodes'
+                                # Adding a class color to the source node
+                                for node in graph_elements['nodes']:
+                                    if node['data']['label'] == selected_node_data[0]['label']:
+                                        node['classes'] = 'red_nodes'
+                                        break
+                                
+                                # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                                length = 0
+                                for edge in path:
+                                    for e in graph_elements['edges']:
+                                        if edge.Id == e['data']['id']:
+                                            if cycle:
+                                                e['classes'] = 'red_edges'
+                                            else:
+                                                e['classes'] = 'blue_edges'
+                                            length += float(e['data']['weight'])
                                             break
-                                    
-                                    # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
-                                    length = 0
-                                    for edge in path:
-                                        for e in graph_elements['edges']:
-                                            print(edge.Id, e['data']['id'])
-                                            if edge.Id == e['data']['id']:
-                                                if cycle:
-                                                    e['classes'] = 'red_edges'
-                                                else:
-                                                    e['classes'] = 'blue_edges'
-                                                length += float(e['data']['weight'])
-                                                break
-                                    
-                                    if not cycle:
-                                        if len(path) == len(graph_elements['nodes']) - 1:
-                                            result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
-                                    else:
-                                        result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                                if not cycle:
+                                    if len(path) == len(graph_elements['nodes']) - 1:
+                                        result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
                                 else:
-                                    result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
-                   
+                                    result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                                if len(path) != len(graph_elements['nodes'])-1:
+                                    result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
+                 
+                 # Floyd - Warshall Algorithm
+                elif select_algorithm_dropdown == "Find shortest paths from one node to all others using Floyd-Warshall algorithm": 
+                    # Validate if the number of selected nodes is correct
+                    if len(selected_node_data) != 1:
+                        # The algorithm expects exactly one node. Please select them and try again
+                        alert = 10
+                    
+                    # If number of selected nodes is correct, run the algorithm
+                    if not alert:
+                        result_div_style = {'display':''}
+                        # Running the algorithm
+                        path, matrix = g.floyd(selected_node_data[0]['label'])
+                        
+                        # Check if we have a cycle
+                        cycle = False
+                        if path[-1][0] == "ciclo":
+                            path = [e[0] for e in path[0:-1]]
+                            cycle = True
+                        else:
+                            path = g.arcos_floyd(path)
+                        
+                        # Check if path exists
+                        if not path:
+                            result_text_children = result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
+                        else:
+                            # Adding a class color to the source node
+                            for node in graph_elements['nodes']:
+                                if node['data']['label'] == selected_node_data[0]['label']:
+                                    node['classes'] = 'red_nodes'
+                                    break
+                            
+                            # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                            length = 0
+                            for edge in path:
+                                for e in graph_elements['edges']:
+                                    if edge.Id == e['data']['id']:
+                                        if cycle:
+                                            e['classes'] = 'red_edges'
+                                        else:
+                                            e['classes'] = 'blue_edges'
+                                        length += float(e['data']['weight'])
+                                        break
+                            if not cycle:
+                                if len(path) == len(graph_elements['nodes']) - 1:
+                                    result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
+                            else:
+                                result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                            
+                            if len(path) != len(graph_elements['nodes'])-1:
+                                result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
+                        
             
             return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
+
         
         # ----- Clear result case -----
         elif btn_triggered == 'clear-result-btn-digraph':
