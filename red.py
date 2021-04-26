@@ -11,12 +11,13 @@ class Arco:
         Esta clase representa un arco. Tiene nodos de origen y destino, además de una 
         capacidad mínima, un flujo y una capacidad.
     """
-    def __init__(self, origen, destino, res_min=0, flujo=0, capacidad=0, id_gui=None):
+    def __init__(self, origen, destino, res_min=0, flujo=0, capacidad=0, costo=0, id_gui=None):
         self.origen = origen
         self.destino = destino
         self.res_min = res_min
         self.flujo = flujo
         self.capacidad = capacidad
+        self.costo = 0
         self.id_gui = id_gui 
 #----------------------------------------------------------------
 
