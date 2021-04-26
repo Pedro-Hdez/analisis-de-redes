@@ -595,8 +595,9 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 node_label = selected_node_data[0]['label']
                 loop_id = str(uuid.uuid1())
 
+                # Restrictions are: [min_restriction, flow, max_restriction, cost]
                 loop = {'data': {'source': node, 
-                            'target': node, 'restrictions': [0,0,"Inf"], 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
+                            'target': node, 'restrictions': [0,0,"Inf", 0], 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
                 graph_elements['edges'].append(loop)
 
                 # Updating the node degree in the nodes degrees table
@@ -622,7 +623,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
                 edge_id = str(uuid.uuid1())
                 edge = {'data': { 'source': node1, 
-                                'target': node2, 'restrictions': [0,0,"Inf"], 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
+                                'target': node2, 'restrictions': [0,0,"Inf", 0], 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
                 graph_elements['edges'].append(edge)
 
                 # Updating the node degree in the nodes degrees table
@@ -729,6 +730,21 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                     # less than 0, then new capacity = current capacity
                     new_capacity = current_capacity
                 
+                # Getting current cost
+                current_cost = float(c['props']['children'][3]['props']['children'][1]['props']['children'])
+                
+                # Trying to get new cost
+                try:
+                    new_cost = c['props']['children'][3]['props']['children'][3]['props']['value']
+                    # Validate if it's a number (can not be infinite) and if it is greater than 0
+                    new_cost = float(new_cost)
+                    if new_cost == math.inf:
+                        raise Exception()
+                except:
+                    # If there isn't new cost, or new cost is 
+                    # infinite, then new cost = current cost
+                    new_cost = current_cost
+                
                 # Validate min_restriction
                 if new_min_restriction > new_capacity:
                     new_min_restriction = current_min_restriction
@@ -740,6 +756,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 # Validate new capacity
                 if new_capacity < new_min_restriction or new_capacity < new_flow:
                     new_capacity = current_capacity
+                
+                # *New cost doesn't need validation since it is independent of others restrictions*
                 
                 # Change direction if it is needed
                 if change_direction:
@@ -818,6 +836,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             edge['data']['restrictions'][2] = "Inf"
                         else:
                             edge['data']['restrictions'][2] = new_capacity
+                        # Cost
+                        edge['data']['restrictions'][3] = new_cost
                         break
 
             print("EDIT EDGE CASE")
@@ -1194,7 +1214,18 @@ def toggleModal(edit_edges_btn, cancel_btn_edit_edges_modal, done_btn_edit_edges
                                     dbc.Label("New Capacity: ", className="mr-2", style={"padding":"2em"}),
                                     dbc.Input(type="text"),
                                 ]
-                            )
+                            ),
+
+                            dbc.FormGroup(
+                                [
+                                    dbc.Label("Current Cost: ", style={"padding":"1em"}),
+                                    dbc.Label(edge['restrictions'][3]),
+                                    dbc.Label("New Cost: ", className="mr-2", style={"padding":"2em"}),
+                                    dbc.Input(type="text"),
+                                ]
+                            ),
+
+                            
                         ],
                         inline=True
                     )

@@ -536,8 +536,8 @@ class Digrafica:
         if nodo_final and not n_final:
             raise ValueError(f"Error. El nodo final {nodo_final} no existe en la digráfica" )
         
-        # Se encuentra la arborescencia temporal con dijkstra normal
-        arborescencia = self.dijkstra(nodo_inicial.nombre, None)
+        # Se encuentra la arborescencia temporal con dikjstra normal
+        arborescencia = self.dikjstra(nodo_inicial.nombre, None)
         
         # Obtenemos las aristas sin usar
         aristas_sin_usar = []
@@ -559,7 +559,6 @@ class Digrafica:
             # Comparamos si la arista sin usar mejora la arborescencia
             if a.origen.etiqueta["longitud_ruta"] + a.peso < a.destino.etiqueta["longitud_ruta"]:
                 
-                
                 # Si la arista sin usar mejora la ruta, primero checamos si no forma un ciclo negativo
                 arista_antecesor = a.origen.etiqueta["antecesor"] 
                 # lista donde guardaremos las aristas del ciclo, en caso de que se encuentre uno              
@@ -571,18 +570,19 @@ class Digrafica:
 
                 # ciclo para revisar ancestros y detectar ciclos
                 while arista_antecesor != nodo_inicial:
-                    ciclo.append(arista_antecesor)
-                    
+                    if(arista_antecesor != a):
+                        ciclo.append(arista_antecesor)
+                
                     # If que revisa si los nodos del arista son ancestros
-                    if arista_antecesor.origen ==  a.destino :
+                    if arista_antecesor ==  a :
                         # calculamos la longitud del ciclo
                         longitud_ciclo = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
                         # agreamos la longitud del ciclo como último elemento de la lista
                         ciclo.append(longitud_ciclo)
                         return ciclo
-                        
+     
+
                     arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
-                    
                     
                 
                 # Si no se formó ningún ciclo negativo, entonces eliminamos la nueva arista de 
