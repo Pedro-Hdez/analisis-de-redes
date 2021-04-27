@@ -11,14 +11,14 @@ class Arco:
         Esta clase representa un arco. Tiene nodos de origen y destino, además de una 
         capacidad mínima, un flujo y una capacidad.
     """
-    def __init__(self, origen, destino, res_min=0, flujo=0, capacidad=0, costo=0, id_gui=None):
+    def __init__(self, origen, destino, res_min=0, flujo=0, capacidad=0, costo=0, Id=None):
         self.origen = origen
         self.destino = destino
         self.res_min = res_min
         self.flujo = flujo
         self.capacidad = capacidad
         self.costo = 0
-        self.id_gui = id_gui 
+        self.Id = Id
 #----------------------------------------------------------------
 
 class Nodo:
@@ -26,14 +26,14 @@ class Nodo:
         Esta clase representa un nodo. Tiene un nombre, restricción mínima y máxima, etiqueta y 
         grados positivo y negativo.
     """
-    def __init__(self, nombre, res_min=0, res_max=math.inf, id_gui=None):
+    def __init__(self, nombre, res_min=0, res_max=math.inf, Id=None):
         self.nombre = nombre
         self.res_min=res_min
         self.res_max=res_max
         self.etiqueta = None
         self.grado_positivo = 0
         self.grado_negativo = 0
-        self.id_gui = id_gui
+        self.Id = Id
 
 #----------------------------------------------------------------
 class Red:
@@ -63,7 +63,7 @@ class Red:
                 return nodo
         return False 
     
-    def agregar_nodo(self, nombre, res_min=0, res_max=math.inf):
+    def agregar_nodo(self, nombre, res_min=0, res_max=math.inf, Id=None):
         """
             Este método agrega un nodo a la digráfica.
 
@@ -83,14 +83,14 @@ class Red:
         
             # Si el nuevo nodo no existe, entonces se crea y se le añade un diccionario
             # con dos listas vacías, la lista de nodos "entrantes" y la lista de nodos "salientes"
-            nodo = Nodo(nombre, float(res_min), float(res_max))
+            nodo = Nodo(nombre, float(res_min), float(res_max), Id=Id)
             self.__red[nodo] = {"entrantes":[], "salientes":[]}
 
             # El número de nodos en la digráfica se incrementa y se regresa True
             self.__num_nodos += 1
         return nodo
     
-    def agregar_arco(self, a, b, res_min=0, flujo=0, capacidad=0):
+    def agregar_arco(self, a, b, res_min=0, flujo=0, capacidad=0, costo=0, Id=None):
         """
             Este método agrega un arco a la digráfica
 
@@ -109,7 +109,7 @@ class Red:
         nodo_b = self.agregar_nodo(b)
 
         # Se construye el arco (a,b)
-        arco = Arco(nodo_a, nodo_b, float(res_min), float(flujo), float(capacidad))
+        arco = Arco(nodo_a, nodo_b, float(res_min), float(flujo), float(capacidad), float(costo), Id=Id)
 
         # Se agrega el arco (a,b) a los salientes de a, y el grado positivo de a 
         # se incrementa en 1
@@ -148,8 +148,8 @@ class Red:
                 self.agregar_nodo(line[0])
             elif length == 3:
                 self.agregar_nodo(line[0], float(line[1]), float(line[2]))
-            elif length == 5:
-                self.agregar_arco(line[0], line[1], float(line[2]), float(line[3]), float(line[4]))
+            elif length == 6:
+                self.agregar_arco(line[0], line[1], float(line[2]), float(line[3]), float(line[4], float(line[5])))
     
     def buscar_arco(self, a, b, res_min=0, flujo=0, capacidad=0):
         """
@@ -579,8 +579,14 @@ class Red:
                 flujo_final += arco.flujo
             for arco in self.__red[self.buscar_nodo(nodo)]["salientes"]:
                 flujo_final -= arco.flujo
+        
+        aristas = []
+        for nodo in self.__red:
+            for arista in self.__red[nodo]['entrantes']:
+                if arista not in aristas:
+                    aristas.append(arista)
 
-        return flujo_final
+        return flujo_final, aristas
 
     def dfs(self, node,fuente, sumidero, cadena,arcos_visitados):
         bool = False
@@ -626,7 +632,25 @@ class Red:
                     node.etiqueta = None
                     self.dfs(nodo,fuente,sumidero,cadena,arcos_visitados)
                     return None
+    def __str__(self):
+        """
+            Este método imprime la digráfica
+        """
+        resultado = ""
+        for nodo in self.__red:
+            resultado += f"Nodo: {nodo.nombre}, ({nodo.res_min},{nodo.res_max},{nodo.Id})\nEntrantes: "
+            for arco in self.__red[nodo]["entrantes"]:
+                resultado += f"({arco.origen.nombre}, {arco.res_min}, {arco.flujo}, {arco.capacidad}, {arco.costo}, {arco.Id}), "
+
+            resultado = resultado[:-2] + "\nSalientes: "
+            for arco in self.__red[nodo]["salientes"]:
+                resultado += f"({arco.destino.nombre}, {arco.res_min}, {arco.flujo}, {arco.capacidad}, {arco.costo}, {arco.Id}), "
+            
+            resultado = resultado[:-2] + "\n\n"
         
+        resultado = resultado[:-2]
+
+        return resultado 
       
         
 

@@ -7,23 +7,86 @@ from dash.dependencies import Output, Input, State
 import pandas as pd  # pip install pandas
 import plotly.express as px
 import random
-from grafica import *
+from red import *
 import base64
-import digraph
 import uuid
 
 from main import app
 
 # ----- Dropdown menu for algorithm selection -----
-algorithms = ["Algorithm 1", "Algorithm 2", "Algorithm 3"]
+algorithms = ["Find maximum flow using Ford-Fulkerson algorithm", "Algorithm 2", "Algorithm 3"]
 select_algorithm_dropdown = dcc.Dropdown(
     id='select-algorithm-dropown-network',
-    value="Algorithm 1",
+    value="Find maximum flow using Ford-Fulkerson algorithm",
     clearable=False,
     options=[ {'label': name, 'value': name} for name in algorithms],
     style={"width":"32em"}
 )
 # -------------------------------------------------------
+
+default_stylesheet =[{
+                        'selector': '.edge',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(restrictions)',
+                            'target-arrow-shape': 'triangle',
+                        }
+                    },
+
+                    {
+                        'selector': '.red_edges',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(restrictions)',
+                            'line-color': '#FF8080',
+                            'target-arrow-shape': 'triangle'
+                        }
+                    },
+
+                    {
+                        'selector': '.blue_edges',
+                        'style':{
+                            'curve-style': 'bezier',
+                            'label': 'data(restrictions)',
+                            'line-color': '#80B7FF',
+                            'target-arrow-shape': 'triangle',
+                        }
+                    },
+
+                    {
+                        'selector': '.node',
+                        'style': {
+                            'content': 'data(label)',
+                            'text-halign':'center',
+                            'text-valign':'center',
+                            'width':'30px',
+                            'height':'30px'
+                        }
+                    },
+
+                    {
+                        'selector':'.red_nodes',
+                        'style':{
+                            'content': 'data(label)',
+                            'text-halign':'center',
+                            'text-valign':'center',
+                            'width':'30px',
+                            'height':'30px',
+                            'background-color': '#FF8080'
+                        }
+                    },
+
+                    {
+                        'selector':'.blue_nodes',
+                        'style':{
+                            'content': 'data(label)',
+                            'text-halign':'center',
+                            'text-valign':'center',
+                            'width':'30px',
+                            'height':'30px',
+                            'background-color': '#80B7FF'
+                        }
+                    }]
 
 # ----- Dash Cytoscape instance to display data structures -----
 canvas = cyto.Cytoscape(
@@ -34,27 +97,7 @@ canvas = cyto.Cytoscape(
             boxSelectionEnabled = True,
             style={'width': '100%', 'height': '500px'},
             elements={'nodes': [], 'edges': []},
-            stylesheet=[
-                {
-                    'selector': 'edge',
-                    'style':{
-                        'curve-style': 'bezier',
-                        'target-arrow-shape': 'triangle',
-                        'label': "data(restrictions)"
-                    }
-                },
-
-                {
-                    'selector': 'node',
-                    'style': {
-                        'content': 'data(label)',
-                        'text-halign':'center',
-                        'text-valign':'center',
-                        'width':'30px',
-                        'height':'30px'
-                    }
-                },
-            ]
+            stylesheet=default_stylesheet
         )
 # -------------------------------------------------------
 
@@ -132,11 +175,47 @@ edit_edges_modal = html.Div(
     ]
 )
 
+# ----- Modal to select source and sink nodes -----
+select_source_and_sink_nodes_modal = html.Div(
+    [
+        dbc.Modal(
+            [
+                dbc.ModalHeader("Select Source And Sink Nodes"),
+                dbc.ModalBody(
+                   id="select-source-and-sink-nodes-modal-body"
+                ),
+                dbc.ModalFooter(
+                    html.Div(
+                        [
+                            dbc.Button("Done", id="done-btn-select-source-and-sink-nodes-modal", color="primary", 
+                                    style={'margin':"1em"},), 
+                            dbc.Button("Cancel", id="cancel-btn-select-source-and-sink-nodes-modal", className="ml-auto")
+                        ]
+                    )
+                )
+            ],
+            id="select-source-and-sink-nodes-modal",
+            is_open=False,
+            size="lg", #sm, lg, xl
+            backdrop=True, # to be or not to be closed by clicking on backdrop
+            scrollable=True, # Scrollable if modal has a lot of text
+            centered=False, 
+            fade=True,
+            style=modals_position
+        )
+    ]
+)
+
+
 # ----- MAIN LAYOUT -----
 layout = html.Div(children=[
     # ----- Store objects to store nodes and edges information -----
     dcc.Store(
         id='nodes-info-network', data=[['a', 1]] # The first element is the first node name that we will use
+    ),
+
+    dcc.Store(
+        id='network-copy', data=None
     ),
  
     # 1- No nodes selected when edit node button is clicked
@@ -153,6 +232,8 @@ layout = html.Div(children=[
     edit_nodes_modal,
     
     edit_edges_modal,
+    
+    select_source_and_sink_nodes_modal,
 
     dbc.Row([
         # Left column
@@ -210,12 +291,20 @@ layout = html.Div(children=[
                             select_algorithm_dropdown
                         ]),
                         html.Td([
-                            dbc.Button("Run", size="sm", className="btn btn-warning"),
+                            dbc.Button("Run", id="run-algorithm-btn-network",size="sm", className="btn btn-warning mr-1"),
+                            dbc.Button("Clear", id="clear-result-btn-network",size="sm", className="btn btn-success mr-1"),
                         ], style={"padding":"1em"}),
                         
                     ])
                 ]), 
             ]),
+
+            html.Br(),
+
+            html.Div([
+                    html.H4('Result'),
+                    html.P(id="result-text-network"),
+            ], id="result-div-network", style={'display':'None'}),
 
             html.Br(),
             html.Br(),
@@ -308,23 +397,31 @@ layout = html.Div(children=[
     [Output("network", "elements"), Output("nodes-degrees-table-network", "children"), 
      Output("number-of-nodes-label-network", "children"), Output("alert-info-network", "data"), 
      Output("number-of-edges-label-network", "children"), Output('nodes-info-network', 'data'), 
-     Output('upload-network-obj', 'contents')],
+     Output('upload-network-obj', 'contents'),
+     Output('result-text-network', 'children'), Output('result-div-network', 'style'),
+     Output('network-copy', 'data')],
 
     [Input("add-node-btn-network", "n_clicks"), Input("done-btn-edit-nodes-modal-network", "n_clicks"),
      Input("remove-nodes-btn-network", "n_clicks"), Input("edit-nodes-btn-network", "n_clicks"),
      Input("add-edge-btn-network", "n_clicks"), Input("done-btn-edit-edges-modal-network", "n_clicks"),
      Input("edit-edges-btn-network", "n_clicks"), Input('remove-edges-btn-network', 'n_clicks'), 
-     Input('upload-network-obj', 'contents')],
+     Input('upload-network-obj', 'contents'), Input('run-algorithm-btn-network', 'n_clicks'),
+     Input('clear-result-btn-network', 'n_clicks'), Input("done-btn-select-source-and-sink-nodes-modal", "n_clicks")],
     
     [State("network", "elements"), State("nodes-degrees-table-network", "children"), 
      State("number-of-nodes-label-network", "children"), State("edit-nodes-modal-body-network", "children"), 
      State("network", "selectedNodeData"), State("number-of-edges-label-network", "children"), 
-     State("edit-edges-modal-body-network", "children"), State("network", "selectedEdgeData"), State('nodes-info-network', 'data')]
+     State("edit-edges-modal-body-network", "children"), State("network", "selectedEdgeData"), 
+     State('nodes-info-network', 'data'), State('select-algorithm-dropown-network', 'value'),
+     State('result-text-network', 'children'), State('result-div-network', 'style'),
+     State('network-copy', 'data'), State("select-source-and-sink-nodes-modal-body", "children")]
 )
 def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_btn, edit_nodes_btn,
     add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, remove_edges_btn, upload_graph_contents,
-    graph_elements, nodes_degrees_table_children, number_of_nodes, edit_nodes_modal_body_childrens, 
-    selected_node_data, number_of_edges, edit_edges_modal_body_childrens, selected_edge_data, nodes_info):
+    run_algorithm_btn, clear_result_btn, done_btn_select_source_and_sink_nodes, graph_elements, nodes_degrees_table_children, number_of_nodes, 
+    edit_nodes_modal_body_childrens, selected_node_data, number_of_edges, edit_edges_modal_body_childrens, 
+    selected_edge_data, nodes_info, select_algorithm_dropdown, result_text_children, result_div_style,
+    graph_copy,select_source_and_sink_nodes_modal_body_children):
     # Getting the callback context to know which input triggered this callback
     ctx = dash.callback_context
 
@@ -334,6 +431,9 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
         # ----- Add node case -----
         if btn_triggered == "add-node-btn-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
 
             # Getting an unique initial name
             while True:
@@ -360,7 +460,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             # Adding the node to the graph_elements
             node = {'data': {'id': node_id, 'label': node_name, 'positive_degree':0, 'negative_degree':0,
                     'min_restriction':0, 'max_restriction':"Inf"},
-                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                    'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
+                    'classes':'node'}
             
             graph_elements['nodes'].append(node)
 
@@ -390,10 +491,14 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Edit nodes case -----
         elif btn_triggered == "done-btn-edit-nodes-modal-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
+
             # Excluding the H3 elements
             edit_nodes_modal_body_childrens = [c for c in edit_nodes_modal_body_childrens if edit_nodes_modal_body_childrens.index(c) % 2 == 1]
 
@@ -523,20 +628,26 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ---- Edit nodes button alert handle -----
         elif btn_triggered == "edit-nodes-btn-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             print("Selected node data")
             print(selected_node_data)
             if not selected_node_data:
                 alert = 1
                 print("NADA SELECCIONADO")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
 
         # ----- Remove nodes case ------
         elif btn_triggered == "remove-nodes-btn-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if selected_node_data:
                 # The ids of the nodes to remove are in selected node data
@@ -578,10 +689,13 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Add Edge case -----
         elif btn_triggered == "add-edge-btn-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             # When no node is selected
             if not selected_node_data:
@@ -597,7 +711,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
                 # Restrictions are: [min_restriction, flow, max_restriction, cost]
                 loop = {'data': {'source': node, 
-                            'target': node, 'restrictions': [0,0,"Inf", 0], 'id':loop_id, 'source_node':node_label, 'target_node':node_label}}
+                            'target': node, 'restrictions': [0,0,"Inf", 0], 'id':loop_id, 'source_node':node_label, 'target_node':node_label},
+                            'classes':'edge'}
                 graph_elements['edges'].append(loop)
 
                 # Updating the node degree in the nodes degrees table
@@ -623,7 +738,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
                 edge_id = str(uuid.uuid1())
                 edge = {'data': { 'source': node1, 
-                                'target': node2, 'restrictions': [0,0,"Inf", 0], 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label}}
+                                'target': node2, 'restrictions': [0,0,"Inf", 0], 'id':edge_id, 'source_node':node1_label, 'target_node':node2_label},
+                                'classes':'edge'}
                 graph_elements['edges'].append(edge)
 
                 # Updating the node degree in the nodes degrees table
@@ -655,10 +771,13 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             radio_buttons = [c for c in edit_edges_modal_body_childrens if edit_edges_modal_body_childrens.index(c) % 2 == 0]
             edit_edges_modal_body_childrens = [c for c in edit_edges_modal_body_childrens if c not in radio_buttons]
             
@@ -849,19 +968,25 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ---- Edit edges button alert handle -----
         elif btn_triggered == "edit-edges-btn-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if not selected_edge_data:
                 alert = 5
             
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
         # ----- Remove edges case -----
         elif btn_triggered == "remove-edges-btn-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
             alert = None
             if not selected_edge_data:
                 alert = 6
@@ -895,10 +1020,11 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
     
         # ----- Upload Graph Case -----
         elif btn_triggered == 'upload-network-obj':
+            nodes_info = [['a',1]]
             # Read the file and convert it to list of elements
             content_type, content_string = upload_graph_contents.split(',')
             graph = [x.replace(" ", "").split(",") for x in base64.b64decode(content_string).decode('ascii').strip().split("\n") if x] 
@@ -906,7 +1032,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
             alert = None
             nodes = [e for e in graph if len(e) == 3]
-            edges = [e for e in graph if len(e) == 5]
+            edges = [e for e in graph if len(e) == 6]
 
             # Validate non repetitions in nodes labels
             labels = []
@@ -928,9 +1054,9 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             # Validate the data format
             if not alert:
                 for element in graph:
-                    # Just accept edges: [a,b,min_res,flow,capacity]
+                    # Just accept edges: [a,b,min_res,flow,capacity,cost]
                     # or nodes: [a,min_res,max_res]
-                    if len(element) != 5 and len(element) != 3: 
+                    if len(element) != 6 and len(element) != 3: 
                         alert = 7
                         break
 
@@ -954,8 +1080,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             break
 
                     # Edges validation
-                    if len(element) == 5:
-                        # Validate if node restrictions are non negative numbers
+                    if len(element) == 6:
+                        # Validate if node restrictions (min_restriction, flow, max_restriction)are non negative numbers
                         try:
                             for i in range(2,5):
                                 element[i] = float(element[i])
@@ -964,6 +1090,16 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         except:
                             # Restrictions aren't numbers or are negative numbers
                             alert = 8 
+                            break
+
+                        # Validate if cost is not infinite
+                        try:
+                            element[5] = float(element[5])
+                            if element[i] == math.inf:
+                                raise Exception()
+                        except:
+                            # Invalid cost.
+                            alert = 13
                             break
 
                         # Validate min_restriction
@@ -981,6 +1117,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         if element[4] < element[2] or element[4] < element[3]:
                             alert = 10
                             break
+
+                        # *********** Cost need no validation since it is independent **********
 
             
             # If file format is ok, then we proceed to create the graph in the interface
@@ -1007,7 +1145,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         # Add it to the new nodes
                         node = {'data': {'id': str(uuid.uuid1()), 'label': element_splitted[0], 'positive_degree':0, 'negative_degree':0,
                                 'min_restriction':element_splitted[1], 'max_restriction':element_splitted[2]},
-                                'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)}}
+                                'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
+                                'classes':'node'}
 
                         new_nodes.append(node)
 
@@ -1043,6 +1182,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         min_restriction = element_splitted[2]
                         # Getting flow
                         flow = element_splitted[3]
+                        # Getting cost
+                        cost = element_splitted[5]
                         # Getting max restriction
                         if element_splitted[4] == math.inf:
                             max_restriction = "Inf"
@@ -1050,9 +1191,10 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             max_restriction = element_splitted[4]
                         
                         edge = {'data': { 'source': node1_id, 
-                                'target': node2_id, 'restrictions': [min_restriction,flow,max_restriction], 
+                                'target': node2_id, 'restrictions': [min_restriction,flow,max_restriction,cost], 
                                 'id':edge_id, 'source_node':element_splitted[0], 
-                                'target_node':element_splitted[1]}}
+                                'target_node':element_splitted[1]},
+                                'classes':'edge'}
 
                         new_edges.append(edge)
                         number_of_edges += 1
@@ -1089,7 +1231,123 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, ""
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, None
+        
+        # ************** RUN ALGORITHMS LOGIC *******************
+        elif btn_triggered == 'done-btn-select-source-and-sink-nodes-modal':
+            
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+
+            graph_elements_copy = copy.deepcopy(graph_elements)
+            alert = None
+
+            # Read sources and sinks nodes
+            sources = []
+            sinks = []
+            for c in select_source_and_sink_nodes_modal_body_children:
+                node = c['props']['children'][0]['props']['value']
+                try:
+                    node_type = c['props']['children'][2]['props']['value']
+                    if node_type == "source":
+                        sources.append(node)
+                    elif node_type == "sink":
+                        sinks.append(node)
+                except:
+                    continue
+            
+            # Alert if there are not sources or sinks
+            if not sources or not sinks:
+                # Incorrect number of sources or sinks
+                alert = 16
+                
+            if not alert:    
+                result_div_style = {'display':''}
+                # Creat a red object
+                g = Red()
+                # Adding all nodes
+                for node in graph_elements['nodes']:
+                    g.agregar_nodo(node['data']['label'])
+                # Adding all edges
+                for edge in graph_elements['edges']:
+                    g.agregar_arco(edge['data']['source_node'], edge['data']['target_node'],
+                                   edge['data']['restrictions'][0],edge['data']['restrictions'][1],
+                                   edge['data']['restrictions'][2], edge['data']['restrictions'][3],
+                                   edge['data']['id'])
+                
+                # ----- ALGORITHM TO RUN -----
+                # Ford-Fulkerson
+                if select_algorithm_dropdown == "Find maximum flow using Ford-Fulkerson algorithm":
+                    # Getting result
+                    max_flow, edges = g.flujo_maximo(sources, sinks)
+                    print(type(max_flow))
+                    
+                    if max_flow:
+                        print("YES WE")
+                        # Updating edges flows
+                        for edge in edges:
+                            for e in graph_elements['edges']:
+                                if edge.Id == e['data']['id']:
+                                    if edge.flujo == math.inf:
+                                        e['data']['restrictions'][1] = "Inf"
+                                    else:
+                                        e['data']['restrictions'][1] = edge.flujo
+                                    break
+                        
+                        # Coloring sources (red) and sinks (blue) nodes
+                        updated_nodes = 0
+                        nodes_to_update = len(sources) + len(sinks)
+                        for node in sources + sinks:
+                            if updated_nodes == nodes_to_update:
+                                break
+                            for n in graph_elements['nodes']:
+                                if node == n['data']['label']:
+                                    if node in sources:
+                                        n['classes'] = 'red_nodes'
+                                    else:
+                                        n['classes'] = 'blue_nodes'
+                                    updated_nodes += 1
+                                    break
+
+
+                        txt = f"Maximum flow of {max_flow} units has beeen found from "
+                        if len(sources) == 1:
+                            txt += f"source {[s for s in sources]} to "
+                        else:
+                            txt += f"sources {[s for s in sources]} to "
+                        
+                        if len(sinks) == 1:
+                            txt += f"sink {[s for s in sinks]}"
+                        else:
+                            txt += f"sinks {[s for s in sinks]}"
+                        result_text_children = html.P([txt])
+                    elif max_flow == 0:
+                        txt = f"Current restrictions could not be satisfied. The problem has no solution."
+                        result_text_children = html.P([txt])
+            
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
+        
+        elif btn_triggered == "run-algorithm-btn-network":
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
+            alert = None
+            if not selected_node_data:
+                alert = 15
+            
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+        
+        # ----- Clear result case -----
+        elif btn_triggered == 'clear-result-btn-network':
+            alert = None
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
+            result_text_children = []
+            result_div_style = {'display':'None'}
+
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
+
     else:
         return dash.no_update
 
@@ -1235,6 +1493,37 @@ def toggleModal(edit_edges_btn, cancel_btn_edit_edges_modal, done_btn_edit_edges
 
     return is_modal_open, []
 
+# ----- Callback to manage "Select Source And Sink Nodes" modal -----
+@app.callback(
+    [Output("select-source-and-sink-nodes-modal", "is_open"), Output("select-source-and-sink-nodes-modal-body", "children")],
+    [Input("run-algorithm-btn-network", "n_clicks"), Input("cancel-btn-select-source-and-sink-nodes-modal", "n_clicks"), 
+     Input("done-btn-select-source-and-sink-nodes-modal", 'n_clicks')],
+    [State("network", "selectedNodeData"), State("select-source-and-sink-nodes-modal", "is_open")]
+)
+def toggleModal(run_algorithm_btn, cancel_btn_select_source_and_sink_nodes_modal, 
+                done_btn_select_source_and_sink_nodes_modal, selected_node_data, is_modal_open):
+    if run_algorithm_btn:
+        if not selected_node_data:
+            return False, []
+        else:
+            node_forms = []
+            for node in selected_node_data:
+                node_forms.append(
+                    dbc.FormGroup([
+                        dbc.Input(type="hidden", value=node['label']),
+                        html.H3(f"Node {node['label']}"),
+                        dcc.RadioItems(
+                            options=[
+                                {'label':'Source', 'value':'source'},
+                                {'label':'Sink', 'value':'sink'}
+                            ],labelStyle={'display':'inline-block', "padding-left":"1em"}
+                        )                
+                    ], style={"padding-left":"1em"})
+                )
+
+            return not is_modal_open, node_forms
+    return is_modal_open, []
+
 
 # ----- Chained callback to display an alert if it is necesary
 @app.callback(
@@ -1280,5 +1569,17 @@ def manageAlert(alert_info):
         show = True
     elif alert_info == 12:
         text = "Error. There are some edge from/to nonexistent node. Please, check it and try again"
+        show = True
+    elif alert_info == 13:
+        text = "Error. There are some edge with invalid cost (infinite or not a number). Please, check it and try again"
+        show = True
+    elif alert_info == 14:
+        text = "Error. No transport network. Please, create or upload a transport network and try again"
+        show = True
+    elif alert_info == 15:
+        text = "No nodes selected to choose sources and sinks. Please, select at least two different nodes and try again"
+        show = True
+    elif alert_info == 16:
+        text = "Error. Sources or sinks nodes not encountered. Please, select at least one source node and one sink node and try again"
         show = True
     return text, show
