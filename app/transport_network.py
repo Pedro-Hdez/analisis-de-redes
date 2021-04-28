@@ -352,23 +352,27 @@ layout = html.Div(children=[
                         html.Tr([
                             html.Th([
                                 html.H5("Node", className="text-muted"),   
-                            ], style={"text-align":"center", "width":"20%"}),
+                            ], style={"text-align":"center", "width":"16.6%"}),
 
                             html.Th([
                                 html.H5("Positive Degree", className="text-muted"),   
-                            ], style={"text-align":"center", "width":"20%"}),
+                            ], style={"text-align":"center", "width":"16.6%"}),
 
                             html.Th([
                                 html.H5("Negative Degree", className="text-muted"),   
-                            ], style={"text-align":"center", "width":"20%"}),
+                            ], style={"text-align":"center", "width":"16.6%"}),
 
                             html.Th([
                                 html.H5("Min. Restriction", className="text-muted"),   
-                            ], style={"text-align":"center", "width":"20%"}),
+                            ], style={"text-align":"center", "width":"16.6%"}),
 
                             html.Th([
                                 html.H5("Max. Restriction", className="text-muted"),   
-                            ], style={"text-align":"center", "width":"20%"}),
+                            ], style={"text-align":"center", "width":"16.6%"}),
+
+                            html.Th([
+                                html.H5("Supply/Demand", className="text-muted"),   
+                            ], style={"text-align":"center", "width":"16.6%"}),
                         ])
                     ]),
                         
@@ -459,7 +463,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
 
             # Adding the node to the graph_elements
             node = {'data': {'id': node_id, 'label': node_name, 'positive_degree':0, 'negative_degree':0,
-                    'min_restriction':0, 'max_restriction':"Inf"},
+                    'min_restriction':0, 'max_restriction':"Inf", 'supply/demand':0},
                     'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
                     'classes':'node'}
             
@@ -468,10 +472,11 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             # Adding the node to the node_degrees_table
             nodes_degrees_table_children.append(html.Tr([
                 html.Td(node_name, style={"text-align":"center"}), 
-                html.Td(node['data']['positive_degree'],  style={"text-align":"center", "width":"20%"}),
-                html.Td(node['data']['negative_degree'],  style={"text-align":"center", "width":"20%"}),
-                html.Td(node['data']['min_restriction'],  style={"text-align":"center", "width":"20%"}),
-                html.Td("Inf",  style={"text-align":"center", "width":"20%"}),
+                html.Td(node['data']['positive_degree'],  style={"text-align":"center", "width":"16.6%"}),
+                html.Td(node['data']['negative_degree'],  style={"text-align":"center", "width":"16.6%"}),
+                html.Td(node['data']['min_restriction'],  style={"text-align":"center", "width":"16.6%"}),
+                html.Td("Inf",  style={"text-align":"center", "width":"16.6%"}),
+                html.Td(node['data']['supply/demand'],  style={"text-align":"center", "width":"16.6%"}),
             ], className="table-primary")),
                 
 
@@ -568,6 +573,21 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                     # If it isn't, do new min restriction = current min restriction
                     new_max_restriction = current_max_restriction
                 
+                # Getting the new supply/demand
+                try:
+                    # if exists, get it
+                    new_supply_demand = children['props']['children'][3]['props']['children'][3]['props']['value']
+                    # Validate if is a number
+                    new_supply_demand = float(new_supply_demand)
+                    # Validate if is not +inf or -inf
+                    if new_supply_demand == math.inf or new_supply_demand == -math.inf:
+                        raise Exception()
+                except:
+                    # If doesn't exists, new supply_demand will be as same as current supply demand
+                    new_supply_demand = float(children['props']['children'][3]['props']['children'][1]['props']['children'])
+                
+
+                
                 # Validate if new min restriction is at least 0. If it isn't, then new min restriction
                 # will be as same as current min restriction which alway is greater or equal than 0
                 # The same will happen if new_min_restriction is greater than new_max_restriction
@@ -592,6 +612,9 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             node['data']['max_restriction'] = "Inf"
                         else:
                             node['data']['max_restriction'] = new_max_restriction
+                        
+                        # Updating the supply/emand
+                        node['data']['supply/demand'] = new_supply_demand
                         break
             
                 # Editing edges in graph_elements (only if node label has changed)
@@ -617,6 +640,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             children['props']['children'][4]['props']['children'] = "Inf"
                         else:
                             children['props']['children'][4]['props']['children'] = new_max_restriction
+                        # Updating the supply/demand
+                        children['props']['children'][5]['props']['children'] = new_supply_demand
                         break
 
             print("EDIT NODE CASE")
@@ -1400,6 +1425,16 @@ def toggleModal(edit_nodes_btn, cancel_btn_edit_nodes_modal, done_btn_edit_nodes
                                     dbc.Label("Current Max. Restriction: ", style={"padding":"1em"}),
                                     dbc.Label(node['max_restriction']),
                                     dbc.Label("New Max Restriction: ", className="mr-2", style={"padding":"2em"}),
+                                    dbc.Input(type="text")
+                                ]
+                            ),
+
+                            dbc.FormGroup(
+                                [
+                             
+                                    dbc.Label("Current Supply/Demand: ", style={"padding":"1em"}),
+                                    dbc.Label(node['supply/demand']),
+                                    dbc.Label("New Supply/Demand: ", className="mr-2", style={"padding":"2em"}),
                                     dbc.Input(type="text")
                                 ]
                             ),
