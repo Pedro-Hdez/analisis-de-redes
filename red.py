@@ -2,6 +2,7 @@ import copy
 import operator
 import math
 from typing import MappingView
+from digrafica import *
 from estructuras_datos import *
 import sys
 sys.setrecursionlimit(5000)
@@ -17,7 +18,7 @@ class Arco:
         self.res_min = res_min
         self.flujo = flujo
         self.capacidad = capacidad
-        self.costo = 0
+        self.costo = costo
         self.id_gui = id_gui 
 #----------------------------------------------------------------
 
@@ -90,7 +91,7 @@ class Red:
             self.__num_nodos += 1
         return nodo
     
-    def agregar_arco(self, a, b, res_min=0, flujo=0, capacidad=0):
+    def agregar_arco(self, a, b, res_min=0, flujo=0, capacidad=0,costo=0):
         """
             Este método agrega un arco a la digráfica
 
@@ -109,7 +110,7 @@ class Red:
         nodo_b = self.agregar_nodo(b)
 
         # Se construye el arco (a,b)
-        arco = Arco(nodo_a, nodo_b, float(res_min), float(flujo), float(capacidad))
+        arco = Arco(nodo_a, nodo_b, float(res_min), float(flujo), float(capacidad),float(costo))
 
         # Se agrega el arco (a,b) a los salientes de a, y el grado positivo de a 
         # se incrementa en 1
@@ -150,7 +151,9 @@ class Red:
                 self.agregar_nodo(line[0], float(line[1]), float(line[2]))
             elif length == 5:
                 self.agregar_arco(line[0], line[1], float(line[2]), float(line[3]), float(line[4]))
-    
+            elif length == 6:
+                self.agregar_arco(line[0], line[1], float(line[2]), float(line[3]), float(line[4]),float(line[5]))
+
     def buscar_arco(self, a, b, res_min=0, flujo=0, capacidad=0):
         """
             Este método busca un arco entre dos nodos
@@ -389,15 +392,15 @@ class Red:
     def imprimir_arcos(self):
         for nodo in self.__red:
                 for arco in self.__red[nodo]["salientes"]:
-                    print("(",arco.origen.nombre,', ',arco.destino.nombre,', ',arco.res_min,', ',arco.flujo,', ',arco.capacidad,')')
+                    print("(",arco.origen.nombre,', ',arco.destino.nombre,', ',arco.res_min,', ',arco.flujo,', ',arco.capacidad,", ",arco.costo,')')
 
-    def fulkerson(self,fuente,sumidero):
+    def fulkerson(self,fuente,sumidero,limite_flujo,sumideros):
             arcos_visitados = []
             cadena = []
            
             # buscamos cadenas aumentantes con busqueda a lo profundo
             self.dfs(fuente,fuente,sumidero,cadena,arcos_visitados)
-
+            bool = False
             # ciclo donde actualizaremos el flujo de las cadenas aumentantes, mientras existan estas cadenas
             while True:
                 flujo_cadena = math.inf
@@ -411,9 +414,24 @@ class Red:
                     else:
                         # caso donde el arco va en sentido impropio
                         if(arco.etiqueta == "sentidoImpropio"):
-                            if(arco.flujo <= flujo_cadena and arco.flujo > arco.res_min):
+                            if(arco.flujo - arco.res_min < flujo_cadena):
                                 flujo_cadena = arco.flujo - arco.res_min
-                
+
+                if (sumidero.nombre != "sumideroFicticio"):
+                    flujo_actual = 0
+                    for nodo in sumideros:
+                        for arco in self.__red[self.buscar_nodo(nodo)]["entrantes"]:
+                            flujo_actual += arco.flujo
+                            
+                        for arco in self.__red[self.buscar_nodo(nodo)]["salientes"]:
+                            if(arco.destino.nombre != "Z-"):
+                                flujo_actual -= arco.flujo
+                           
+                   
+                if(flujo_cadena+flujo_actual > limite_flujo):
+                    bool = True
+                    flujo_cadena =   flujo_cadena - ((flujo_cadena+flujo_actual) - limite_flujo )
+                    
                 # actualizamos el flujo de los arcos de la cadena aumentante
                 for arco in cadena:
                     # caso donde el arco va en sentido propio, sumamos flujo
@@ -423,7 +441,10 @@ class Red:
                     # caso donde el arco va en sentido impropio, restamos flujo
                     if(arco.etiqueta == "sentidoImpropio"):
                         arco.flujo -= flujo_cadena
-                   
+
+                if(bool == True):
+                    break
+
                 cadena= []
                 arcos_visitados = []
                 # reseteamos las etiquetas de los nodos
@@ -436,7 +457,7 @@ class Red:
                 if not cadena:
                     break
 
-    def flujo_maximo(self,fuentes,sumideros):
+    def flujo_maximo(self,fuentes,sumideros,limite_flujo = None):
 
         # revisaremos cuantos nodos fuentes y sumideros hay 
         # si hay mas de un sumireo o mas de un nodo fuente, crearemos un super fuente o un super sumidero
@@ -483,8 +504,8 @@ class Red:
                 self.agregar_arco(nodo.nombre, nodo.nombre+ '"',nodo.res_min,0,nodo.res_max)
 
                 for arco in lista_arcos:   
-                    # los arcos salientes del nodo con restricciones ahora serán los arcos salientes del nuevo nodo ficticios           
-                    self.agregar_arco(nodo.nombre+ '"', arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
+                    # los arcos salientes del nodo con restricciones ahora serán los arcos salientes del nuevo nodo ficticio           
+                    self.agregar_arco(nodo.nombre+ '"', arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
                     # eliminamos momentaneamente los arcos salientes del nodo que tiene restricciones
                     self.eliminar_arco(nodo.nombre,arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
 
@@ -526,8 +547,21 @@ class Red:
             sumideroFicticio = self.buscar_nodo("SumideroFicticio")
             
             # aplicamos ford fulkerson a la red, con los nodos fuente y sumidero ficticios
-            self.fulkerson(fuenteFicticio,sumideroFicticio)
-        
+            self.fulkerson(fuenteFicticio,sumideroFicticio,limite_flujo,sumideros)
+
+            if(limite_flujo):
+                flujo_actual = 0
+                for nodo in sumideros:
+                    for arco in self.__red[self.buscar_nodo(nodo)]["entrantes"]:
+                        flujo_actual += arco.flujo
+                        
+                    for arco in self.__red[self.buscar_nodo(nodo)]["salientes"]:
+                        if(arco.destino.nombre != "Z-"):
+                            flujo_actual -= arco.flujo
+                if(flujo_actual > limite_flujo):
+                    return None
+
+
             # regresamos a la normalidad los arcos que tenian reestriccion minima
             arcos_sumideroFicticio = []
             for arco in self.__red[sumideroFicticio]['entrantes']:
@@ -550,7 +584,7 @@ class Red:
         
        
         # aplicamos for fulkerson a la red
-        self.fulkerson(fuente,sumidero)
+        self.fulkerson(fuente,sumidero,limite_flujo,sumideros)
 
 
         # regresamos los nodos con reestriccion particionados a la normalidad
@@ -561,7 +595,7 @@ class Red:
                 lista_arcos_ficticios.append(arco)
             
             for arco in lista_arcos_ficticios:
-                self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
+                self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
             self.eliminar_nodo(nodo.nombre+ '"')
 
         # eliminamos los nodos super fuente y super sumidero en caso de que fueran requeridos
@@ -584,7 +618,7 @@ class Red:
 
     def dfs(self, node,fuente, sumidero, cadena,arcos_visitados):
         bool = False
-        node.etiqueta == "marcado"
+        node.etiqueta = "marcado"
         for saliente in self.__red[node]["salientes"]: 
             if(saliente.flujo < saliente.capacidad and saliente not in arcos_visitados and saliente.destino.etiqueta != "marcado"): 
       
@@ -629,8 +663,188 @@ class Red:
         
       
         
+    def costo_minimo(self,fuentes,sumideros,limite_flujo):
 
-      
+        flujo = self.flujo_maximo(fuentes,sumideros,limite_flujo)
+        if(flujo):
+
+            costo = 0
+            # lista de arcos de la red original
+            arcos_red_original = []
+
+            #calculamos el costo inicial, en base al primer flujo factible encontrado por ford fulkerson
+            for nodo in self.__red:
+                for arco in self.__red[nodo]["salientes"]:
+                    arcos_red_original.append(arco)
+                    costo += arco.flujo * arco.costo
+            print("Costo inicial: ",costo)
+
+            #Creamos la red marginal
+            red_marginal = Red()
+
+            # creamos la red marginal en base a los arcos de la re original
+            red_marginal.crear_red_marginal(arcos_red_original)
+        
+
+            # aplicamos el algoritmo usando la red marginal
+            red_marginal.algotimo_costo_minimo()
+
+            #imprimimos el costo final
+            costo = 0
+            for nodo in self.__red:
+                for arco in self.__red[nodo]["salientes"]:
+                    arcos_red_original.append(arco)
+                    costo += arco.flujo * arco.costo
+            print("Costo final: ",costo)
+
+            print("")
+            return flujo
+        else:
+            # caso donde no hay un flujo inicial factible en base al flujo deseado
+            return None
              
             
-        
+    def crear_red_marginal(self, arcos_red_original):
+        # creamos los arcos de la red marginal, en base a los arcos de la red original
+        for arco in arcos_red_original:
+            # revisamos si la capacidad del arco de la red original es mayor al flujo del arco
+            # caso donde agregaremos los arcos de la red margial que van en el mismo sentido que los de la red orignal
+            if(arco.capacidad > arco.flujo):
+                # agregamos el arco a la red marginal
+                # la capacidad en este caso será la capacidad del arco menos el flujo, y el costo será el mismo del arco orignal 
+                self.agregar_arco(arco.origen.nombre,arco.destino.nombre,0,0,arco.capacidad - arco.flujo,arco.costo)
+                # etiquetaremos el nuevo arco de la red marginal con el arco relacionado de la red original
+                arcoNuevo = self.buscar_arco(arco.origen.nombre,arco.destino.nombre,0,0,arco.capacidad - arco.flujo)
+                arcoNuevo.etiqueta = arco
+            
+            # revisamos si el flujo del arco de la red original es mayor a la restricción minima
+            # caso donde agregaremos los arcos de la red margial que van en el mismo sentido que los de la red orignal
+            if(arco.res_min < arco.flujo):
+                # agregamos el arco a la red marginal
+                # la capacidad en este caso será el flujo del arco menos la restricción minima y el costo será el mismo del arco orignal pero negativo
+                self.agregar_arco(arco.destino.nombre,arco.origen.nombre,0,0,arco.flujo - arco.res_min,-arco.costo)
+                # etiquetaremos el nuevo arco de la red marginal con el arco relacionado de la red original
+                arcoNuevo = self.buscar_arco(arco.destino.nombre,arco.origen.nombre,0,0,arco.flujo - arco.res_min)
+                arcoNuevo.etiqueta = arco
+    
+    def algotimo_costo_minimo(self):
+        # creamos el objeto dígrafica que usaremos para aplicar el algoritmo de rutas mas cortas (Floyd)
+        # para encontrar ciclos negativos en la red marginal
+        d = Digrafica()
+
+        # hacemos las iteraciones del algoritmo mientras haya ciclos negativos en la red marginal
+        while(True):
+
+            # vaciamos la digrafica
+            d.vaciar_grafica()
+
+            # creamos los arcos de la digrafica tomando los mismos arcos que hay en la red marginal 
+            # tomamos el costo de los arcos de la red marginal como peso de los arcos de la digrafica
+            for nodo in self.__red:
+                for arco in self.__red[nodo]["salientes"]:
+                    d.agregar_arco(arco.origen.nombre,arco.destino.nombre,arco.costo)
+                    # etiquetamos los arcos de la digrafica con los arcos relacionados correspondientes a la red marginal
+                    arcoNuevo = d.buscar_arco(arco.origen.nombre,arco.destino.nombre,arco.costo)
+                    arcoNuevo.etiqueta = arco
+
+            # aplicamos el algoritmo de floyd para encontrar ciclos negativos
+            ciclo = d.floyd("g")
+            
+            # en caso de encontrar algun ciclo negativo, seguimos con el algoritmo
+            if ciclo[len(ciclo)-1][0] == 'ciclo':
+                # iniciamos el delta con valor infinito
+                delta = math.inf
+                # variable auxiliar para saber si los objetos de la lista ciclos son arcos o no
+                tipo = type(ciclo[0][0])
+                # recorremos el ciclo
+                for arco in ciclo:
+                    # revisamos que el elemento del ciclo sea un objeto arco de de la clase digrafica            
+                    if(type(arco[0]) == tipo):
+                        # comparamos las capacidades de los arcos del ciclo para buscar la mas pequeña y obtener el delta
+                        if(arco[0].etiqueta.capacidad < delta):
+                            delta = arco[0].etiqueta.capacidad
+
+                # recorremos los arcos del ciclo para actualizar el flujo de la red original 
+                # los arcos del ciclo tiene como etiqueta sus arcos relacionados en la red marginal y los arcos de la red marginal
+                # tienen como etiqueta los arcos relacionados en la red original
+                for arco in ciclo:
+                    # revisamos que el elemento sea un arco de de la clase digrafica            
+                    if(type(arco[0]) == tipo):
+                        # para acceder a los arcos de la red original desde los arcos de la lista ciclo acccedemos a la etiqueta de la etiqueta
+                        # si el arco del ciclo va en el mismo sentido a su arco relacionado en la red original, sumamos delta
+                        if(arco[0].etiqueta.etiqueta.origen.nombre == arco[0].origen.nombre):
+                            arco[0].etiqueta.etiqueta.flujo += delta
+                            
+                        else:
+                             # si el arco del ciclo va en el sentido contrario a su arco relacionado en la red original, restamos delta
+                            arco[0].etiqueta.etiqueta.flujo -= delta
+
+                # ciclo para actualizar los arcos de la red marginal y eliminar los que no cumplan los requisitos
+                # accederemos a los arcos de la red marginal y red orignal desde las etiquetas de los arcos del ciclo encontrado en la digrafica
+                for arco in ciclo:
+                    # revisamos que el elemento sea un arco de de la clase digrafica            
+                    if(type(arco[0]) == tipo):
+                        # caso para los arcos de la red marginal que van en el mismo sentido que su arco correspondiente en la red original
+                        if(arco[0].etiqueta.origen.nombre == arco[0].etiqueta.etiqueta.origen.nombre):
+                            # revisamos que se cumpla la condición de que la capacidad sea mayor al flujo
+                            if(arco[0].etiqueta.etiqueta.flujo < arco[0].etiqueta.etiqueta.capacidad):
+                                # si cumplen la condición, actualizamos la capacidad
+                                arco[0].etiqueta.capacidad = arco[0].etiqueta.etiqueta.capacidad - arco[0].etiqueta.etiqueta.flujo
+                            else:
+                                # si no cumplen la condición eliminamos el arco de la red marginal
+                                self.eliminar_arco(arco[0].etiqueta.origen.nombre,arco[0].etiqueta.destino.nombre,0,0,arco[0].etiqueta.capacidad)
+                        else:
+                         # caso para los arcos de la red marginal que van en sentido contrario que su arco correspondiente en la red original
+                            # revisamos que se cumpla la condición de que el flujo sea mayor a la restricción minima
+                            if(arco[0].etiqueta.etiqueta.flujo > arco[0].etiqueta.etiqueta.res_min):
+                                 # si cumplen la condición, actualizamos la capacidad
+                                arco[0].etiqueta.capacidad = arco[0].etiqueta.etiqueta.flujo - arco[0].etiqueta.etiqueta.res_min
+                            else:
+                                # si no cumplen la condición eliminamos el arco de la red marginal
+                                self.eliminar_arco(arco[0].etiqueta.origen.nombre,arco[0].etiqueta.destino.nombre,0,0,arco[0].etiqueta.capacidad)
+
+                # ciclo para agregar los arcos que cumplan las condiciones a la red marginal
+                for arco in ciclo:
+                    if(type(arco[0]) == tipo):
+                        # caso para los arcos de la red marginal que van en el mismo sentido que su arco correspondiente en la red original
+                        # revisamos que se cumpla la condición de que la capacidad sea mayor al flujo
+                        if(arco[0].etiqueta.etiqueta.flujo < arco[0].etiqueta.etiqueta.capacidad):
+                            # booleano para saber si se cumplen las condiciones para agregar el arco a la red marginal
+                            bool = False
+
+                            # recorremos los arcos de la red marginal y revisamos si el arco correspondiente ya existe
+                            for nodo in self.__red:
+                                for arco_red in self.__red[nodo]["salientes"]:
+                                    # si el arco en el sentido correspondiente ya existe, el booleano será verdadero
+                                    if arco_red.origen.nombre == arco[0].etiqueta.etiqueta.origen.nombre and arco_red.destino.nombre == arco[0].etiqueta.etiqueta.destino.nombre and arco_red.etiqueta == arco[0].etiqueta.etiqueta:
+                                        bool = True
+                             # si el arco no existe, lo agregamos ya que si cumple los requisitos para estar en la red marginal
+                            if bool == False:
+                                self.agregar_arco(arco[0].etiqueta.etiqueta.origen.nombre,arco[0].etiqueta.etiqueta.destino.nombre,0,0,arco[0].etiqueta.etiqueta.capacidad - arco[0].etiqueta.etiqueta.flujo,arco[0].etiqueta.etiqueta.costo)
+                                # etiquetamos al nuevo arco de la red marginal con su arco relacionado con respecto a la red original
+                                arcoNuevo = self.buscar_arco(arco[0].etiqueta.etiqueta.origen.nombre,arco[0].etiqueta.etiqueta.destino.nombre,0,0,arco[0].etiqueta.etiqueta.capacidad - arco[0].etiqueta.etiqueta.flujo)
+                                arcoNuevo.etiqueta = arco[0].etiqueta.etiqueta
+
+                        # caso para los arcos de la red marginal que van en sentido contrario que su arco correspondiente en la red original
+                        # revisamos que se cumpla la condición de que el flujo sea mayor a la restricción minima
+                        if(arco[0].etiqueta.etiqueta.flujo > arco[0].etiqueta.etiqueta.res_min):
+                            # booleano para saber si se cumplen las condiciones para agregar el arco a la red marginal
+                            bool = False
+                            # recorremos los arcos de la red marginal y revisamos si el arco correspondiente ya existe
+                            for nodo in self.__red:
+                                for arco_red in self.__red[nodo]["salientes"]:
+                                    # si el arco en el sentido correspondiente ya existe, el booleano será verdadero
+                                    if arco_red.destino.nombre == arco[0].etiqueta.etiqueta.origen.nombre and arco_red.origen.nombre == arco[0].etiqueta.etiqueta.destino.nombre and arco_red.etiqueta == arco[0].etiqueta.etiqueta:
+                                        bool = True
+                            # si el arco no existe, lo agregamos ya que si cumple los requisitos para estar en la red marginal
+                            if bool == False:
+                                self.agregar_arco(arco[0].etiqueta.etiqueta.destino.nombre,arco[0].etiqueta.etiqueta.origen.nombre,0,0,arco[0].etiqueta.etiqueta.flujo - arco[0].etiqueta.etiqueta.res_min,-arco[0].etiqueta.etiqueta.costo) 
+                                # etiquetamos al nuevo arco de la red marginal con su arco relacionado con respecto a la red original
+                                arcoNuevo = self.buscar_arco(arco[0].etiqueta.etiqueta.destino.nombre,arco[0].etiqueta.etiqueta.origen.nombre,0,0,arco[0].etiqueta.etiqueta.flujo - arco[0].etiqueta.etiqueta.res_min)
+                                arcoNuevo.etiqueta = arco[0].etiqueta.etiqueta
+            else: 
+                # si no hay ciclos negativos, rompemos el while y se acaba el algoritmo              
+                break        
+                
+            
+            
