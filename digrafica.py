@@ -760,13 +760,19 @@ class Digrafica:
             # caso donde obtendremos la ruta del nodo origen a los demas    
             else:
                 # obtenemos la posición del nodo destino
-                posicion_nodo1 = lista_nodos.index(destino)
+                try:
+                    posicion_nodo1 = lista_nodos.index(destino)
+                except:
+                    return None
+
+                if matriz[posicion_nodo][posicion_nodo1][1] == math.inf:
+                    return None
 
                 # ciclo para recuperar ruta del origen al nodo correspondiente (destino)
                 while(True):
                     # si encontramos un elemento con peso infinito o un nodo, detenemos el ciclo
                     # condicional que se cumplirá cuando ya no haya más camino que recuperar
-                    if matriz[posicion_nodo][posicion_nodo1][1] == math.inf or type(matriz[posicion_nodo][posicion_nodo1][0])== Nodo:
+                    if type(matriz[posicion_nodo][posicion_nodo1][0])== Nodo:
                         break   
 
                     # agregamos el arco a la ruta             
@@ -890,14 +896,21 @@ class Digrafica:
 
         # aplicamos el algoritmo
         rutas_origen = self.floyd(origen,destino)
-        
-        
-        # recuperamos la ruta del nodo origen al nodo destino
-        ruta = self.arcos_floyd(rutas_origen)
-        ruta = list(ruta)
-        # agregamos la longitud de la ruta al final de la lista de los arcos
-        ruta.append(rutas_origen[len(rutas_origen)-1][1][1])
+        if rutas_origen:
+            # si se encontró un ciclo negativo, regresamos el ciloc
+            if (rutas_origen[len(rutas_origen)-1][0]=="ciclo"):
+                return rutas_origen
+            
+            # recuperamos la ruta del nodo origen al nodo destino
+            ruta = self.arcos_floyd(rutas_origen)
+            ruta = list(ruta)
+            # agregamos la longitud de la ruta al final de la lista de los arcos
+            ruta.append(rutas_origen[len(rutas_origen)-1][1][1])
 
         
-        return ruta
+            return ruta
+        else:
+            return None
 
+    def objeto_arco(self):
+        return Arco
