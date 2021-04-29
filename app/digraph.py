@@ -16,7 +16,9 @@ from main import app
 
 # ----- Dropdown menu for algorithm selection -----
 algorithms = ["Find shortest path between two nodes using Dijkstra's algorithm",
-              "Find shortest paths from one node to all others using Dijkstra's algorithm",
+              "Find shortest path between two nodes using general Dijkstra's algorithm",
+              "Find shortest path between two nodes using Floyd-Warshall algorithm",
+              "Find shortest paths from one node to all others using general Dijkstra's algorithm",
               "Find shortest paths from one node to all others using Floyd-Warshall algorithm"]
 select_algorithm_dropdown = dcc.Dropdown(
     id='select-algorithm-dropown-digraph',
@@ -207,6 +209,37 @@ matrix_modal = html.Div(
                 )
             ],
             id="matrix-modal",
+            is_open=False,
+            size="lg", #sm, lg, xl
+            backdrop=True, # to be or not to be closed by clicking on backdrop
+            scrollable=True, # Scrollable if modal has a lot of text
+            centered=False, 
+            fade=True,
+            style=modals_position
+        )
+    ]
+)
+
+# ----- Modal to select source and target nodes -----
+select_source_and_target_nodes_modal = html.Div(
+    [
+        dbc.Modal(
+            [
+                dbc.ModalHeader("Select Source And Target Nodes"),
+                dbc.ModalBody(
+                   id="select-source-and-target-nodes-modal-body"
+                ),
+                dbc.ModalFooter(
+                    html.Div(
+                        [
+                            dbc.Button("Done", id="done-btn-select-source-and-target-nodes-modal", color="primary", 
+                                    style={'margin':"1em"},), 
+                            dbc.Button("Cancel", id="cancel-btn-select-source-and-target-nodes-modal", className="ml-auto")
+                        ]
+                    )
+                )
+            ],
+            id="select-source-and-target-nodes-modal",
             is_open=False,
             size="lg", #sm, lg, xl
             backdrop=True, # to be or not to be closed by clicking on backdrop
@@ -1031,8 +1064,64 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                     edge['data']['id'], float(edge['data']['weight']))
                 
                 # ----- ALGORITHM TO RUN -----
-                # DIjkstra between two nodes
+                # DI
+                # Dijkstra between two nodes
                 if select_algorithm_dropdown == "Find shortest path between two nodes using Dijkstra's algorithm":
+                    # Validate if the number of selected nodes is correct
+                    if len(selected_node_data) != 2:
+                        # The algorithm expects exactly two nodes. Please select them and try again
+                        alert = 9
+                    
+                    # If number of selected nodes is correct, run the algorithm
+                    if not alert:
+                        result_div_style = {'display':''}
+                        # Running the algorithm
+                        path = g.dijkstra(selected_node_data[0]['label'], selected_node_data[1]['label'])
+                        
+                        # Check if path exists
+                        if not path:
+                            result_text_children = html.P(f"There is no route between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}.")
+                        else:
+                                # Check if we have a cycle
+                                cycle = False
+                                if path[0] == "ciclo":
+                                    path = path[1:-1]
+                                    cycle = True
+
+                                # Adding a class color to the source and target node
+                                updated_nodes = 0
+                                for node in graph_elements['nodes']:
+                                    if updated_nodes == 2:
+                                        break
+                                    if node['data']['label'] == selected_node_data[0]['label']:
+                                        node['classes'] = 'red_nodes'
+                                        updated_nodes += 1
+                                        continue
+                                    elif node['data']['label'] == selected_node_data[1]['label']:
+                                        node['classes'] = 'blue_nodes'
+                                        updated_nodes += 1
+                                        continue
+                                
+                                # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                                length = 0
+                                for edge in path:
+                                    for e in graph_elements['edges']:
+                                        print(edge.Id, e['data']['id'])
+                                        if edge.Id == e['data']['id']:
+                                            if cycle:
+                                                e['classes'] = 'red_edges'
+                                            else:
+                                                e['classes'] = 'blue_edges'
+                                            length += float(e['data']['weight'])
+                                            break
+                                
+                                if not cycle:
+                                    result_text_children = html.P(f"The shortest path between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']} has length {length}")
+                                else:
+                                    result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                
+                # General Dijkstra between two nodes
+                if select_algorithm_dropdown == "Find shortest path between two nodes using general Dijkstra's algorithm":
                     # Validate if the number of selected nodes is correct
                     if len(selected_node_data) != 2:
                         # The algorithm expects exactly two nodes. Please select them and try again
@@ -1086,8 +1175,8 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                 else:
                                     result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
                         
-                # Shortest path from one node to all others with Dijkstra's Algorithm
-                elif select_algorithm_dropdown == "Find shortest paths from one node to all others using Dijkstra's algorithm":
+                # Shortest path from one node to all others with general Dijkstra's Algorithm
+                elif select_algorithm_dropdown == "Find shortest paths from one node to all others using general Dijkstra's algorithm":
                     # Validate if the number of selected nodes is correct
                     if len(selected_node_data) != 1:
                         # The algorithm expects exactly one node. Please select them and try again
@@ -1333,6 +1422,39 @@ def toggleModal(edit_edges_btn, cancel_btn_edit_edges_modal, done_btn_edit_edges
             
             return not is_modal_open, edges_forms
 
+    return is_modal_open, []
+
+# ----- Callback to manage "Select Source And Target Nodes" modal -----
+@app.callback(
+    [Output("select-source-and-target-nodes-modal", "is_open"), Output("select-source-and-target-nodes-modal-body", "children")],
+    [Input("run-algorithm-btn-digraph", "n_clicks"), Input("cancel-btn-select-source-and-target-nodes-modal", "n_clicks"), 
+     Input("done-btn-select-source-and-target-nodes-modal", 'n_clicks')],
+    [State("digraph", "selectedNodeData"), State("select-source-and-target-nodes-modal", "is_open"),
+     State('select-algorithm-dropown-digraph', 'value')]
+)
+def toggleModal(run_algorithm_btn, cancel_btn_select_source_and_target_nodes_modal, 
+                done_btn_select_source_and_target_nodes_modal, selected_node_data, is_modal_open,
+                select_algorithm_dropdown_value):
+    if run_algorithm_btn:
+        if "two nodes" in select_algorithm_dropdown_value:
+            return False, []
+        else:
+            node_forms = []
+            for node in selected_node_data:
+                node_forms.append(
+                    dbc.FormGroup([
+                        dbc.Input(type="hidden", value=node['label']),
+                        html.H3(f"Node {node['label']}"),
+                        dcc.RadioItems(
+                            options=[
+                                {'label':'Source', 'value':'source'},
+                                {'label':'Sink', 'value':'sink'}
+                            ],labelStyle={'display':'inline-block', "padding-left":"1em"}
+                        )                
+                    ], style={"padding-left":"1em"})
+                )
+
+            return not is_modal_open, node_forms
     return is_modal_open, []
 
 
