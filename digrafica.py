@@ -578,17 +578,20 @@ class Digrafica:
                         ciclo.append(longitud_ciclo)
                         return ciclo
      
-
-                    arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
                     
+                    arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
                 
+                if(a.destino == nodo_inicial):
+                        longitud_ciclo = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
+                        ciclo.append(longitud_ciclo)
+                        return ciclo
                 # Si no se formó ningún ciclo negativo, entonces eliminamos la nueva arista de 
                 # las aristas sin usar y la agregamos a la arborescencia. Además, la arista 
                 # mejorada se elimina de la arborescencia y se agrega a las aristas sin usar.
                 aristas_sin_usar.remove(a)
-                arborescencia.append(a)
 
                 aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
+                print(a.destino.nombre)
                 arborescencia.remove(a.destino.etiqueta["antecesor"])
 
                 # Se actualiza el antecesor del destino de la nueva arista
@@ -672,7 +675,7 @@ class Digrafica:
 
         
 
-    def floyd(self,nodo_origen = None):
+    def floyd(self,nodo_origen = None,destino = None):
         # buscamos el nodo de origen y nodo destino 
         origen = self.buscar_nodo(nodo_origen)
         
@@ -728,35 +731,36 @@ class Digrafica:
 
         
         # recuperamos la ruta
-        ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos)
+        ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos,destino)
 
         return ruta_corta
 
     
-    def recuperar_ruta_floyd(self,matriz,nodo,lista_nodos):
+    def recuperar_ruta_floyd(self,matriz,nodo,lista_nodos, destino = None):
+        
+        destino = self.buscar_nodo(destino)
+
         # Obtenemos la posición del nodo de origen dentro de la lista de nodos, 
         # para saber de que renglon de la matriz obtendremos las rutas
         posicion_nodo = lista_nodos.index(nodo)
 
         # lista de rutas desde el nodo origen hasta los demas nodos
         rutas = []
-
-        # recorremos los nodos de la gráfica, correspondiente a las columnas de la matriz
-        for nodo1 in lista_nodos:
+        if destino:
             # ruta individual desde el origen hasta determinado nodo
             ruta_hacia_nodo = []
             # Agregamos el nodo a la lista para identificar el nodo destino de la ruta
-            ruta_hacia_nodo.append(nodo1)
+            ruta_hacia_nodo.append(destino)
 
             # si el nodo de origen es igual al nodo destino, solo agregaremos el elemento correspondiente a ese nodo en la diagonal
             # caso donde el nodo de origen y nodo destino son el mismo
-            if nodo == nodo1:
+            if nodo == destino:
                 ruta_hacia_nodo.append(matriz[posicion_nodo][posicion_nodo][0])
                 rutas.append(ruta_hacia_nodo)
             # caso donde obtendremos la ruta del nodo origen a los demas    
             else:
                 # obtenemos la posición del nodo destino
-                posicion_nodo1 = lista_nodos.index(nodo1)
+                posicion_nodo1 = lista_nodos.index(destino)
 
                 # ciclo para recuperar ruta del origen al nodo correspondiente (destino)
                 while(True):
@@ -775,7 +779,43 @@ class Digrafica:
                 ruta_hacia_nodo.reverse()
 
                 # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
-                rutas.append(ruta_hacia_nodo)  
+                rutas.append(ruta_hacia_nodo)
+        else:
+            # recorremos los nodos de la gráfica, correspondiente a las columnas de la matriz
+            for nodo1 in lista_nodos:
+                # ruta individual desde el origen hasta determinado nodo
+                ruta_hacia_nodo = []
+                # Agregamos el nodo a la lista para identificar el nodo destino de la ruta
+                ruta_hacia_nodo.append(nodo1)
+
+                # si el nodo de origen es igual al nodo destino, solo agregaremos el elemento correspondiente a ese nodo en la diagonal
+                # caso donde el nodo de origen y nodo destino son el mismo
+                if nodo == nodo1:
+                    ruta_hacia_nodo.append(matriz[posicion_nodo][posicion_nodo][0])
+                    rutas.append(ruta_hacia_nodo)
+                # caso donde obtendremos la ruta del nodo origen a los demas    
+                else:
+                    # obtenemos la posición del nodo destino
+                    posicion_nodo1 = lista_nodos.index(nodo1)
+
+                    # ciclo para recuperar ruta del origen al nodo correspondiente (destino)
+                    while(True):
+                        # si encontramos un elemento con peso infinito o un nodo, detenemos el ciclo
+                        # condicional que se cumplirá cuando ya no haya más camino que recuperar
+                        if matriz[posicion_nodo][posicion_nodo1][1] == math.inf or type(matriz[posicion_nodo][posicion_nodo1][0])== Nodo:
+                            break   
+
+                        # agregamos el arco a la ruta             
+                        ruta_hacia_nodo.append(matriz[posicion_nodo][posicion_nodo1])
+
+                        # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
+                        posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
+
+                    # invertimos la lista para ordenar los arcos
+                    ruta_hacia_nodo.reverse()
+
+                    # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
+                    rutas.append(ruta_hacia_nodo)  
           
 
         return rutas
@@ -841,3 +881,23 @@ class Digrafica:
                     if type(arco[0])== Arco:
                         arcos.add(arco[0]) 
         return arcos
+    
+    def ruta_nodos_floyd(self,origen=None,destino=None):
+
+        # verificamos que esixtan los nodos origen y destino
+        if (self.buscar_nodo(origen) == None or self.buscar_nodo(destino)== None):
+            return None
+
+        # aplicamos el algoritmo
+        rutas_origen = self.floyd(origen,destino)
+        
+        
+        # recuperamos la ruta del nodo origen al nodo destino
+        ruta = self.arcos_floyd(rutas_origen)
+        ruta = list(ruta)
+        # agregamos la longitud de la ruta al final de la lista de los arcos
+        ruta.append(rutas_origen[len(rutas_origen)-1][1][1])
+
+        
+        return ruta
+
