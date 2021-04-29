@@ -24,7 +24,7 @@ select_algorithm_dropdown = dcc.Dropdown(
     id='select-algorithm-dropown-digraph',
     value="Find shortest path between two nodes using Dijkstra's algorithm",
     clearable=False,
-    options=[ {'label': name, 'value': name} for name in algorithms],
+    options=[ {'label': name, 'value': name} for name in algorithms], 
     style={"width":"32em"}
 )
 # -------------------------------------------------------
@@ -225,7 +225,7 @@ select_source_and_target_nodes_modal = html.Div(
     [
         dbc.Modal(
             [
-                dbc.ModalHeader("Select Source And Target Nodes"),
+                dbc.ModalHeader(html.H3("Define Route Direction")),
                 dbc.ModalBody(
                    id="select-source-and-target-nodes-modal-body"
                 ),
@@ -246,7 +246,18 @@ select_source_and_target_nodes_modal = html.Div(
             scrollable=True, # Scrollable if modal has a lot of text
             centered=False, 
             fade=True,
-            style=modals_position
+            style={
+                    "position": "absolute",
+                    "top": "0",
+                    "right": "0",
+                    "bottom": "0",
+                    "left": "50%",
+                    "width":'50%',
+                    "height":'50%',
+                    "z-index": "10040",
+                    "overflow": "auto",
+                    "overflow-y": "auto"
+                }
         )
     ]
 )
@@ -269,6 +280,10 @@ layout = html.Div(children=[
         id='alert-info-digraph', data=None
     ),
 
+    dcc.Store(
+        id='select-nodes-modal-info', data=None
+    ),
+
     # ----- Div to display nodes errors -----
     html.Div(id="edit-nodes-alert-digraph", children=[]),
 
@@ -277,6 +292,8 @@ layout = html.Div(children=[
     edit_edges_modal,
     
     matrix_modal,
+    
+    select_source_and_target_nodes_modal,
 
     dbc.Row([
         # Left column
@@ -436,14 +453,15 @@ layout = html.Div(children=[
      Output("number-of-edges-label-digraph", "children"), Output('nodes-info-digraph', 'data'), 
      Output('upload-digraph-obj', 'contents'),
      Output('result-text-digraph', 'children'), Output('result-div-digraph', 'style'),
-     Output('digraph-copy', 'data'), Output('show-matrix-btn', 'style'), Output('matrix-table', 'children')],
+     Output('digraph-copy', 'data'), Output('show-matrix-btn', 'style'), Output('matrix-table', 'children'),
+     Output('select-nodes-modal-info', 'data')],
 
     [Input("add-node-btn-digraph", "n_clicks"), Input("done-btn-edit-nodes-modal-digraph", "n_clicks"),
      Input("remove-nodes-btn-digraph", "n_clicks"), Input("edit-nodes-btn-digraph", "n_clicks"),
      Input("add-edge-btn-digraph", "n_clicks"), Input("done-btn-edit-edges-modal-digraph", "n_clicks"),
      Input("edit-edges-btn-digraph", "n_clicks"), Input('remove-edges-btn-digraph', 'n_clicks'), 
      Input('upload-digraph-obj', 'contents'), Input('run-algorithm-btn-digraph', 'n_clicks'),
-     Input('clear-result-btn-digraph', 'n_clicks')],
+     Input('clear-result-btn-digraph', 'n_clicks'), Input('done-btn-select-source-and-target-nodes-modal', 'n_clicks')],
     
     [State("digraph", "elements"), State("nodes-degrees-table-digraph", "children"), 
      State("number-of-nodes-label-digraph", "children"), State("edit-nodes-modal-body-digraph", "children"), 
@@ -451,14 +469,16 @@ layout = html.Div(children=[
      State("edit-edges-modal-body-digraph", "children"), State("digraph", "selectedEdgeData"), 
      State('nodes-info-digraph', 'data'), State('select-algorithm-dropown-digraph', 'value'), 
      State('result-text-digraph', 'children'), State('result-div-digraph', 'style'), 
-     State('digraph-copy', 'data'), State('matrix-modal-body', 'children')]
+     State('digraph-copy', 'data'), State('matrix-modal-body', 'children'),
+     State('select-source-and-target-nodes-modal-body', 'children')]
 )
 def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes_btn, edit_nodes_btn,
     add_edge_btn, done_btn_edit_edges_modal, edit_edges_btn, remove_edges_btn, upload_graph_contents,
-    run_algorithm_btn, clear_result_btn, graph_elements, nodes_degrees_table_children, number_of_nodes, 
-    edit_nodes_modal_body_childrens, selected_node_data, number_of_edges, edit_edges_modal_body_childrens, 
-    selected_edge_data, nodes_info, select_algorithm_dropdown, result_text_children, result_div_style, 
-    graph_copy, matrix_modal_body_children):
+    run_algorithm_btn, clear_result_btn, done_btn_select_source_and_target_nodes_modal, graph_elements, 
+    nodes_degrees_table_children, number_of_nodes, edit_nodes_modal_body_childrens, selected_node_data, 
+    number_of_edges, edit_edges_modal_body_childrens, selected_edge_data, nodes_info, 
+    select_algorithm_dropdown, result_text_children, result_div_style, graph_copy, 
+    matrix_modal_body_children, select_source_and_target_nodes_modal_children):
     # Getting the callback context to know which input triggered this callback
     ctx = dash.callback_context
 
@@ -525,7 +545,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes+1, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
         
         # ----- Edit nodes case -----
         elif btn_triggered == "done-btn-edit-nodes-modal-digraph":
@@ -587,7 +607,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
         
         # ---- Edit nodes button alert handle -----
         elif btn_triggered == "edit-nodes-btn-digraph":
@@ -600,7 +620,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             if not selected_node_data:
                 alert = 1
                 print("NADA SELECCIONADO")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
 
         # ----- Remove nodes case ------
         elif btn_triggered == "remove-nodes-btn-digraph":
@@ -648,7 +668,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
         
         # ----- Add Edge case -----
         elif btn_triggered == "add-edge-btn-digraph":
@@ -729,7 +749,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
         
         # ----- Edit edges case -----
         elif btn_triggered == "done-btn-edit-edges-modal-digraph":
@@ -834,7 +854,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, None, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
         
         # ---- Edit edges button alert handle -----
         elif btn_triggered == "edit-edges-btn-digraph":
@@ -846,7 +866,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 alert = 5
             
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
         
         # ----- Remove edges case -----
         elif btn_triggered == "remove-edges-btn-digraph":
@@ -886,7 +906,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             for e in graph_elements['edges']:
                 print(e)
             print("------------------------------\n")
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
     
         # ----- Upload Graph Case -----
         elif btn_triggered == 'upload-digraph-obj':
@@ -1033,13 +1053,14 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 print(e)
             print("------------------------------\n")
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, None, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, None, {'display':'None'}, [], None
         
         # ************** RUN ALGORITHMS LOGIC *******************
         elif btn_triggered == 'run-algorithm-btn-digraph':
             
             show_matrix_btn_style = {'display':'None'}
             matrix_modal_body_children = []
+            open_select_nodes_modal = None
 
             if graph_copy:
                 graph_elements = copy.deepcopy(graph_copy)
@@ -1064,140 +1085,90 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                     edge['data']['id'], float(edge['data']['weight']))
                 
                 # ----- ALGORITHM TO RUN -----
-                # DI
                 # Dijkstra between two nodes
-                if select_algorithm_dropdown == "Find shortest path between two nodes using Dijkstra's algorithm":
+                if "two nodes" in select_algorithm_dropdown:
                     # Validate if the number of selected nodes is correct
                     if len(selected_node_data) != 2:
                         # The algorithm expects exactly two nodes. Please select them and try again
                         alert = 9
-                    
-                    # If number of selected nodes is correct, run the algorithm
-                    if not alert:
-                        result_div_style = {'display':''}
-                        # Running the algorithm
-                        path = g.dijkstra(selected_node_data[0]['label'], selected_node_data[1]['label'])
-                        
-                        # Check if path exists
-                        if not path:
-                            result_text_children = html.P(f"There is no route between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}.")
-                        else:
-                                # Check if we have a cycle
-                                cycle = False
-                                if path[0] == "ciclo":
-                                    path = path[1:-1]
-                                    cycle = True
-
-                                # Adding a class color to the source and target node
-                                updated_nodes = 0
-                                for node in graph_elements['nodes']:
-                                    if updated_nodes == 2:
-                                        break
-                                    if node['data']['label'] == selected_node_data[0]['label']:
-                                        node['classes'] = 'red_nodes'
-                                        updated_nodes += 1
-                                        continue
-                                    elif node['data']['label'] == selected_node_data[1]['label']:
-                                        node['classes'] = 'blue_nodes'
-                                        updated_nodes += 1
-                                        continue
-                                
-                                # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
-                                length = 0
-                                for edge in path:
-                                    for e in graph_elements['edges']:
-                                        print(edge.Id, e['data']['id'])
-                                        if edge.Id == e['data']['id']:
-                                            if cycle:
-                                                e['classes'] = 'red_edges'
-                                            else:
-                                                e['classes'] = 'blue_edges'
-                                            length += float(e['data']['weight'])
-                                            break
-                                
-                                if not cycle:
-                                    result_text_children = html.P(f"The shortest path between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']} has length {length}")
-                                else:
-                                    result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                    else:
+                        open_select_nodes_modal = True
                 
-                # General Dijkstra between two nodes
-                if select_algorithm_dropdown == "Find shortest path between two nodes using general Dijkstra's algorithm":
-                    # Validate if the number of selected nodes is correct
-                    if len(selected_node_data) != 2:
-                        # The algorithm expects exactly two nodes. Please select them and try again
-                        alert = 9
-                    
-                    # If number of selected nodes is correct, run the algorithm
-                    if not alert:
-                        result_div_style = {'display':''}
-                        # Running the algorithm
-                        path = g.dijkstra_general(selected_node_data[0]['label'], selected_node_data[1]['label'])
+                else:
+                    # Shortest path from one node to all others with general Dijkstra's Algorithm
+                    if select_algorithm_dropdown == "Find shortest paths from one node to all others using general Dijkstra's algorithm":
+                        # Validate if the number of selected nodes is correct
+                        if len(selected_node_data) != 1:
+                            # The algorithm expects exactly one node. Please select them and try again
+                            alert = 10
                         
-                        # Check if path exists
-                        if not path:
-                            result_text_children = html.P(f"There is no route between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']}.")
-                        else:
-                                # Check if we have a cycle
-                                cycle = False
-                                if path[0] == "ciclo":
-                                    path = path[1:-1]
-                                    cycle = True
-
-                                # Adding a class color to the source and target node
-                                updated_nodes = 0
-                                for node in graph_elements['nodes']:
-                                    if updated_nodes == 2:
-                                        break
-                                    if node['data']['label'] == selected_node_data[0]['label']:
-                                        node['classes'] = 'red_nodes'
-                                        updated_nodes += 1
-                                        continue
-                                    elif node['data']['label'] == selected_node_data[1]['label']:
-                                        node['classes'] = 'blue_nodes'
-                                        updated_nodes += 1
-                                        continue
-                                
-                                # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
-                                length = 0
-                                for edge in path:
-                                    for e in graph_elements['edges']:
-                                        print(edge.Id, e['data']['id'])
-                                        if edge.Id == e['data']['id']:
-                                            if cycle:
-                                                e['classes'] = 'red_edges'
-                                            else:
-                                                e['classes'] = 'blue_edges'
-                                            length += float(e['data']['weight'])
+                        # If number of selected nodes is correct, run the algorithm
+                        if not alert:
+                            result_div_style = {'display':''}
+                            # Running the algorithm
+                            path = g.dijkstra_general(selected_node_data[0]['label'])
+                            
+                            # Check if path exists
+                            if not path:
+                                result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
+                            else:
+                                    # Check if we have a cycle
+                                    cycle = False
+                                    if path[0] == "ciclo":
+                                        path = path[1:-1]
+                                        cycle = True
+                                    
+                                    # Adding a class color to the source node
+                                    for node in graph_elements['nodes']:
+                                        if node['data']['label'] == selected_node_data[0]['label']:
+                                            node['classes'] = 'red_nodes'
                                             break
-                                
-                                if not cycle:
-                                    result_text_children = html.P(f"The shortest path between source node {selected_node_data[0]['label']} and target node {selected_node_data[1]['label']} has length {length}")
-                                else:
-                                    result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
-                        
-                # Shortest path from one node to all others with general Dijkstra's Algorithm
-                elif select_algorithm_dropdown == "Find shortest paths from one node to all others using general Dijkstra's algorithm":
-                    # Validate if the number of selected nodes is correct
-                    if len(selected_node_data) != 1:
-                        # The algorithm expects exactly one node. Please select them and try again
-                        alert = 10
+                                    
+                                    # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                                    length = 0
+                                    for edge in path:
+                                        for e in graph_elements['edges']:
+                                            if edge.Id == e['data']['id']:
+                                                if cycle:
+                                                    e['classes'] = 'red_edges'
+                                                else:
+                                                    e['classes'] = 'blue_edges'
+                                                length += float(e['data']['weight'])
+                                                break
+                                    if not cycle:
+                                        if len(path) == len(graph_elements['nodes']) - 1:
+                                            result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
+                                    else:
+                                        result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                                    if len(path) != len(graph_elements['nodes'])-1:
+                                        result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
                     
-                    # If number of selected nodes is correct, run the algorithm
-                    if not alert:
-                        result_div_style = {'display':''}
-                        # Running the algorithm
-                        path = g.dijkstra_general(selected_node_data[0]['label'])
+                    # Floyd - Warshall Algorithm
+                    elif select_algorithm_dropdown == "Find shortest paths from one node to all others using Floyd-Warshall algorithm": 
+                        # Validate if the number of selected nodes is correct
+                        if len(selected_node_data) != 1:
+                            # The algorithm expects exactly one node. Please select them and try again
+                            alert = 10
                         
-                        # Check if path exists
-                        if not path:
-                            result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
-                        else:
-                                # Check if we have a cycle
-                                cycle = False
-                                if path[0] == "ciclo":
-                                    path = path[1:-1]
-                                    cycle = True
-                                
+                        # If number of selected nodes is correct, run the algorithm
+                        if not alert:
+                            result_div_style = {'display':''}
+                            show_matrix_btn_style = {'display':''}
+                            # Running the algorithm
+                            path, matrix = g.floyd(selected_node_data[0]['label'])
+                            
+                            # Check if we have a cycle
+                            cycle = False
+                            if path[-1][0] == "ciclo":
+                                path = [e[0] for e in path[0:-1]]
+                                cycle = True
+                            else:
+                                path = g.arcos_floyd(path)
+                            
+                            # Check if path exists
+                            if not path:
+                                result_text_children = result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
+                            else:
                                 # Adding a class color to the source node
                                 for node in graph_elements['nodes']:
                                     if node['data']['label'] == selected_node_data[0]['label']:
@@ -1218,100 +1189,268 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                 if not cycle:
                                     if len(path) == len(graph_elements['nodes']) - 1:
                                         result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
+                                    
+                                    elif len(path) != len(graph_elements['nodes'])-1:
+                                        result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
                                 else:
                                     result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
-                                if len(path) != len(graph_elements['nodes'])-1:
-                                    result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
-                 
-                 # Floyd - Warshall Algorithm
-                elif select_algorithm_dropdown == "Find shortest paths from one node to all others using Floyd-Warshall algorithm": 
-                    # Validate if the number of selected nodes is correct
-                    if len(selected_node_data) != 1:
-                        # The algorithm expects exactly one node. Please select them and try again
-                        alert = 10
-                    
-                    # If number of selected nodes is correct, run the algorithm
-                    if not alert:
-                        result_div_style = {'display':''}
-                        show_matrix_btn_style = {'display':''}
-                        # Running the algorithm
-                        path, matrix = g.floyd(selected_node_data[0]['label'])
                         
-                        # Check if we have a cycle
-                        cycle = False
-                        if path[-1][0] == "ciclo":
-                            path = [e[0] for e in path[0:-1]]
-                            cycle = True
-                        else:
-                            path = g.arcos_floyd(path)
-                        
-                        # Check if path exists
-                        if not path:
-                            result_text_children = result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
-                        else:
-                            # Adding a class color to the source node
-                            for node in graph_elements['nodes']:
-                                if node['data']['label'] == selected_node_data[0]['label']:
-                                    node['classes'] = 'red_nodes'
-                                    break
+                            # Getting matrix information
+                            # Sacamos el orden de los elementos (la diagonal)(
+                            orden = [n['data']['label'] for n in graph_elements['nodes']]
+                            orden.sort()
+                            orden.insert(0, " ")
+
+                            # armamos la matriz
+                            matriz = [orden]
+                            for ren, nodo in zip(matrix, orden[1:]):
+                                row = [nodo]
+                                for i in range(len(ren)):
+                                    if type(ren[i][0]) is Nodo:
+                                        row.append(f"{ren[i][0].nombre} / {ren[i][1]}" )
+                                    elif type(ren[i][0]) is Arco:
+                                        row.append(f"{ren[i][0].origen.nombre} / {ren[i][1]}" )
+                                    else:
+                                        row.append(f"{ren[i][0]} / {ren[i][1]}" )
+
+                                matriz.append(row)
+
+                            # Reemplazamos los "inf "
+                            for ren in matriz:
+                                for j in range(len(ren)):
+                                    if ren[j] == math.inf:
+                                        ren[j] = "Inf"
                             
-                            # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
-                            length = 0
-                            for edge in path:
-                                for e in graph_elements['edges']:
-                                    if edge.Id == e['data']['id']:
-                                        if cycle:
-                                            e['classes'] = 'red_edges'
-                                        else:
-                                            e['classes'] = 'blue_edges'
-                                        length += float(e['data']['weight'])
-                                        break
-                            if not cycle:
-                                if len(path) == len(graph_elements['nodes']) - 1:
-                                    result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
-                                
-                                elif len(path) != len(graph_elements['nodes'])-1:
-                                    result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
-                            else:
-                                result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
-                    
-                        # Getting matrix information
-                        # Sacamos el orden de los elementos (la diagonal)(
-                        orden = [n['data']['label'] for n in graph_elements['nodes']]
-                        orden.sort()
-                        orden.insert(0, " ")
-
-                        # armamos la matriz
-                        matriz = [orden]
-                        for ren, nodo in zip(matrix, orden[1:]):
-                            row = [nodo]
-                            for i in range(len(ren)):
-                                if type(ren[i][0]) is Nodo:
-                                    row.append(f"{ren[i][0].nombre} / {ren[i][1]}" )
-                                elif type(ren[i][0]) is Arco:
-                                    row.append(f"{ren[i][0].origen.nombre} / {ren[i][1]}" )
-                                else:
-                                    row.append(f"{ren[i][0]} / {ren[i][1]}" )
-
-                            matriz.append(row)
-
-                        # Reemplazamos los "inf "
-                        for ren in matriz:
-                            for j in range(len(ren)):
-                                if ren[j] == math.inf:
-                                    ren[j] = "Inf"
-                        
-                        for ren in matriz:
-                            table_row = []
-                            for col in ren:
-                                table_row.append(html.Td(col, style={"text-align":"center"}))
-                            matrix_modal_body_children.append(html.Tr(table_row))
+                            for ren in matriz:
+                                table_row = []
+                                for col in ren:
+                                    table_row.append(html.Td(col, style={"text-align":"center"}))
+                                matrix_modal_body_children.append(html.Tr(table_row))
 
                         
             
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy, show_matrix_btn_style, matrix_modal_body_children
-
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy, show_matrix_btn_style, matrix_modal_body_children, open_select_nodes_modal
         
+        elif btn_triggered == 'done-btn-select-source-and-target-nodes-modal':
+            show_matrix_btn_style = {'display':'None'}
+            matrix_modal_body_children = []
+            open_select_nodes_modal = None
+
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+
+            graph_elements_copy = copy.deepcopy(graph_elements)
+            alert = None
+
+            print(select_source_and_target_nodes_modal_children)
+
+            # Find the route direction
+            try:
+                select_source_and_target_nodes_modal_children[0]['props']['children'][2]['props']['checked']
+                node1 = selected_node_data[1]['label']
+                node2 = selected_node_data[0]['label']
+            except:
+                node1 = selected_node_data[0]['label']
+                node2 = selected_node_data[1]['label']
+
+            # Creat a Grafica object
+            g = Digrafica()
+            # Adding all nodes
+            for node in graph_elements['nodes']:
+                g.agregar_nodo(node['data']['label'])
+            # Adding all edges
+            for edge in graph_elements['edges']:
+                g.agregar_arco(edge['data']['source_node'], edge['data']['target_node'],
+                                edge['data']['id'], float(edge['data']['weight']))
+            
+            # ----- ALGORITHM TO RUN -----
+            if select_algorithm_dropdown == "Find shortest path between two nodes using Dijkstra's algorithm":
+                    
+                result_div_style = {'display':''}
+                # Running the algorithm
+                path = g.dijkstra(node1, node2)
+                
+                # Check if path exists
+                if not path:
+                    result_text_children = html.P(f"There is no route between source node {node1} and target node {node2}.")
+                else:
+                        # Check if we have a cycle
+                        cycle = False
+                        if path[0] == "ciclo":
+                            path = path[1:-1]
+                            cycle = True
+
+                        # Adding a class color to the source and target node
+                        updated_nodes = 0
+                        for node in graph_elements['nodes']:
+                            if updated_nodes == 2:
+                                break
+                            if node['data']['label'] == node1:
+                                node['classes'] = 'red_nodes'
+                                updated_nodes += 1
+                                continue
+                            elif node['data']['label'] == node2:
+                                node['classes'] = 'blue_nodes'
+                                updated_nodes += 1
+                                continue
+                        
+                        # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                        length = 0
+                        for edge in path:
+                            for e in graph_elements['edges']:
+                                print(edge.Id, e['data']['id'])
+                                if edge.Id == e['data']['id']:
+                                    if cycle:
+                                        e['classes'] = 'red_edges'
+                                    else:
+                                        e['classes'] = 'blue_edges'
+                                    length += float(e['data']['weight'])
+                                    break
+                        
+                        if not cycle:
+                            result_text_children = html.P(f"The shortest path between source node {node1} and target node {node2} has length {length}")
+                        else:
+                            result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                
+            # General Dijkstra between two nodes
+            elif select_algorithm_dropdown == "Find shortest path between two nodes using general Dijkstra's algorithm":
+                
+                result_div_style = {'display':''}
+                # Running the algorithm
+                path = g.dijkstra_general(node1, node2)
+                
+                # Check if path exists
+                if not path:
+                    result_text_children = html.P(f"There is no route between source node {node1} and target node {node2}.")
+                else:
+                        # Check if we have a cycle
+                        cycle = False
+                        if path[0] == "ciclo":
+                            path = path[1:-1]
+                            cycle = True
+
+                        # Adding a class color to the source and target node
+                        updated_nodes = 0
+                        for node in graph_elements['nodes']:
+                            if updated_nodes == 2:
+                                break
+                            if node['data']['label'] == node1:
+                                node['classes'] = 'red_nodes'
+                                updated_nodes += 1
+                                continue
+                            elif node['data']['label'] == node2:
+                                node['classes'] = 'blue_nodes'
+                                updated_nodes += 1
+                                continue
+                        
+                        # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                        length = 0
+                        for edge in path:
+                            for e in graph_elements['edges']:
+                                print(edge.Id, e['data']['id'])
+                                if edge.Id == e['data']['id']:
+                                    if cycle:
+                                        e['classes'] = 'red_edges'
+                                    else:
+                                        e['classes'] = 'blue_edges'
+                                    length += float(e['data']['weight'])
+                                    break
+                        
+                        if not cycle:
+                            result_text_children = html.P(f"The shortest path between source node {node1} and target node {node2} has length {length}")
+                        else:
+                            result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+            
+            elif select_algorithm_dropdown == "Find shortest path between two nodes using Floyd-Warshall algorithm":
+                result_div_style = {'display':''}
+                show_matrix_btn_style = {'display':''}
+                # Running the algorithm
+                path, matrix = g.ruta_nodos_floyd(node1, node2)
+                print(path)
+
+                # Check if we have a cycle
+                cycle = False
+                try:
+                    if path[-1][0] == "ciclo":
+                        path = [e[0] for e in path[0:-1]]
+                        cycle = True
+                except:
+                    None
+                
+                # Check if path exists
+                if not path:
+                    result_text_children = html.P(f"There is no route between source node {node1} and target node {node2}.")
+                else:
+                    # Adding a class color to the source and target node
+                    updated_nodes = 0
+                    for node in graph_elements['nodes']:
+                        if updated_nodes == 2:
+                            break
+                        if node['data']['label'] == node1:
+                            node['classes'] = 'red_nodes'
+                            updated_nodes += 1
+                            continue
+                        elif node['data']['label'] == node2:
+                            node['classes'] = 'blue_nodes'
+                            updated_nodes += 1
+                            continue
+                    
+                    # Coloring all the route edges (red if path is a negative cycle ; blue otherwise)
+                    length = 0
+                    for edge in path:
+                        for e in graph_elements['edges']:
+                            if edge.Id == e['data']['id']:
+                                if cycle:
+                                    e['classes'] = 'red_edges'
+                                else:
+                                    e['classes'] = 'blue_edges'
+                                length += float(e['data']['weight'])
+                                break
+                    if not cycle:
+                        result_text_children = html.P(f"The shortest path between source node {node1} and target node {node2} has length {length}")
+                    else:
+                        result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+            
+                # Getting matrix information
+                # Sacamos el orden de los elementos (la diagonal)(
+                orden = [n['data']['label'] for n in graph_elements['nodes']]
+                orden.sort()
+                orden.insert(0, " ")
+
+                # armamos la matriz
+                matriz = [orden]
+                for ren, nodo in zip(matrix, orden[1:]):
+                    row = [nodo]
+                    for i in range(len(ren)):
+                        if type(ren[i][0]) is Nodo:
+                            row.append(f"{ren[i][0].nombre} / {ren[i][1]}" )
+                        elif type(ren[i][0]) is Arco:
+                            row.append(f"{ren[i][0].origen.nombre} / {ren[i][1]}" )
+                        else:
+                            row.append(f"{ren[i][0]} / {ren[i][1]}" )
+
+                    matriz.append(row)
+
+                # Reemplazamos los "inf "
+                for ren in matriz:
+                    for j in range(len(ren)):
+                        if ren[j] == math.inf:
+                            ren[j] = "Inf"
+                
+                for ren in matriz:
+                    table_row = []
+                    for col in ren:
+                        table_row.append(html.Td(col, style={"text-align":"center"}))
+                    matrix_modal_body_children.append(html.Tr(table_row))
+
+            
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy, show_matrix_btn_style, matrix_modal_body_children, open_select_nodes_modal
+
+        elif btn_triggered == 'done-btn-select-source-and-target-nodes-modal':
+            if graph_copy:
+                graph_elements = copy.deepcopy(graph_copy)
+                graph_copy = None
+            None
         # ----- Clear result case -----
         elif btn_triggered == 'clear-result-btn-digraph':
             alert = None
@@ -1321,7 +1460,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             result_text_children = []
             result_div_style = {'display':'None'}
 
-            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, []
+            return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy, {'display':'None'}, [], None
 
     else:
         return dash.no_update
@@ -1427,35 +1566,29 @@ def toggleModal(edit_edges_btn, cancel_btn_edit_edges_modal, done_btn_edit_edges
 # ----- Callback to manage "Select Source And Target Nodes" modal -----
 @app.callback(
     [Output("select-source-and-target-nodes-modal", "is_open"), Output("select-source-and-target-nodes-modal-body", "children")],
-    [Input("run-algorithm-btn-digraph", "n_clicks"), Input("cancel-btn-select-source-and-target-nodes-modal", "n_clicks"), 
-     Input("done-btn-select-source-and-target-nodes-modal", 'n_clicks')],
-    [State("digraph", "selectedNodeData"), State("select-source-and-target-nodes-modal", "is_open"),
-     State('select-algorithm-dropown-digraph', 'value')]
+    [Input("select-nodes-modal-info", "data"), Input("cancel-btn-select-source-and-target-nodes-modal", "n_clicks"),
+     Input("done-btn-select-source-and-target-nodes-modal", "n_clicks")],
+    [State("digraph", "selectedNodeData"), State("select-source-and-target-nodes-modal", "is_open")]
 )
-def toggleModal(run_algorithm_btn, cancel_btn_select_source_and_target_nodes_modal, 
-                done_btn_select_source_and_target_nodes_modal, selected_node_data, is_modal_open,
-                select_algorithm_dropdown_value):
-    if run_algorithm_btn:
-        if "two nodes" in select_algorithm_dropdown_value:
-            return False, []
-        else:
-            node_forms = []
-            for node in selected_node_data:
-                node_forms.append(
-                    dbc.FormGroup([
-                        dbc.Input(type="hidden", value=node['label']),
-                        html.H3(f"Node {node['label']}"),
-                        dcc.RadioItems(
-                            options=[
-                                {'label':'Source', 'value':'source'},
-                                {'label':'Sink', 'value':'sink'}
-                            ],labelStyle={'display':'inline-block', "padding-left":"1em"}
-                        )                
-                    ], style={"padding-left":"1em"})
-                )
+def toggleModal(select_nodes_modal_info, cancel_btn, done_btn, selected_node_data, is_modal_open):
+    
+    node_forms = []
+    is_open = False
+    if select_nodes_modal_info:
+        node1 = selected_node_data[0]['label']
+        node2  = selected_node_data[1]['label']
+        
+        node_forms.append(
+            dbc.FormGroup([
+                html.H4(f"Source: {node1}"),
+                html.H4(f"Target: {node2}"),
+                dbc.RadioButton(),
+                dbc.Label(f"Swap source and target nodes", style={"padding":"1em"})               
+            ], style={"padding-left":"1em"})
+        )
+        is_open = True
 
-            return not is_modal_open, node_forms
-    return is_modal_open, []
+    return is_open, node_forms
 
 
 # ----- Chained callback to display an alert if it is necesary
