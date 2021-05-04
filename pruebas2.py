@@ -10,7 +10,7 @@ fuentes.append('a')
 fuentes.append('b')
 sumideros.append('g')
 
-flujo = d.costo_minimo_rutas_cortas(fuentes,sumideros,15)
+flujo = d.algoritmo_dual(fuentes,sumideros,15)
 
 d.imprimir_arcos()
 

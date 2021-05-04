@@ -10,7 +10,7 @@ fuentes.append('a')
 
 sumideros.append('g')
 
-costo = d.costo_minimo_ciclos_negativos(fuentes,sumideros,15)
+costo = d.algoritmo_primal(fuentes,sumideros,15)
 
 d.imprimir_arcos()
 
