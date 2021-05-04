@@ -7,13 +7,15 @@ fuentes = []
 sumideros = []
 
 fuentes.append('a')
-
+fuentes.append('b')
 sumideros.append('g')
 
-costo = d.costo_minimo_ciclos_negativos(fuentes,sumideros,15)
+flujo = d.costo_minimo_rutas_cortas(fuentes,sumideros,15)
 
 d.imprimir_arcos()
 
 print("")
-print("Costo final: ",costo)
+print("costo final de la red: ",flujo)        
+
+
 

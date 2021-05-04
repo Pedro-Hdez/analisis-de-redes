@@ -706,30 +706,32 @@ class Digrafica:
 
                         # Si el nuevo peso es menor al actual, actualizamos el peso y el nodo de origen 
                         if (lista_matriz[i][j][1]) > (lista_matriz[i][k][1] + lista_matriz[k][j][1]):
-
+                            
                             # Revisamos si un elemento de la diagonal cambió de valor, para ver si hay ciclo
-                            if(i == j):
-                                # si uno de los elementos de la diagonal de la mtriz cambia de valor, entonces hay un ciclo.
+                            if(i == j ):
+                               
+                                # si uno de los elementos de la diagonal de la matriz cambia de valor, entonces hay un ciclo.
 
                                 # Actualizamos los valores de la dupla del elemento ij (arco y longitud)
                                 lista_matriz[i][j][0] = self.buscar_arco(lista_matriz[k][j][0].origen.nombre,nodos[j].nombre)
                                 lista_matriz[i][j][1]= lista_matriz[i][k][1] + lista_matriz[k][j][1]
+                                if not destino:
+                              
+                                    # recuperamos la ruta del ciclo
+                                    ruta_ciclo = []
+                                    ruta_ciclo = self.regresar_ruta_ciclo(i,j,lista_matriz,nodos)
+                                
+                                    return ruta_ciclo
+                            else:   
+                           
+                                # si el nuevo peso es menor, actualizamos el arco del elemento ij de la matriz    
+                                lista_matriz[i][j][0] = self.buscar_arco(lista_matriz[k][j][0].origen.nombre,nodos[j].nombre)
 
-                                # recuperamos la ruta del ciclo
-                                ruta_ciclo = []
-                                ruta_ciclo = self.regresar_ruta_ciclo(i,j,lista_matriz,nodos)
-
-                                return ruta_ciclo
+                                # Si el nuevo peso es menor actualizamos le peso del elemento ij
+                                lista_matriz[i][j][1]= lista_matriz[i][k][1] + lista_matriz[k][j][1]
 
 
-                            # si el nuevo peso es menor, actualizamos el arco del elemento ij de la matriz    
-                            lista_matriz[i][j][0] = self.buscar_arco(lista_matriz[k][j][0].origen.nombre,nodos[j].nombre)
-
-                            # Si el nuevo peso es menor actualizamos le peso del elemento ij
-                            lista_matriz[i][j][1]= lista_matriz[i][k][1] + lista_matriz[k][j][1]
-
-
-        
+      
         # recuperamos la ruta
         ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos,destino)
 
@@ -767,18 +769,28 @@ class Digrafica:
 
                 if matriz[posicion_nodo][posicion_nodo1][1] == math.inf:
                     return None
-
+                
+            
                 # ciclo para recuperar ruta del origen al nodo correspondiente (destino)
                 while(True):
+       
+                    if(posicion_nodo == posicion_nodo1):
+          
+                        if type(matriz[posicion_nodo][posicion_nodo][0])!= Nodo:
+                            
+                            ruta_ciclo = self.regresar_ruta_ciclo(posicion_nodo,posicion_nodo1,matriz,lista_nodos)
+                            return ruta_ciclo
                     # si encontramos un elemento con peso infinito o un nodo, detenemos el ciclo
                     # condicional que se cumplirá cuando ya no haya más camino que recuperar
                     if type(matriz[posicion_nodo][posicion_nodo1][0])== Nodo:
                         break   
-
+                    
+                    
                     # agregamos el arco a la ruta             
                     ruta_hacia_nodo.append(matriz[posicion_nodo][posicion_nodo1])
-
+                   
                     # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
+                   
                     posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
 
                 # invertimos la lista para ordenar los arcos
@@ -843,10 +855,10 @@ class Digrafica:
             # condicional que se cumplirá cuando ya no haya más camino que recuperar
             if lista_matriz[i][posicion_nodo1][1] == math.inf or type(lista_matriz[i][posicion_nodo1][0])== Nodo:
                 break   
-
+          
             # agregamos el arco a la ruta             
             ruta_ciclo.append(lista_matriz[i][posicion_nodo1])
-
+            
             # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
             posicion_nodo1 = nodos.index(lista_matriz[i][posicion_nodo1][0].origen)
             
@@ -855,7 +867,7 @@ class Digrafica:
                 # ordenamos los arcos
                 ruta_ciclo.reverse()
                 break
-                
+       
         return ruta_ciclo
 
     def imprimir_rutas_floyd(self,nodo1,matriz):
@@ -914,3 +926,4 @@ class Digrafica:
 
     def objeto_arco(self):
         return Arco
+
