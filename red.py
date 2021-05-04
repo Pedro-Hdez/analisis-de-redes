@@ -686,7 +686,7 @@ class Red:
         
       
         
-    def costo_minimo_ciclos_negativos(self,fuentes,sumideros,limite_flujo):
+    def algoritmo_primal(self,fuentes,sumideros,limite_flujo):
         # aplicamos for fulkerson con el limite de flujo deseado
         flujo = self.flujo_maximo(fuentes,sumideros,limite_flujo)
      
@@ -940,7 +940,7 @@ class Red:
                 break        
                 
             
-    def costo_minimo_rutas_cortas(self,fuentes,sumideros,limite_flujo):
+    def algoritmo_dual(self,fuentes,sumideros,limite_flujo):
         # aplicamos for fulkerson con el limite de flujo deseado
   
         flujo = self.flujo_maximo(fuentes,sumideros,None,True)
@@ -967,7 +967,7 @@ class Red:
 
         # aplicamos el algoritmo primal para obtener el flujo de menor costo
         
-        self.costo_minimo_ciclos_negativos(fuente,sumidero,flujo)
+        self.algoritmo_primal(fuente,sumidero,flujo)
         
         costo = 0
 
