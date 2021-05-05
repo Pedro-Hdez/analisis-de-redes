@@ -14,7 +14,10 @@ import uuid
 from main import app
 
 # ----- Dropdown menu for algorithm selection -----
-algorithms = ["Find maximum flow using Ford-Fulkerson algorithm", "Algorithm 2", "Algorithm 3"]
+algorithms = ["Find maximum flow using Ford-Fulkerson algorithm", 
+              "Find minimum-cost flow using Primal algorithm",
+              "Find minimum-cost flow using Dual algorithm"]
+
 select_algorithm_dropdown = dcc.Dropdown(
     id='select-algorithm-dropown-network',
     value="Find maximum flow using Ford-Fulkerson algorithm",
@@ -1271,8 +1274,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             sources = []
             sinks = []
             for c in select_source_and_sink_nodes_modal_body_children:
-                node = c['props']['children'][0]['props']['value']
                 try:
+                    node = c['props']['children'][0]['props']['value']
                     node_type = c['props']['children'][2]['props']['value']
                     if node_type == "source":
                         sources.append(node)
@@ -1281,10 +1284,26 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 except:
                     continue
             
+            # Getting target flow
+            target_flow = None
+            try:
+                target_flow = select_source_and_sink_nodes_modal_body_children[2]['props']['children'][1]['props']['value']
+                # If it exists, validate if it is a positive number less than infinity
+                target_flow = float(target_flow)
+                if target_flow < 0 or target_flow == math.inf:
+                    raise Exception()
+            except:
+                target_flow = None
+            
             # Alert if there are not sources or sinks
             if not sources or not sinks:
                 # Incorrect number of sources or sinks
                 alert = 16
+
+            # Alert if target flow is needed and it is incorrect or unexistent
+            if target_flow == None and select_algorithm_dropdown != "Find maximum flow using Ford-Fulkerson algorithm":
+                # Target flow is needed 
+                alert = 17
                 
             if not alert:    
                 result_div_style = {'display':''}
@@ -1304,11 +1323,11 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 # Ford-Fulkerson
                 if select_algorithm_dropdown == "Find maximum flow using Ford-Fulkerson algorithm":
                     # Getting result
-                    max_flow, edges = g.flujo_maximo(sources, sinks)
+                    max_flow = g.flujo_maximo(sources, sinks)
+                    edges = g.arcos()
                     print(type(max_flow))
                     
                     if max_flow:
-                        print("YES WE")
                         # Updating edges flows
                         for edge in edges:
                             for e in graph_elements['edges']:
@@ -1349,7 +1368,105 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                     elif max_flow == 0:
                         txt = f"Current restrictions could not be satisfied. The problem has no solution."
                         result_text_children = html.P([txt])
-            
+                
+                elif select_algorithm_dropdown == "Find minimum-cost flow using Primal algorithm":
+                    # Getting the cost
+                    cost = g.algoritmo_primal(sources, sinks, target_flow)
+
+                    # If not cost, do nothing but write the result
+                    if not cost:
+                        txt = f"Target flow of {target_flow} units could not be reached due current restrictions. The problem has no solution."
+                    # If there are cost, show the final flow distribution
+                    else:
+                        # Updating edges flows
+                        edges = g.arcos()
+                        for edge in edges:
+                            for e in graph_elements['edges']:
+                                if edge.Id == e['data']['id']:
+                                    if edge.flujo == math.inf:
+                                        e['data']['restrictions'][1] = "Inf"
+                                    else:
+                                        e['data']['restrictions'][1] = edge.flujo
+                                    break
+
+                        # Coloring sources (red) and sinks (blue) nodes
+                        updated_nodes = 0
+                        nodes_to_update = len(sources) + len(sinks)
+                        for node in sources + sinks:
+                            if updated_nodes == nodes_to_update:
+                                break
+                            for n in graph_elements['nodes']:
+                                if node == n['data']['label']:
+                                    if node in sources:
+                                        n['classes'] = 'red_nodes'
+                                    else:
+                                        n['classes'] = 'blue_nodes'
+                                    updated_nodes += 1
+                                    break
+                        
+                        # Written result
+                        txt = f"Target flow of {target_flow} units have been reached with cost {cost} from "
+                        if len(sources) == 1:
+                            txt += f"source {[s for s in sources]} to "
+                        else:
+                            txt += f"sources {[s for s in sources]} to "
+                        
+                        if len(sinks) == 1:
+                            txt += f"sink {[s for s in sinks]}"
+                        else:
+                            txt += f"sinks {[s for s in sinks]}"
+                        
+                    result_text_children = html.P([txt])
+                
+                elif select_algorithm_dropdown == "Find minimum-cost flow using Dual algorithm":
+                    # Getting the cost
+                    cost = g.algoritmo_dual(sources, sinks, target_flow)
+
+                    # If not cost, do nothing but write the result
+                    if not cost:
+                        txt = f"Target flow of {target_flow} units could not be reached due current restrictions. The problem has no solution."
+                    # If there are cost, show the final flow distribution
+                    else:
+                        # Updating edges flows
+                        edges = g.arcos()
+                        for edge in edges:
+                            for e in graph_elements['edges']:
+                                if edge.Id == e['data']['id']:
+                                    if edge.flujo == math.inf:
+                                        e['data']['restrictions'][1] = "Inf"
+                                    else:
+                                        e['data']['restrictions'][1] = edge.flujo
+                                    break
+
+                        # Coloring sources (red) and sinks (blue) nodes
+                        updated_nodes = 0
+                        nodes_to_update = len(sources) + len(sinks)
+                        for node in sources + sinks:
+                            if updated_nodes == nodes_to_update:
+                                break
+                            for n in graph_elements['nodes']:
+                                if node == n['data']['label']:
+                                    if node in sources:
+                                        n['classes'] = 'red_nodes'
+                                    else:
+                                        n['classes'] = 'blue_nodes'
+                                    updated_nodes += 1
+                                    break
+                        
+                        # Written result
+                        txt = f"Target flow of {target_flow} units have been reached with cost {cost} from "
+                        if len(sources) == 1:
+                            txt += f"source {[s for s in sources]} to "
+                        else:
+                            txt += f"sources {[s for s in sources]} to "
+                        
+                        if len(sinks) == 1:
+                            txt += f"sink {[s for s in sinks]}"
+                        else:
+                            txt += f"sinks {[s for s in sinks]}"
+                        
+                    result_text_children = html.P([txt])
+
             return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
         
         elif btn_triggered == "run-algorithm-btn-network":
@@ -1533,10 +1650,12 @@ def toggleModal(edit_edges_btn, cancel_btn_edit_edges_modal, done_btn_edit_edges
     [Output("select-source-and-sink-nodes-modal", "is_open"), Output("select-source-and-sink-nodes-modal-body", "children")],
     [Input("run-algorithm-btn-network", "n_clicks"), Input("cancel-btn-select-source-and-sink-nodes-modal", "n_clicks"), 
      Input("done-btn-select-source-and-sink-nodes-modal", 'n_clicks')],
-    [State("network", "selectedNodeData"), State("select-source-and-sink-nodes-modal", "is_open")]
+    [State("network", "selectedNodeData"), State("select-source-and-sink-nodes-modal", "is_open"),
+     State('select-algorithm-dropown-network', 'value')]
 )
 def toggleModal(run_algorithm_btn, cancel_btn_select_source_and_sink_nodes_modal, 
-                done_btn_select_source_and_sink_nodes_modal, selected_node_data, is_modal_open):
+                done_btn_select_source_and_sink_nodes_modal, selected_node_data, is_modal_open,
+                select_algorithm_dropdown):
     if run_algorithm_btn:
         if not selected_node_data:
             return False, []
@@ -1554,6 +1673,19 @@ def toggleModal(run_algorithm_btn, cancel_btn_select_source_and_sink_nodes_modal
                             ],labelStyle={'display':'inline-block', "padding-left":"1em"}
                         )                
                     ], style={"padding-left":"1em"})
+                )
+            
+            if select_algorithm_dropdown != "Find maximum flow using Ford-Fulkerson algorithm":
+                node_forms.append(
+                    dbc.Form(
+                        [
+                            html.H6("Target Flow: ", className="mr-2", style={"padding":"2em"}),
+                            dbc.Input(type="text"),
+                            
+                            
+                        ], inline=True
+                    )
+
                 )
 
             return not is_modal_open, node_forms
@@ -1616,5 +1748,11 @@ def manageAlert(alert_info):
         show = True
     elif alert_info == 16:
         text = "Error. Sources or sinks nodes not encountered. Please, select at least one source node and one sink node and try again"
+        show = True
+    elif alert_info == 16:
+        text = "Error. Sources or sinks nodes not encountered. Please, select at least one source node and one sink node and try again"
+        show = True
+    elif alert_info == 17:
+        text = "Error. Incorrect target flow. Please, check it and try again"
         show = True
     return text, show
