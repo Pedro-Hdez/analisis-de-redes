@@ -991,17 +991,17 @@ class Red:
 
         salientes_sumideros = []
         entrantes_sumideros = []
-        for nodo in sumideros:
+        for nodo in sumidero:
             for arco in self.__red[self.buscar_nodo(nodo)]["salientes"]:
                 salientes_sumideros.append(arco)
             for arco in self.__red[self.buscar_nodo(nodo)]["entrantes"]:
                 entrantes_sumideros.append(arco)
 
         
-
+     
         # aplicamos el algoritmo usando la red marginal
         red_marginal.rutas_cortas(fuente,sumidero,salientes_sumideros,entrantes_sumideros,limite_flujo)
-       
+        
         if(len(fuentes)>1):
             self.eliminar_nodo('A+')
         if(len(sumideros)>1):
@@ -1034,7 +1034,7 @@ class Red:
         while(True):
           
             # aplicamos el algoritmo de floyd para encontrar ciclos negativos
-            ruta = d.ruta_nodos_floyd("a","g")
+            ruta = d.ruta_nodos_floyd(fuente[0],sumidero[0])
 
             # en caso de encontrar alguna ruta, seguimos con el algoritmo
             if ruta and type(ruta[len(ruta)-1]) == float:
