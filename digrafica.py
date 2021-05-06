@@ -99,7 +99,7 @@ class Digrafica:
         nodo_b = self.buscar_nodo(b)
 
         # Se construye el arco (a,b)
-        arco = Arco(nodo_a, nodo_b, peso, Id)
+        arco = Arco(nodo_a, nodo_b, peso, Id=Id)
 
         # Se agrega el arco (a,b) a los salientes de a, y el grado positivo de a 
         # se incrementa en 1
@@ -429,7 +429,7 @@ class Digrafica:
         return ruta
 
 
-    def dikjstra(self, nodo_inicial, nodo_final=None):
+    def dijkstra(self, nodo_inicial, nodo_final=None):
         # Se obtienen los nodos inicial y final
         a = self.buscar_nodo(nodo_inicial)
         if not a:
@@ -503,7 +503,7 @@ class Digrafica:
             return rutas
 
 
-    def dikjstra_general(self, nodo_inicial, nodo_final=None):
+    def dijkstra_general(self, nodo_inicial, nodo_final=None):
         # Se buscan los dos nodos
         nodo_inicial = self.buscar_nodo(nodo_inicial)
         n_final = self.buscar_nodo(nodo_final)
@@ -512,8 +512,8 @@ class Digrafica:
         if nodo_final and not n_final:
             raise ValueError(f"Error. El nodo final {nodo_final} no existe en la digráfica" )
         
-        # Se encuentra la arborescencia temporal con dikjstra normal
-        arborescencia = self.dikjstra(nodo_inicial.nombre, None)
+        # Se encuentra la arborescencia temporal con dijkstra normal
+        arborescencia = self.dijkstra(nodo_inicial.nombre, None)
         
         # Obtenemos las aristas sin usar
         aristas_sin_usar = []
@@ -700,7 +700,7 @@ class Digrafica:
                                     ruta_ciclo = []
                                     ruta_ciclo = self.regresar_ruta_ciclo(i,j,lista_matriz,nodos)
                                 
-                                    return ruta_ciclo
+                                    return ruta_ciclo, lista_matriz
                             else:   
                            
                                 # si el nuevo peso es menor, actualizamos el arco del elemento ij de la matriz    
@@ -714,7 +714,7 @@ class Digrafica:
         # recuperamos la ruta
         ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos,destino)
 
-        return ruta_corta
+        return ruta_corta, lista_matriz
 
     
     def recuperar_ruta_floyd(self,matriz,nodo,lista_nodos, destino = None):
@@ -756,7 +756,7 @@ class Digrafica:
                     if(posicion_nodo == posicion_nodo1):
           
                         if type(matriz[posicion_nodo][posicion_nodo][0])!= Nodo:
-                            
+                            posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
                             ruta_ciclo = self.regresar_ruta_ciclo(posicion_nodo,posicion_nodo1,matriz,lista_nodos)
                             return ruta_ciclo
                     # si encontramos un elemento con peso infinito o un nodo, detenemos el ciclo
@@ -886,11 +886,11 @@ class Digrafica:
             return None
 
         # aplicamos el algoritmo
-        rutas_origen = self.floyd(origen,destino)
+        rutas_origen, matriz = self.floyd(origen,destino)
         if rutas_origen:
             # si se encontró un ciclo negativo, regresamos el ciloc
             if (rutas_origen[len(rutas_origen)-1][0]=="ciclo"):
-                return rutas_origen
+                return rutas_origen, matriz
             
             # recuperamos la ruta del nodo origen al nodo destino
             ruta = self.arcos_floyd(rutas_origen)
@@ -899,9 +899,9 @@ class Digrafica:
             ruta.append(rutas_origen[len(rutas_origen)-1][1][1])
 
         
-            return ruta
+            return ruta, matriz
         else:
-            return None
+            return None, matriz
 
     def objeto_arco(self):
         return Arco
