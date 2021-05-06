@@ -1082,7 +1082,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 # Adding all edges
                 for edge in graph_elements['edges']:
                     g.agregar_arco(edge['data']['source_node'], edge['data']['target_node'],
-                                    edge['data']['id'], float(edge['data']['weight']))
+                                   peso=float(edge['data']['weight']), Id=edge['data']['id'])
                 
                 # ----- ALGORITHM TO RUN -----
                 # Dijkstra between two nodes
@@ -1261,7 +1261,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             # Adding all edges
             for edge in graph_elements['edges']:
                 g.agregar_arco(edge['data']['source_node'], edge['data']['target_node'],
-                                edge['data']['id'], float(edge['data']['weight']))
+                               pes=float(edge['data']['weight']), Id=edge['data']['id'])
             
             # ----- ALGORITHM TO RUN -----
             if select_algorithm_dropdown == "Find shortest path between two nodes using Dijkstra's algorithm":

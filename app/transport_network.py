@@ -1059,7 +1059,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             print(graph)
 
             alert = None
-            nodes = [e for e in graph if len(e) == 3]
+            nodes = [e for e in graph if len(e) == 4]
             edges = [e for e in graph if len(e) == 6]
 
             # Validate non repetitions in nodes labels
@@ -1083,13 +1083,13 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             if not alert:
                 for element in graph:
                     # Just accept edges: [a,b,min_res,flow,capacity,cost]
-                    # or nodes: [a,min_res,max_res]
-                    if len(element) != 6 and len(element) != 3: 
+                    # or nodes: [a,min_res,max_res, cost]
+                    if len(element) != 6 and len(element) != 4: 
                         alert = 7
                         break
 
                     # Nodes validation
-                    if len(element) == 3:
+                    if len(element) == 4:
                         # Validate if node restrictions are non negative numbers
                         try:
                             for i in range(1,3):
@@ -1165,14 +1165,15 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 for element in graph:
                     element_splitted = element
                     # When it's a node
-                    if len(element_splitted) == 3:
+                    if len(element_splitted) == 4:
                         # Check if max restriction is Inf to store it as string
                         if element_splitted[2] == math.inf:
                             element_splitted[2] = 'Inf'
 
                         # Add it to the new nodes
                         node = {'data': {'id': str(uuid.uuid1()), 'label': element_splitted[0], 'positive_degree':0, 'negative_degree':0,
-                                'min_restriction':element_splitted[1], 'max_restriction':element_splitted[2]},
+                                'min_restriction':element_splitted[1], 'max_restriction':element_splitted[2],
+                                'supply/demand':element_splitted[3]},
                                 'position': {'x':random.uniform(0,500),'y':random.uniform(0,500)},
                                 'classes':'node'}
 
@@ -1181,7 +1182,8 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         # Adding the node to the degrees dict
                         nodes_degrees[element_splitted[0]] = {'positive_degree':0, 'negative_degree':0, 
                                                               'min_restriction':element_splitted[1],
-                                                              'max_restriction':element_splitted[2]}
+                                                              'max_restriction':element_splitted[2],
+                                                              'supply/demand':element_splitted[3]}
                         number_of_nodes += 1
 
                     # When it's an edge
@@ -1240,11 +1242,12 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 for node in nodes_degrees .items():   
                     nodes_degrees_table_children.append(html.Tr(
                         [
-                            html.Td(node[0], style={"text-align":"center"}), 
-                            html.Td(node[1]['positive_degree'],  style={"text-align":"center"}),
-                            html.Td(node[1]['negative_degree'],  style={"text-align":"center"}),
-                            html.Td(node[1]['min_restriction'],  style={"text-align":"center"}),
-                            html.Td(node[1]['max_restriction'],  style={"text-align":"center"})
+                            html.Td(node[0], style={"text-align":"center", "width":"16.6%"}), 
+                            html.Td(node[1]['positive_degree'],  style={"text-align":"center", "width":"16.6%"}),
+                            html.Td(node[1]['negative_degree'],  style={"text-align":"center", "width":"16.6%"}),
+                            html.Td(node[1]['min_restriction'],  style={"text-align":"center", "width":"16.6%"}),
+                            html.Td(node[1]['max_restriction'],  style={"text-align":"center", "width":"16.6%"}),
+                            html.Td(node[1]['supply/demand'],  style={"text-align":"center", "width":"16.6%"}),
                         ], className="table-primary"))
             
             # Clean the upload content so we can upload a diferent file
@@ -1311,7 +1314,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 g = Red()
                 # Adding all nodes
                 for node in graph_elements['nodes']:
-                    g.agregar_nodo(node['data']['label'])
+                    g.agregar_nodo(node['data']['label'],node['data']['min_restriction'],node['data']['max_restriction'],node['data']['supply/demand'])
                 # Adding all edges
                 for edge in graph_elements['edges']:
                     g.agregar_arco(edge['data']['source_node'], edge['data']['target_node'],

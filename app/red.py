@@ -27,13 +27,14 @@ class Nodo:
         Esta clase representa un nodo. Tiene un nombre, restricción mínima y máxima, etiqueta y 
         grados positivo y negativo.
     """
-    def __init__(self, nombre, res_min=0, res_max=math.inf, Id=None):
+    def __init__(self, nombre, res_min=0, res_max=math.inf, oferta_demanda=0, Id=None):
         self.nombre = nombre
         self.res_min=res_min
         self.res_max=res_max
         self.etiqueta = None
         self.grado_positivo = 0
         self.grado_negativo = 0
+        self.oferta_demanda=0
         self.Id = Id
 
 #----------------------------------------------------------------
@@ -49,11 +50,9 @@ class Red:
     def buscar_nodo(self, nombre):
         """
             Este método busca un nodo en la gráfica.
-
             Parametros:
             ----------
             nodo: Nodo a buscar
-
             Regresa:
             -------
             True si el nodo se encuentra en la digráfica.
@@ -64,19 +63,16 @@ class Red:
                 return nodo
         return False 
     
-    def agregar_nodo(self, nombre, res_min=0, res_max=math.inf):
+    def agregar_nodo(self, nombre, res_min=0, res_max=math.inf, oferta_demanda=0):
         """
             Este método agrega un nodo a la digráfica.
-
             Parámetros
             ----------
             nodo: Nodo que se desea agregar
-
             Regresa
             -------
             False: Si el nodo a agregar ya existe
             True: Si el nodo a agregar no existía en la digráfica.
-
         """
         # Se busca el nodo en la gráfica, si ya existe, se regresa False
         nodo = self.buscar_nodo(nombre)
@@ -84,7 +80,7 @@ class Red:
         
             # Si el nuevo nodo no existe, entonces se crea y se le añade un diccionario
             # con dos listas vacías, la lista de nodos "entrantes" y la lista de nodos "salientes"
-            nodo = Nodo(nombre, float(res_min), float(res_max))
+            nodo = Nodo(nombre, float(res_min), float(res_max), float(oferta_demanda))
             self.__red[nodo] = {"entrantes":[], "salientes":[]}
 
             # El número de nodos en la digráfica se incrementa y se regresa True
@@ -94,7 +90,6 @@ class Red:
     def agregar_arco(self, a, b, res_min=0, flujo=0, capacidad=0,costo=0, Id=None):
         """
             Este método agrega un arco a la digráfica
-
             Parámetros
             ----------
             a: Nodo de origen.
@@ -130,7 +125,6 @@ class Red:
     def leer_red(self, archivo):
         """
             Este método lee una digráfica desde un archivo
-
             Parámetros
             ----------
             archivo: Ruta del archivo de texto en donde se encuentra la información
@@ -147,8 +141,12 @@ class Red:
             length = len(line)
             if length == 1:
                 self.agregar_nodo(line[0])
+            elif length == 2:
+                self.agregar_arco(line[0], line[1])
             elif length == 3:
                 self.agregar_nodo(line[0], float(line[1]), float(line[2]))
+            elif length == 4:
+                self.agregar_nodo(line[0], float(line[1]), float(line[2]), float(line[3]))
             elif length == 5:
                 self.agregar_arco(line[0], line[1], float(line[2]), float(line[3]), float(line[4]))
             elif length == 6:
@@ -157,13 +155,11 @@ class Red:
     def buscar_arco(self, a, b, res_min=0, flujo=0, capacidad=0):
         """
             Este método busca un arco entre dos nodos
-
             Parámetros
             ----------
             a: Nodo de origen del arco a buscar.
             b: Nodo destino del arco a buscar.
             peso (None por default): Peso del arco a buscar 
-
             Regresa
             -------
             arco: Si existe, regresa el objeto de la clase Arco que tiene como origen al nodo a, 
@@ -189,13 +185,11 @@ class Red:
     def eliminar_arco(self, a=None, b=None, res_min=0, flujo=0, capacidad=0, obj_arco=None):
         """
             Este método elimina un arco de la digráfica
-
             Parámetros
             ----------
             a: Nodo de origen del arco
             b: Nodo destino del arco
             peso (None por default): peso del arco
-
             Regresa
             -------
             True: Si el arco pudo eliminarse (si existía)
@@ -234,11 +228,9 @@ class Red:
     def eliminar_nodo(self, nombre):
         """
             Este método elimina un nodo de la digráfica
-
             Parámetros
             ----------
             nombre: Nombre del nodo que se quiere eliminar
-
             Regresa
             -------
             True: Si el nodo pudo eliminarse (Sí existía)
@@ -263,14 +255,12 @@ class Red:
     def obtener_grado(self, nombre, tipo="positivo"):
         """
             Este método obtiene el grado positivo de un nodo de la gráfica
-
             Parámetros
             ----------
             nombre: Nombre del nodo al que se le va a calcular el grado
             tipo: Tipo del grado
                 - "positivo" (por default) para el grado positivo
                 - "negativo" para el grado negativo
-
             Regresa
             -------
             - El grado del nodo si éste existe en la digráfica
@@ -288,7 +278,6 @@ class Red:
     def obtener_numero_nodos(self):
         """
             Este método obtiene el número de nodos de la gráfica
-
             Regresa
             -------
             El número de nodos de la gráfica
@@ -299,7 +288,6 @@ class Red:
     def obtener_numero_arcos(self):
         """
             Este método obtiene el número de aristas de la gráfica
-
             Regresa
             -------
             El número de aristas de la gráfica
@@ -310,11 +298,9 @@ class Red:
     def vaciar_nodo(self, nombre):
         """
             Este método elimina todos los arcos incidentes de un nodo
-
             Parámetros
             ----------
             nombre: Nombre del nodo que vamos a vaciar
-
             Regresa
             -------
             - True si el nodo pudo ser vaciado (si existía en la digráfica)
@@ -352,7 +338,6 @@ class Red:
     def copiar(self):
         """
             Este método realiza una copia de la gráfica
-
             Regresa
             -------
             Objeto de la clase Digráfica que representa la copia del objeto actual.
@@ -362,10 +347,8 @@ class Red:
     def __limpiar_etiquetas(self, tipo):
         """
             Este método limpia las etiquetas de los nodos y/o aristas de la gráfica
-
             Parámetros
             ----------
-
             tipo: Tipo del objeto del que deseamos eliminar las etiquetas
                 - "nodos": Para limpiar las etiquetas de los nodos
                 - "arcos": Para limpiar las etiquetas de los arcos
@@ -458,7 +441,7 @@ class Red:
                     break
 
     def flujo_maximo(self,fuentes,sumideros,limite_flujo = None,Dual = None):
-
+        
         # revisaremos cuantos nodos fuentes y sumideros hay 
         # si hay mas de un sumireo o mas de un nodo fuente, crearemos un super fuente o un super sumidero
         if len(fuentes) > 1:
@@ -549,7 +532,7 @@ class Red:
             
             # aplicamos ford fulkerson a la red, con los nodos fuente y sumidero ficticios
             self.fulkerson(fuenteFicticio,sumideroFicticio,limite_flujo,sumideros)
-
+            print("s")
 
             
             # regresamos a la normalidad los arcos que tenian reestriccion minima
@@ -594,6 +577,11 @@ class Red:
                     for arco in lista_arcos_ficticios:
                         self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
                     self.eliminar_nodo(nodo.nombre+ '"')
+                costo = 0
+                for nodo in self.__red:
+                    for arco in self.__red[nodo]["salientes"]:
+                        costo += arco.flujo * arco.costo
+                print("costo: ",costo)
                 return flujo_actual
             if(limite_flujo):
                 
@@ -608,7 +596,7 @@ class Red:
                     return None
         # aplicamos for fulkerson a la red
         self.fulkerson(fuente,sumidero,limite_flujo,sumideros)
-
+       
 
         # regresamos los nodos con reestriccion particionados a la normalidad
         for nodo in nodos_ficticios:
@@ -689,6 +677,7 @@ class Red:
     def algoritmo_primal(self,fuentes,sumideros,limite_flujo):
         # aplicamos for fulkerson con el limite de flujo deseado
         flujo = self.flujo_maximo(fuentes,sumideros,limite_flujo)
+        
      
         if(flujo):
 
@@ -944,6 +933,7 @@ class Red:
         # aplicamos for fulkerson con el limite de flujo deseado
   
         flujo = self.flujo_maximo(fuentes,sumideros,None,True)
+      
 
         # revisamos si nos excedemos del limite de flujo
         if (flujo > limite_flujo):
@@ -966,8 +956,8 @@ class Red:
             sumidero = sumideros
 
         # aplicamos el algoritmo primal para obtener el flujo de menor costo
-        
-        self.algoritmo_primal(fuente,sumidero,flujo)
+        if(flujo>0):
+            self.algoritmo_primal(fuente,sumidero,flujo)
         
         costo = 0
 
@@ -1011,7 +1001,6 @@ class Red:
         costo = 0
         for nodo in self.__red:
             for arco in self.__red[nodo]["salientes"]:
-                arcos_red_original.append(arco)
                 costo += arco.flujo * arco.costo
 
         return costo
