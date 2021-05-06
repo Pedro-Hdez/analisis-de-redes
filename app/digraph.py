@@ -1261,7 +1261,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             # Adding all edges
             for edge in graph_elements['edges']:
                 g.agregar_arco(edge['data']['source_node'], edge['data']['target_node'],
-                               pes=float(edge['data']['weight']), Id=edge['data']['id'])
+                               float(edge['data']['weight']), edge['data']['id'])
             
             # ----- ALGORITHM TO RUN -----
             if select_algorithm_dropdown == "Find shortest path between two nodes using Dijkstra's algorithm":
@@ -1269,6 +1269,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 result_div_style = {'display':''}
                 # Running the algorithm
                 path = g.dijkstra(node1, node2)
+
                 
                 # Check if path exists
                 if not path:
@@ -1365,7 +1366,9 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 result_div_style = {'display':''}
                 show_matrix_btn_style = {'display':''}
                 # Running the algorithm
+                print("Se va a correr el floyd")
                 path, matrix = g.ruta_nodos_floyd(node1, node2)
+                print("SE ENCONTRO ALGO")
                 print(path)
 
                 # Check if we have a cycle
