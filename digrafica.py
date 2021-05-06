@@ -9,11 +9,12 @@ class Arco:
         Esta clase representa un arco. Tiene nodos de origen y destino, además de un peso
         y una etiqueta.
     """
-    def __init__(self, origen, destino, peso=None, etiqueta=None):
+    def __init__(self, origen, destino, peso=None, etiqueta=None, Id=None):
         self.origen = origen
         self.destino = destino
         self.peso = peso
         self.etiqueta = etiqueta
+        self.Id = Id
 #----------------------------------------------------------------
 
 class Nodo:
@@ -41,11 +42,9 @@ class Digrafica:
     def buscar_nodo(self, nombre):
         """
             Este método busca un nodo en la gráfica.
-
             Parametros:
             ----------
             nodo: Nodo a buscar
-
             Regresa:
             -------
             True si el nodo se encuentra en la digráfica.
@@ -59,16 +58,13 @@ class Digrafica:
     def agregar_nodo(self, nombre):
         """
             Este método agrega un nodo a la digráfica.
-
             Parámetros
             ----------
             nodo: Nodo que se desea agregar
-
             Regresa
             -------
             False: Si el nodo a agregar ya existe
             True: Si el nodo a agregar no existía en la digráfica.
-
         """
         # Se busca el nodo en la gráfica, si ya existe, se regresa False
         if self.buscar_nodo(nombre):
@@ -83,10 +79,9 @@ class Digrafica:
         self.__num_nodos += 1
         return True
 
-    def agregar_arco(self, a, b, peso=None):
+    def agregar_arco(self, a, b, peso=None, Id=None):
         """
             Este método agrega un arco a la digráfica
-
             Parámetros
             ----------
             a: Nodo de origen.
@@ -104,7 +99,7 @@ class Digrafica:
         nodo_b = self.buscar_nodo(b)
 
         # Se construye el arco (a,b)
-        arco = Arco(nodo_a, nodo_b, peso)
+        arco = Arco(nodo_a, nodo_b, peso, Id)
 
         # Se agrega el arco (a,b) a los salientes de a, y el grado positivo de a 
         # se incrementa en 1
@@ -124,7 +119,6 @@ class Digrafica:
     def leer_digrafica(self, archivo):
         """
             Este método lee una digráfica desde un archivo
-
             Parámetros
             ----------
             archivo: Ruta del archivo de texto en donde se encuentra la información
@@ -149,13 +143,11 @@ class Digrafica:
     def buscar_arco(self, a, b, peso=None):
         """
             Este método busca un arco entre dos nodos
-
             Parámetros
             ----------
             a: Nodo de origen del arco a buscar.
             b: Nodo destino del arco a buscar.
             peso (None por default): Peso del arco a buscar 
-
             Regresa
             -------
             arco: Si existe, regresa el objeto de la clase Arco que tiene como origen al nodo a, 
@@ -199,13 +191,11 @@ class Digrafica:
     def eliminar_arco(self, a, b, peso=None):
         """
             Este método elimina un arco de la digráfica
-
             Parámetros
             ----------
             a: Nodo de origen del arco
             b: Nodo destino del arco
             peso (None por default): peso del arco
-
             Regresa
             -------
             True: Si el arco pudo eliminarse (si existía)
@@ -241,11 +231,9 @@ class Digrafica:
     def eliminar_nodo(self, nombre):
         """
             Este método elimina un nodo de la digráfica
-
             Parámetros
             ----------
             nombre: Nombre del nodo que se quiere eliminar
-
             Regresa
             -------
             True: Si el nodo pudo eliminarse (Sí existía)
@@ -278,14 +266,12 @@ class Digrafica:
     def obtener_grado(self, nombre, tipo="positivo"):
         """
             Este método obtiene el grado positivo de un nodo de la gráfica
-
             Parámetros
             ----------
             nombre: Nombre del nodo al que se le va a calcular el grado
             tipo: Tipo del grado
                 - "positivo" (por default) para el grado positivo
                 - "negativo" para el grado negativo
-
             Regresa
             -------
             - El grado del nodo si éste existe en la digráfica
@@ -303,7 +289,6 @@ class Digrafica:
     def obtener_numero_nodos(self):
         """
             Este método obtiene el número de nodos de la gráfica
-
             Regresa
             -------
             El número de nodos de la gráfica
@@ -314,7 +299,6 @@ class Digrafica:
     def obtener_numero_arcos(self):
         """
             Este método obtiene el número de aristas de la gráfica
-
             Regresa
             -------
             El número de aristas de la gráfica
@@ -325,11 +309,9 @@ class Digrafica:
     def vaciar_nodo(self, nombre):
         """
             Este método elimina todos los arcos incidentes de un nodo
-
             Parámetros
             ----------
             nombre: Nombre del nodo que vamos a vaciar
-
             Regresa
             -------
             - True si el nodo pudo ser vaciado (si existía en la digráfica)
@@ -367,7 +349,6 @@ class Digrafica:
     def copiar(self):
         """
             Este método realiza una copia de la gráfica
-
             Regresa
             -------
             Objeto de la clase Digráfica que representa la copia del objeto actual.
@@ -377,10 +358,8 @@ class Digrafica:
     def __limpiar_etiquetas(self, tipo):
         """
             Este método limpia las etiquetas de los nodos y/o aristas de la gráfica
-
             Parámetros
             ----------
-
             tipo: Tipo del objeto del que deseamos eliminar las etiquetas
                 - "nodos": Para limpiar las etiquetas de los nodos
                 - "arcos": Para limpiar las etiquetas de los arcos
@@ -926,4 +905,3 @@ class Digrafica:
 
     def objeto_arco(self):
         return Arco
-
