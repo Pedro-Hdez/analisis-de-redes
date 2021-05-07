@@ -772,8 +772,6 @@ class Digrafica:
                    
                     posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
 
-                # invertimos la lista para ordenar los arcos
-                ruta_hacia_nodo.reverse()
 
                 # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
                 rutas.append(ruta_hacia_nodo)

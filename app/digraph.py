@@ -1378,12 +1378,14 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         path = [e[0] for e in path[0:-1]]
                         cycle = True
                 except:
-                    None
+                    # If path is not a cycle, remove last path element, which is the route length
+                    path = path[:-1]
                 
                 # Check if path exists
                 if not path:
                     result_text_children = html.P(f"There is no route between source node {node1} and target node {node2}.")
                 else:
+                    
                     # Adding a class color to the source and target node
                     updated_nodes = 0
                     for node in graph_elements['nodes']:
