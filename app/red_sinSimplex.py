@@ -34,7 +34,7 @@ class Nodo:
         self.etiqueta = None
         self.grado_positivo = 0
         self.grado_negativo = 0
-        self.oferta_demanda=oferta_demanda
+        self.oferta_demanda=0
         self.Id = Id
 
 #----------------------------------------------------------------
@@ -532,7 +532,7 @@ class Red:
             
             # aplicamos ford fulkerson a la red, con los nodos fuente y sumidero ficticios
             self.fulkerson(fuenteFicticio,sumideroFicticio,limite_flujo,sumideros)
-            
+            print("s")
 
             
             # regresamos a la normalidad los arcos que tenian reestriccion minima
@@ -581,7 +581,7 @@ class Red:
                 for nodo in self.__red:
                     for arco in self.__red[nodo]["salientes"]:
                         costo += arco.flujo * arco.costo
-              
+                print("costo: ",costo)
                 return flujo_actual
             if(limite_flujo):
                 
@@ -1021,19 +1021,18 @@ class Red:
 
         # hacemos las iteraciones del algoritmo mientras haya ciclos negativos en la red marginal
         while(True):
+          
             # aplicamos el algoritmo de floyd para encontrar ciclos negativos
-            ruta = d.dikjstra_general(fuente[0],sumidero[0])
-         
+            ruta = d.ruta_nodos_floyd(fuente[0],sumidero[0])
+
             # en caso de encontrar alguna ruta, seguimos con el algoritmo
-            if ruta :
+            if ruta and type(ruta[len(ruta)-1]) == float:
                 
-               
+                
                 # iniciamos el delta con valor infinito
                 delta = math.inf
                 # variable auxiliar para saber si los objetos de la lista ciclos son arcos o no
                 tipo = type(ruta[0])
-                
-                        
 
                 # calculamos el flujo actual de la red original
                 flujo_actual = 0
@@ -1053,7 +1052,7 @@ class Red:
                         # comparamos las capacidades de los arcos del ciclo para buscar la mas pequeña y obtener el delta
                         if(capacidad_arco_red_marginal< delta):
                             delta = capacidad_arco_red_marginal
-               
+
                 # revisamos si el flujo que tiene actualmente la red mas el delta, se pasan del flujo establecido
                 if(flujo_actual + delta > flujo):
                     delta -= flujo_actual + delta - flujo
@@ -1170,300 +1169,13 @@ class Red:
                                 # etiquetamos al nuevo arco de digrafica con su arco relacionado con respecto a la red marginal
                                 arcoNuevoDigrafica = d.buscar_arco(destino_arco_red_original,origen_arco_red_original, -costo_arco_original)
                                 arcoNuevoDigrafica.etiqueta = arcoNuevo
-               
+
             else: 
                 # si no hay ciclos negativos, rompemos el while y se acaba el algoritmo              
-                break        
-                            
-        
-
-    def metodo_simplex(self):
-
-        # revisamos que la sumatoria de la oferta/demanda sea igual a 0
-        b = 0
-        for nodo in self.__red:
-            b += nodo.oferta_demanda
-
-        # caso donde la sumatoria de la oferta/demanda de los nodos es mayor a cero
-        if(b > 0):
-            # creamos un nuevo nodo ficticio
-            self.agregar_nodo("nodoDemanda")
-            nuevoNodo = self.buscar_nodo("nodoDemanda")
-            nuevoNodo.oferta_demanda = -b
-
-            # creamos los arcos ficticios que van desde los nodos que de demanda hasta el nuevo nodo 
-            for nodo in self.__red:
-                if(nodo.oferta_demanda > 0):
-                    self.agregar_arco(nodo.nombre,"nodoDemanda",0,0,math.inf,0)
-        # caso donde la sumatoria de la oferta/demanda de los nodos es menor a cero
-        if(b < 0):
-            # creamos un nuevo nodo ficticio
-            self.agregar_nodo("nodoOferta")
-            nuevoNodo = self.buscar_nodo("nodoOferta")
-            nuevoNodo.oferta_demanda = -b
-
-            # creamos los arcos ficticios que van desde el nuevo nodo hacia los nodos que de demanda
-            for nodo in self.__red:
-                if(nodo.oferta_demanda > 0):
-                    self.agregar_arco("nodoOferta",nodo.nombre,0,0,math.inf,0)
+                break     
 
 
 
-        # creamos el nodo ficticio para obtener la solución inicial
-        self.agregar_nodo("nodoFicticio")
-        # listas donde guardaremos los arcos que estan y no estan en la solución
-        arcos_basicos = []
-        arco_no_basicos = []
-
-        lista_nodos = []
-
-        # Creamos una lista con los nodos de la red y su oferta/demanda
-        for nodo in self.__red:
-            if (nodo.nombre != "nodoFicticio"):
-                lista_nodos.append([nodo,nodo.oferta_demanda])
-
-        # Calculamos el flujo inicial que tendran los arcos ficticios que crearemos
-        # revisamos si hay arcos con restricciones minimas y satisfacemos dichas restricciones
-        for nodo in lista_nodos:
-            if (nodo[0].nombre != "nodoFicticio"):
-                for arco in self.__red[nodo[0]]["salientes"]:
-                    # si hay restrcción minima, la satisfacemos
-                    if arco.res_min > 0:
-                        arco.flujo = arco.res_min
-                        # restamos el flujo de la oferta que tenia el nodo de origen del arco
-                        nodo[1] -= arco.res_min
-        # revisamos el flujo de los arcos entrantes de los nodos para ver que tanta demanda tendran antes de crear los arcos fictcios
-        for nodo in lista_nodos:
-            if (nodo[0].nombre != "nodoFicticio"):
-                for arco in self.__red[nodo[0]]["entrantes"]:
-                    if arco.flujo > 0:
-                        # disminuimos la demanda de los arcos que inicialmente reciben flujo de los arcos
-                        nodo[1] += arco.flujo
-        
-        # creamos los arcos fictcios entre los nodos originales y el nodo ficticio creado para obtener la solución inicial
-        for nodo in lista_nodos:
-            if (nodo[0].nombre != "nodoFicticio"):
-                flujo_nodo_arco = 0
-                # revisamos si el nodo tiene oferta o demanda
-                if nodo[1] < 0:   
-                    # si el nodo tiene demanda, creamos el arco que va del nodo ficticio al respectivo nodo original    
-                    self.agregar_arco("nodoFicticio",nodo[0].nombre,0,-nodo[1],math.inf,9999)
-                else:
-                    # si el nodo tiene oferta, creamos el arco que va del nodo original al nodo ficticio
-                    self.agregar_arco(nodo[0].nombre,"nodoFicticio",0,nodo[1],math.inf,9999)
-
-
-        # crearemos una lista con los arcos dentro de la solucion y otra con los arcos que no estan en la solución
-        # inicialmente los arcos de la solución serán los entrantes y salientes del nodo ficticio
-        nodo_ficticio = self.buscar_nodo("nodoFicticio")
-        for arco in self.__red[nodo_ficticio]["salientes"]:
-            arcos_basicos.append(arco)
-        for arco in self.__red[nodo_ficticio]["entrantes"]:
-            arcos_basicos.append(arco)
-        # llenamos la lista de arcos no basicos con los arcos de la red que no esten en la lista de arcos basicos
-        for nodo in self.__red:
-            for arco in self.__red[nodo]["salientes"]:
-                if arco not in arcos_basicos:
-                    arco_no_basicos.append(arco)
-    
-        # ciclo con el que realizaremos las iteraciones buscando los ciclos ya actualizando los flujos de los arcos
-        while(True):
-
-            bool = False
-            # variable auxliar donde iremos guardando el peso del ciclo más grande que vayamos encontrando 
-            w_max = 0
-            # lista donde guardaremos el ciclo de peso más grande que vayamos encontrando
-            ciclo_max = []
-
-
-            # recorremos los arcos que no estan en la solución para ver si mejoran la solución actual
-            for arco in arco_no_basicos:
-                # variable donde guardaremos el peso de los ciclos
-                w = 0
-                # lista donde guardaremos los ciclos
-                ciclo = []
-                # lista donde guardaremos los nodos visitados cuando busquemos ciclos
-                visitados = []
-
-                # buscamos ciclos a partir de los arcos no saturados
-                if(arco.capacidad - arco.flujo > 0):
-                    self.dfs_ciclos(arco.destino,arco,ciclo,visitados,arcos_basicos)
-                
-                # revisammos si encontramos un ciclo y calculamos su peso
-                if(ciclo):
-                    # agregamos el arco iterado que posiblemente se unirá a la solución
-                    ciclo.append(arco)
-                    # lo etiquetamos con sentido propio
-                    arco.etiqueta = "sentidoPropio"
- 
-                    # recorremos las aristas del ciclo para calcular el peso del ciclo
-                    for arista in ciclo:
-                        # caso donde las aristas van en sentido del ciclo (restamos el costo de la arista)
-                        if(arista.etiqueta== "sentidoPropio"):
-                                w += -(arista.costo)
-
-                        else: 
-                            # caso donde las aristas van en sentido contrario (sumamos el costo de la arista)
-                               w += arista.costo
-                    # comparamos si el peso del ciclo encontrado es mayor que 0 o mayor que el último ciclo de amyor peso encontrado
-
-                    if(w>w_max):
-                        # actualizamos la variable de peso maximo y guardamos el ciclo como el actual ciclo de peso máximo
-                        w_max = w
-                        ciclo_max = ciclo
-                        # guardamos el arco iterado como el arco que se unirá a la solución
-                        nuevo_arco_solucion = arco
-                       
-
-
-            # revisamos si encontramos el ciclo de peso más grande
-            if (ciclo_max):
-                ciclo_max = []
-                visitados = []
-                # iniciamos el delta con un valor muy grande
-                delta = math.inf
-                # recuperamos el ciclo de peso más grande a partir del arco que agregaremos a la solución
-                self.dfs_ciclos(nuevo_arco_solucion.destino,nuevo_arco_solucion,ciclo_max,visitados,arcos_basicos)
-                # agreamos el arco que se unirá a la solución al ciclo
-                ciclo_max.append(nuevo_arco_solucion)
-                nuevo_arco_solucion.etiqueta = "sentidoPropio"
-
-                # recorremos las aristas del ciclo de peso amyor para calcular el delta
-                # buscaremos los maximos y minimos de flujo que le podemos sumar o restar a los flujos de los arcos del ciclo       
-                for arista in ciclo_max:
-
-                    # caso donde los arcos van en sentido propio del ciclo 
-                    # solo tomamos en cuenta arcos con flujo mayor a 0 para obtener el delta
-                    if(arista.etiqueta== "sentidoPropio" and arista.flujo >0 ):
-                        if(arista.capacidad != math.inf):
-                            # caso donde el flujo es mayor que diferencia entre la capacidad del arco y su flujo
-                            if(arista.capacidad - arista.flujo < arista.flujo):
-
-                                delta_arco = arista.capacidad - arista.flujo
-                            else:
-                                # si el flujo es menor a la diferencia entre capacidad y flujo, entonces podemos tomar como posible delta al flujo del arco
-                                delta_arco = arista.flujo
-                        else:
-                            # si el arco tiene capacidad infinita (gran M) entonces el posible delta será el flujo actual del arco
-                            delta_arco = arista.flujo
-                            
-                        # si el posible delta del arco iterado es menor al último delta, enconces actualizamos el valor del delta
-                        if (delta_arco < delta ):
-                            delta = delta_arco
-                           
-                    else:
-                        # caso donde los arcos van en sentido contrario al del ciclo
-                        # solo tomamos en cuenta arcos con flujo mayor a 0 para obtener el delta
-                        if(arista.flujo >0 ):
-                            # caso donde el flujo es mayor que diferencia entre la restrcción minima del arco y su flujo
-                            if(arista.flujo - arista.res_min < arista.flujo):
-                                
-                                delta_arco = arista.flujo - arista.res_min
-                            else:
-                                 # si el flujo es menor a la diferencia entre la res min y el flujo, entonces podemos tomar como posible delta al flujo del arco
-                                delta_arco = arista.flujo
-                            
-                            if (delta_arco < delta ):
-                                # si el posible delta del arco iterado es menor al último delta, enconces actualizamos el valor del delta
-                                delta = delta_arco
-                
-                arista_fuera_solucion = None
-                # actualizamos el flujo de los arcos del ciclo de acuerdo al delta obtenido
-                for arco in ciclo_max:
-                    # caso para los arcos que van en sentido del ciclo
-                    if(arco.etiqueta== "sentidoPropio"):
-                        arco.flujo+=delta
-                    else:
-                    # caso donde los arcos van en sentido contrario al ciclo
-                        arco.flujo-=delta
-                        # revisamos si arco saldrá de la solución dependiendo del flujo resultante después de sumar el delta
-                        if(arco.flujo == arco.res_min):
-                            arista_fuera_solucion = arco
-                
-         
-                # agremos el arco a la lista de los arcos de la solución y lo sacamos de la lista de arcos que no estaban en la solucíon
-                arcos_basicos.append(nuevo_arco_solucion)
-                arco_no_basicos.remove(nuevo_arco_solucion)
-
-                # sacamos el arco de la lista de arcos de la solución y lo metemos a la lista de arcos que no estan en la solución
-                if(arista_fuera_solucion):
-                   
-                    arcos_basicos.remove(arista_fuera_solucion)
-                    arco_no_basicos.append(arista_fuera_solucion)
-              
-       
-                # calculamos el costo actual
-                #costo = 0
-                #for nodo in self.__red:
-                    #for arco in self.__red[nodo]["salientes"]:
-                        #costo += arco.flujo * arco.costo
-                        #print("costo actual: " costo)
-            else:
-                # si iteramos todos los arcos que no estan en la solución y no encontramos ningún ciclo, detenemos el algoritmo
-                break
-        
-    
-        # eliminamos el nodo y arcos ficticios
-        self.eliminar_nodo("nodoFicticio")
-
-        # calculamos el costo final
-        costo_final = 0
-        for nodo in self.__red:
-            for arco in self.__red[nodo]["salientes"]:
-                costo_final += arco.flujo * arco.costo
-        
-        
-        
-        return costo_final
-
-
-    
-
-    # función para encontrar ciclos (metodo simplex)
-    def dfs_ciclos(self, node,arco,ciclo,arcos_visitados,arcos_basicos):
-        bool = False
-        node.etiqueta = "marcado"
-        for saliente in self.__red[node]["salientes"]: 
-            if(saliente in arcos_basicos and saliente not in arcos_visitados and (saliente.capacidad - saliente.flujo)>0): 
-                bool = True
-                arcos_visitados.append(saliente)
-                ciclo.append(saliente) 
-                saliente.etiqueta = "sentidoPropio"
-                if(saliente.destino == arco.origen):
-                    return ciclo
-
-                self.dfs_ciclos(saliente.destino,arco,ciclo,arcos_visitados,arcos_basicos)
-                break
-
-        if(bool == False):
-            for entrante in self.__red[node]["entrantes"]: 
-                if(entrante in arcos_basicos and entrante not in arcos_visitados and ( entrante.flujo - entrante.res_min)>0 and (entrante.capacidad - entrante.flujo)>0): 
-                    bool = True
-                    arcos_visitados.append(entrante)
-                    ciclo.append(entrante) 
-                    entrante.etiqueta = "sentidoImpropio"
-                    if(entrante.origen == arco.origen):
-                        return ciclo
-                    self.dfs_ciclos(entrante.origen,arco,ciclo,arcos_visitados,arcos_basicos)
-                    break
-        
-        
-
-        if(bool == False):     
-            if(len(ciclo)>=1):
-                if(ciclo[len(ciclo)-1].etiqueta == "sentidoPropio"):      
-                    nodo = ciclo[len(ciclo)-1].origen
-                    ciclo.pop(len(ciclo)-1)
-                    node.etiqueta = None
-                    self.dfs_ciclos(nodo,arco,ciclo,arcos_visitados,arcos_basicos)
-                    return None
-                elif(ciclo[len(ciclo)-1].etiqueta == "sentidoImpropio"):
-                    nodo = ciclo[len(ciclo)-1].destino
-                    ciclo.pop(len(ciclo)-1)
-                    node.etiqueta = None
-                    self.dfs_ciclos(nodo,arco,ciclo,arcos_visitados,arcos_basicos)
-                    return None
-    
     def arcos(self):
         arcos = []
         for nodo in self.__red:
@@ -1471,3 +1183,4 @@ class Red:
                 if arco not in arcos:
                     arcos.append(arco)
         return arcos   
+                            

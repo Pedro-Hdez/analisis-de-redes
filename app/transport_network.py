@@ -16,7 +16,7 @@ from main import app
 # ----- Dropdown menu for algorithm selection -----
 algorithms = ["Find maximum flow using Ford-Fulkerson algorithm", 
               "Find minimum-cost flow using Primal algorithm",
-              "Find minimum-cost flow using Dual algorithm"]
+              "Find total minimum-cost flow using Simplex algorithm"]
 
 select_algorithm_dropdown = dcc.Dropdown(
     id='select-algorithm-dropown-network',
@@ -227,6 +227,12 @@ layout = html.Div(children=[
     # 4- More than two nodes selected when add edge button is clicked
     dcc.Store(
         id='alert-info-network', data=None
+    ),
+
+    # Object to store a flag to run simplex algorithm. the only one which doesn't need to show
+    # the source and sink nodes selection modal
+    dcc.Store(
+        id='info-run-simplex', data=None
     ),
 
     # ----- Div to display nodes errors -----
@@ -1299,12 +1305,13 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 target_flow = None
             
             # Alert if there are not sources or sinks
-            if not sources or not sinks:
+            if (not sources or not sinks) and select_algorithm_dropdown != "Find total minimum-cost flow using Simplex algorithm":
                 # Incorrect number of sources or sinks
                 alert = 16
 
             # Alert if target flow is needed and it is incorrect or unexistent
-            if target_flow == None and select_algorithm_dropdown != "Find maximum flow using Ford-Fulkerson algorithm":
+            if (target_flow == None and select_algorithm_dropdown != "Find maximum flow using Ford-Fulkerson algorithm"
+                and select_algorithm_dropdown != "Find total minimum-cost flow using Simplex algorithm"):
                 # Target flow is needed 
                 alert = 17
                 
@@ -1469,16 +1476,45 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             txt += f"sinks {[s for s in sinks]}"
                         
                     result_text_children = html.P([txt])
+                
+                elif select_algorithm_dropdown == "Find total minimum-cost flow using Simplex algorithm":
+                    print("SIMPLEEX")
+                    # Getting the cost
+                    cost = g.metodo_simplex()
+
+                    # If not cost, do nothing but write the result
+                    if not cost:
+                        txt = f"The current restrictions could not be satisfied. The problem has no solution."
+                    # If there are cost, show the final flow distribution
+                    else:
+                        # Updating edges flows
+                        edges = g.arcos()
+                        for edge in edges:
+                            for e in graph_elements['edges']:
+                                if edge.Id == e['data']['id']:
+                                    if edge.flujo == math.inf:
+                                        e['data']['restrictions'][1] = "Inf"
+                                    else:
+                                        e['data']['restrictions'][1] = edge.flujo
+                                    break
+                        
+                        # Written result
+                        txt = f"Minimum flow have been reached with cost {cost}"
+                        
+                    result_text_children = html.P([txt])
 
             return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_elements_copy
         
         elif btn_triggered == "run-algorithm-btn-network":
+            print("Algoritmo a correr:", select_algorithm_dropdown)
             if graph_copy:
                 graph_elements = copy.deepcopy(graph_copy)
                 graph_copy = None
+
             alert = None
-            if not selected_node_data:
-                alert = 15
+            if select_algorithm_dropdown != "Find total minimum-cost flow using Simplex algorithm":
+                if not selected_node_data:
+                    alert = 15
             
             return graph_elements, nodes_degrees_table_children, number_of_nodes, alert, number_of_edges, nodes_info, "",result_text_children, result_div_style, graph_copy
         
@@ -1660,37 +1696,40 @@ def toggleModal(run_algorithm_btn, cancel_btn_select_source_and_sink_nodes_modal
                 done_btn_select_source_and_sink_nodes_modal, selected_node_data, is_modal_open,
                 select_algorithm_dropdown):
     if run_algorithm_btn:
-        if not selected_node_data:
+        if not selected_node_data and select_algorithm_dropdown != "Find total minimum-cost flow using Simplex algorithm":
             return False, []
         else:
             node_forms = []
-            for node in selected_node_data:
-                node_forms.append(
-                    dbc.FormGroup([
-                        dbc.Input(type="hidden", value=node['label']),
-                        html.H3(f"Node {node['label']}"),
-                        dcc.RadioItems(
-                            options=[
-                                {'label':'Source', 'value':'source'},
-                                {'label':'Sink', 'value':'sink'}
-                            ],labelStyle={'display':'inline-block', "padding-left":"1em"}
-                        )                
-                    ], style={"padding-left":"1em"})
-                )
-            
-            if select_algorithm_dropdown != "Find maximum flow using Ford-Fulkerson algorithm":
-                node_forms.append(
-                    dbc.Form(
-                        [
-                            html.H6("Target Flow: ", className="mr-2", style={"padding":"2em"}),
-                            dbc.Input(type="text"),
-                            
-                            
-                        ], inline=True
+            if select_algorithm_dropdown != "Find total minimum-cost flow using Simplex algorithm":
+                for node in selected_node_data:
+                    node_forms.append(
+                        dbc.FormGroup([
+                            dbc.Input(type="hidden", value=node['label']),
+                            html.H3(f"Node {node['label']}"),
+                            dcc.RadioItems(
+                                options=[
+                                    {'label':'Source', 'value':'source'},
+                                    {'label':'Sink', 'value':'sink'}
+                                ],labelStyle={'display':'inline-block', "padding-left":"1em"}
+                            )                
+                        ], style={"padding-left":"1em"})
                     )
+                
+                if select_algorithm_dropdown != "Find maximum flow using Ford-Fulkerson algorithm":
+                    node_forms.append(
+                        dbc.Form(
+                            [
+                                html.H6("Target Flow: ", className="mr-2", style={"padding":"2em"}),
+                                dbc.Input(type="text"),
+                                
+                                
+                            ], inline=True
+                        )
 
-                )
-
+                    )
+            else:
+                node_forms.append(html.H5('No sink or sources needed to run this algorithm.'))
+                
             return not is_modal_open, node_forms
     return is_modal_open, []
 
@@ -1748,9 +1787,6 @@ def manageAlert(alert_info):
         show = True
     elif alert_info == 15:
         text = "No nodes selected to choose sources and sinks. Please, select at least two different nodes and try again"
-        show = True
-    elif alert_info == 16:
-        text = "Error. Sources or sinks nodes not encountered. Please, select at least one source node and one sink node and try again"
         show = True
     elif alert_info == 16:
         text = "Error. Sources or sinks nodes not encountered. Please, select at least one source node and one sink node and try again"
