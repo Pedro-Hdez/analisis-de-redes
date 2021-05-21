@@ -26,7 +26,17 @@ main_menu = html.Div([
 
         html.Table([
 
-       
+            html.Tr(
+                dcc.Link('Start', href='main_app', className='btn btn-primary btn-lg', style={'width': '100%'}),
+            ),
+            html.Tr(
+                dcc.Link('How to use', href='how-to-use', className='btn btn-primary btn-lg', 
+                         style={'width': '100%'}),
+            ),
+            html.Tr(
+                dcc.Link('About', href='about', className='btn btn-primary btn-lg', style={'width': '100%'}),
+                
+            )
                 
         ], style={'margin-left':'auto', 'margin-right':'auto', 'border-collapse':'separate', 'border-spacing':'17px'}),
     ])

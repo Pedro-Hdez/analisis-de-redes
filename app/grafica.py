@@ -334,8 +334,6 @@ class Grafica:
             
     
     def es_bipartita(self):
-        for nodo in self.__grafica:
-            print(nodo.nombre," ,")
         if not self.es_conexa():
             return -1, -1
         # Cola auxiliar del algoritmo
