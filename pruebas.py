@@ -8,12 +8,12 @@ sumideros = []
 
 fuentes.append('a')
 
-sumideros.append('g')
+sumideros.append('j')
 
-costo = d.algoritmo_primal(fuentes,sumideros,15)
-
+costo = d.algoritmo_primal(fuentes,sumideros,30)
+print("")
+print("Flujo final:")
 d.imprimir_arcos()
 
 print("")
 print("Costo final: ",costo)
-

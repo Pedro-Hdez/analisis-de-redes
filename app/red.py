@@ -676,14 +676,18 @@ class Red:
         
     def algoritmo_primal(self,fuentes,sumideros,limite_flujo):
         # aplicamos for fulkerson con el limite de flujo deseado
+        print("Fuentes: ",fuentes)
+        print("Sumideros: ",sumideros)
+        print("")
         flujo = self.flujo_maximo(fuentes,sumideros,limite_flujo)
         
+        if (flujo < limite_flujo):
+            return None
      
         if(flujo):
 
             costo = 0
             # lista de arcos de la red original
-            
             # caso donde existen nodos con restricciones
             # crearemos un nodo ficticio que particione el nodo con restricciones
             nodos_con_restriccion = []
@@ -737,7 +741,7 @@ class Red:
                     self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
                 # eliminamos el nodo ficticio creado para la partición
                 self.eliminar_nodo(nodo.nombre+ '"')
-
+           
             #calculamos el costo final
             costo = 0
             for nodo in self.__red:
@@ -745,7 +749,7 @@ class Red:
                     arcos_red_original.append(arco)
                     costo += arco.flujo * arco.costo
            
-
+            
             return costo
         else:
             # caso donde no hay un flujo inicial factible en base al flujo deseado
@@ -799,6 +803,7 @@ class Red:
 
             # en caso de encontrar algun ciclo negativo, seguimos con el algoritmo
             if ciclo[len(ciclo)-1][0] == 'ciclo':
+
                 # iniciamos el delta con valor infinito
                 delta = math.inf
                 # variable auxiliar para saber si los objetos de la lista ciclos son arcos o no
@@ -990,7 +995,11 @@ class Red:
         
      
         # aplicamos el algoritmo usando la red marginal
-        red_marginal.rutas_cortas(fuente,sumidero,salientes_sumideros,entrantes_sumideros,limite_flujo)
+        bool = red_marginal.rutas_cortas(fuente,sumidero,salientes_sumideros,entrantes_sumideros,limite_flujo)
+        
+        # regresamos none si no se encuentra una solución
+        if not bool:
+            return None
         
         if(len(fuentes)>1):
             self.eliminar_nodo('A+')
@@ -1002,7 +1011,7 @@ class Red:
         for nodo in self.__red:
             for arco in self.__red[nodo]["salientes"]:
                 costo += arco.flujo * arco.costo
-
+        
         return costo
 
 
@@ -1022,11 +1031,13 @@ class Red:
         # hacemos las iteraciones del algoritmo mientras haya ciclos negativos en la red marginal
         while(True):
             # aplicamos el algoritmo de floyd para encontrar ciclos negativos
-            ruta = d.dikjstra_general(fuente[0],sumidero[0])
-         
+            ruta = d.dijkstra_general(fuente[0],sumidero[0])
+            print(ruta)
             # en caso de encontrar alguna ruta, seguimos con el algoritmo
             if ruta :
-                
+                # revisamos si encontramos un ciclo negativo
+                if type(ruta[0]) == str:
+                    return None
                
                 # iniciamos el delta con valor infinito
                 delta = math.inf
@@ -1175,7 +1186,7 @@ class Red:
                 # si no hay ciclos negativos, rompemos el while y se acaba el algoritmo              
                 break        
                             
-        
+        return True
 
     def metodo_simplex(self):
 

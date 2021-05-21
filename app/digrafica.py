@@ -411,7 +411,7 @@ class Digrafica:
         return resultado 
     
 
-    def __recuperar_ruta(self, nodo_actual, nodo_inicial):
+    def __recuperar_ruta(self, nodo_actual, nodo_inicial, bool = None):
         # Comenzamos la recuperación de la ruta en el nodo actual
         ruta = []
         arista_antecesor = nodo_actual.etiqueta["antecesor"]
@@ -426,6 +426,8 @@ class Digrafica:
             arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
         # Una vez que alcancemos el nodo inicial en la recuperación de la ruta, ésta
         # se regresa
+        if (bool):
+            self.__limpiar_etiquetas("nodos")
         return ruta
 
 
@@ -464,7 +466,7 @@ class Digrafica:
             # En este último caso esta condición también nos sirve ya que z siempre será None y
             # x nunca será None por lo tanto, siempre x != z
             if x == z:
-                return self.__recuperar_ruta(x, a)
+                return self.__recuperar_ruta(x, a, False)
             
             # Si x != z, entonces se iteran los salientes de x:
             for arco in self.__digrafica[x]["salientes"]:
@@ -499,12 +501,13 @@ class Digrafica:
                 # no fue marcado por el algoritmo ya que no existe algúna trayectoria desde el
                 # vértice inicial hasta este nodo
                 if nodo != a and nodo.etiqueta:
-                    rutas =list(set().union(rutas,self.__recuperar_ruta(nodo, a)))
+                    rutas =list(set().union(rutas,self.__recuperar_ruta(nodo, a,False)))
             return rutas
 
 
     def dijkstra_general(self, nodo_inicial, nodo_final=None):
         # Se buscan los dos nodos
+        print("cicssslo")
         nodo_inicial = self.buscar_nodo(nodo_inicial)
         n_final = self.buscar_nodo(nodo_final)
 
@@ -514,7 +517,7 @@ class Digrafica:
         
         # Se encuentra la arborescencia temporal con dijkstra normal
         arborescencia = self.dijkstra(nodo_inicial.nombre, None)
-        
+        print("cicssslo")
         # Obtenemos las aristas sin usar
         aristas_sin_usar = []
         
@@ -528,6 +531,7 @@ class Digrafica:
            
       
         i = 0
+       
         while i < len(aristas_sin_usar):
             # Tomamos la i-ésima arista sin usar
             a = aristas_sin_usar[i]
@@ -541,16 +545,16 @@ class Digrafica:
                 ciclo = []
                 # elemento para identificar si se regresa un ciclo
                 ciclo.append('ciclo')
-                # agregamos la arista a al ciclo prvisionalmente
-                ciclo.append(a)
+  
 
                 # ciclo para revisar ancestros y detectar ciclos
                 while arista_antecesor != nodo_inicial:
-                    if(arista_antecesor != a):
+                    
+                    if(arista_antecesor.origen != a.origen):
                         ciclo.append(arista_antecesor)
                 
                     # If que revisa si los nodos del arista son ancestros
-                    if arista_antecesor ==  a :
+                    if arista_antecesor.origen ==  a.origen :
                         # calculamos la longitud del ciclo
                         longitud_ciclo = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
                         # agreamos la longitud del ciclo como último elemento de la lista
@@ -570,7 +574,7 @@ class Digrafica:
                 aristas_sin_usar.remove(a)
 
                 aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
-                print(a.destino.nombre)
+             
                 arborescencia.remove(a.destino.etiqueta["antecesor"])
 
                 # Se actualiza el antecesor del destino de la nueva arista
@@ -600,7 +604,7 @@ class Digrafica:
             if not n_final.etiqueta:
                 return []
             else:
-                return self.__recuperar_ruta(n_final, nodo_inicial)
+                return self.__recuperar_ruta(n_final, nodo_inicial, True)
 
         return arborescencia
 
@@ -613,7 +617,7 @@ class Digrafica:
             node.etiqueta["longitud_ruta"] += delta
             for saliente in self.__digrafica[node]["salientes"]:   
                if saliente in arborescencia:  
-                   self.dfs(saliente.destino,visited,arborescencia,delta) 
+                   self.dfs(saliente.destino,visited,arborescencia,delta)  
     
     def genera_matriz(self,nodos): 
         # Lista de listas donde guardaremos los elementos de la matriz
@@ -700,9 +704,9 @@ class Digrafica:
                                     ruta_ciclo = []
                                     ruta_ciclo = self.regresar_ruta_ciclo(i,j,lista_matriz,nodos)
                                 
-                                    return ruta_ciclo, lista_matriz
-                            else:   
-                           
+                                    return ruta_ciclo
+                             
+                            else:
                                 # si el nuevo peso es menor, actualizamos el arco del elemento ij de la matriz    
                                 lista_matriz[i][j][0] = self.buscar_arco(lista_matriz[k][j][0].origen.nombre,nodos[j].nombre)
 
@@ -714,7 +718,7 @@ class Digrafica:
         # recuperamos la ruta
         ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos,destino)
 
-        return ruta_corta, lista_matriz
+        return ruta_corta
 
     
     def recuperar_ruta_floyd(self,matriz,nodo,lista_nodos, destino = None):
@@ -748,30 +752,37 @@ class Digrafica:
 
                 if matriz[posicion_nodo][posicion_nodo1][1] == math.inf:
                     return None
-                
-            
+                if type(matriz[posicion_nodo][posicion_nodo][0])!= Nodo:
+                    posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo][0].origen)
+                    ruta_ciclo = self.regresar_ruta_ciclo(posicion_nodo,posicion_nodo,matriz,lista_nodos)
+                    return ruta_ciclo
                 # ciclo para recuperar ruta del origen al nodo correspondiente (destino)
+              
                 while(True):
-       
+                   
+                    
                     if(posicion_nodo == posicion_nodo1):
-          
-                        if type(matriz[posicion_nodo][posicion_nodo][0])!= Nodo:
+                        
+                        if type(matriz[posicion_nodo][posicion_nodo1][0])!= Nodo:
                             posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
                             ruta_ciclo = self.regresar_ruta_ciclo(posicion_nodo,posicion_nodo1,matriz,lista_nodos)
                             return ruta_ciclo
                     # si encontramos un elemento con peso infinito o un nodo, detenemos el ciclo
                     # condicional que se cumplirá cuando ya no haya más camino que recuperar
-                    if type(matriz[posicion_nodo][posicion_nodo1][0])== Nodo:
+                    if type(matriz[posicion_nodo][posicion_nodo1][0]) == Nodo:
+                        
                         break   
                     
                     
-                    # agregamos el arco a la ruta             
+                    # agregamos el arco a la ruta
+                    
                     ruta_hacia_nodo.append(matriz[posicion_nodo][posicion_nodo1])
                    
                     # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
-                   
+                    
                     posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
 
+                # invertimos la lista para ordenar los arcos
 
                 # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
                 rutas.append(ruta_hacia_nodo)
@@ -806,8 +817,7 @@ class Digrafica:
                         # actualizamo la posición del nodo destino, que será el origen del nodo destino anterior
                         posicion_nodo1 = lista_nodos.index(matriz[posicion_nodo][posicion_nodo1][0].origen)
 
-                    # invertimos la lista para ordenar los arcos
-                    ruta_hacia_nodo.reverse()
+                  
 
                     # agregamos la ruta del nodo origen al nodo correspondiente a la lista con las rutas 
                     rutas.append(ruta_hacia_nodo)  
@@ -884,11 +894,12 @@ class Digrafica:
             return None
 
         # aplicamos el algoritmo
-        rutas_origen, matriz = self.floyd(origen,destino)
+        rutas_origen = self.floyd(origen,destino)
+     
         if rutas_origen:
             # si se encontró un ciclo negativo, regresamos el ciloc
             if (rutas_origen[len(rutas_origen)-1][0]=="ciclo"):
-                return rutas_origen, matriz
+                return rutas_origen
             
             # recuperamos la ruta del nodo origen al nodo destino
             ruta = self.arcos_floyd(rutas_origen)
@@ -897,9 +908,14 @@ class Digrafica:
             ruta.append(rutas_origen[len(rutas_origen)-1][1][1])
 
         
-            return ruta, matriz
+            return ruta
         else:
-            return None, matriz
+            return None
 
     def objeto_arco(self):
         return Arco
+
+    def imprimir_arcos(self): 
+        for nodo in self.__digrafica:
+            for arco in self.__digrafica[nodo]["salientes"]:
+                print("(",arco.origen.nombre,', ',arco.destino.nombre,', ',arco.peso,')')

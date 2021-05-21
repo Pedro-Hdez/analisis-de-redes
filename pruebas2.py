@@ -7,11 +7,12 @@ fuentes = []
 sumideros = []
 
 fuentes.append('a')
-fuentes.append('b')
-sumideros.append('g')
 
-flujo = d.algoritmo_dual(fuentes,sumideros,15)
+sumideros.append('j')
 
+flujo = d.algoritmo_dual(fuentes,sumideros,30)
+print("")
+print("Flujo final:")
 d.imprimir_arcos()
 
 print("")

@@ -678,8 +678,11 @@ class Red:
         # aplicamos for fulkerson con el limite de flujo deseado
         flujo = self.flujo_maximo(fuentes,sumideros,limite_flujo)
         
-     
+        
         if(flujo):
+            # regresamos falso si no se satisface el flujo deseado
+            if flujo < limite_flujo:
+                return None
 
             costo = 0
             # lista de arcos de la red original
@@ -990,7 +993,11 @@ class Red:
         
      
         # aplicamos el algoritmo usando la red marginal
-        red_marginal.rutas_cortas(fuente,sumidero,salientes_sumideros,entrantes_sumideros,limite_flujo)
+        bool = red_marginal.rutas_cortas(fuente,sumidero,salientes_sumideros,entrantes_sumideros,limite_flujo)
+        
+        # regresamos none si no se encuentra una solución
+        if not bool:
+            return None
         
         if(len(fuentes)>1):
             self.eliminar_nodo('A+')
@@ -1012,13 +1019,14 @@ class Red:
         d = Digrafica()
         # creamos los arcos de la digrafica tomando los mismos arcos que hay en la red marginal 
             # tomamos el costo de los arcos de la red marginal como peso de los arcos de la digrafica
+        print("ciclo2")
         for nodo in self.__red:
             for arco in self.__red[nodo]["salientes"]:
                 d.agregar_arco(arco.origen.nombre,arco.destino.nombre,arco.costo)
                 # etiquetamos los arcos de la digrafica con los arcos relacionados correspondientes a la red marginal
                 arcoNuevo = d.buscar_arco(arco.origen.nombre,arco.destino.nombre,arco.costo)
                 arcoNuevo.etiqueta = arco
-
+        print("ciclo")
         # hacemos las iteraciones del algoritmo mientras haya ciclos negativos en la red marginal
         while(True):
             # aplicamos el algoritmo de floyd para encontrar ciclos negativos
@@ -1026,7 +1034,9 @@ class Red:
          
             # en caso de encontrar alguna ruta, seguimos con el algoritmo
             if ruta :
-                
+                # revisamos si encontramos un ciclo negativo
+                if type(ruta[0]) == str:
+                    return None
                
                 # iniciamos el delta con valor infinito
                 delta = math.inf
@@ -1174,8 +1184,8 @@ class Red:
             else: 
                 # si no hay ciclos negativos, rompemos el while y se acaba el algoritmo              
                 break        
-                            
-        
+                           
+        return True
 
     def metodo_simplex(self):
 
