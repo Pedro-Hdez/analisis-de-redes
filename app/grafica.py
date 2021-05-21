@@ -334,52 +334,63 @@ class Grafica:
             
     
     def es_bipartita(self):
-        if not self.es_conexa():
-            return -1, -1
+        # if not self.es_conexa():
+        #     return -1, -1
         # Cola auxiliar del algoritmo
+
+        # Lista de los nodos que no han sido etiquetados por el algoritmos
+        nodos_sin_etiqueta = [nodo for nodo in self.__grafica]
+        
         cola = Cola()
         
-        # Se obtiene el primer nodo de la gráfica
-        nodo_inicial = list(self.__grafica.keys())[0]
-
-        # Lista en donde se almacenarán las particiones. Se agrega el primer nodo
-        # automáticamente a la partición 1
-        nodo_inicial.etiqueta = 1
-        particion_1 = [nodo_inicial]
+        particion_1 = []
         particion_2 = []
-        
-        # Se encola el primer nodo
-        cola.encolar(nodo_inicial)
 
-        # El algoritmo continúa mientras la cola no esté vacía. Si se termina exitosamente, 
-        # entonces la gráfica es bipartita, de lo contrario terminará antes.
-        while not cola.es_vacia():
-            # Se desencola un vértice 
-            nodo_actual = cola.desencolar()
-            # Se decide hacia qué partición enviar a sus vecinos de acuerdo a la etiqueta
-            # que el nodo desencolado tenga
-            if nodo_actual.etiqueta == 1:
-                etiqueta = 2
-            else:
-                etiqueta = 1
-            # Se  agregan a la partición contraria  todos los vértices vecinos que no tengan
-            # etiqueta. Si cumplen con esta condición, se encolan.
-            # En caso de que tengan etiqueta y sea la misma que la del nodo actual, entonces
-            # la gráfica no es bipartita
-            for arista in self.__grafica[nodo_actual]:
-                nodo_vecino = arista.destino
-                if not nodo_vecino.etiqueta:
-                    nodo_vecino.etiqueta = etiqueta
-                    if etiqueta == 1:
-                        particion_1.append(nodo_vecino)
-                    else:
-                        particion_2.append(nodo_vecino)
-                        
-                    cola.encolar(nodo_vecino)
+        # Mientras existan nodos sin etiquetar se efectuará el algoritmo para encontrar
+        # particiones en todas las componentes
+        while nodos_sin_etiqueta:
+            # Se obtiene el primer nodo de la gráfica
+            nodo_inicial = nodos_sin_etiqueta.pop(0)
+
+            # Lista en donde se almacenarán las particiones. Se agrega el primer nodo
+            # automáticamente a la partición 1
+            nodo_inicial.etiqueta = 1
+            particion_1.append(nodo_inicial)
+            
+            # Se encola el primer nodo
+            cola.encolar(nodo_inicial)
+
+            # El algoritmo continúa mientras la cola no esté vacía. Si se termina exitosamente, 
+            # entonces la gráfica es bipartita, de lo contrario terminará antes.
+            while not cola.es_vacia():
+                # Se desencola un vértice 
+                nodo_actual = cola.desencolar()
+                # Se decide hacia qué partición enviar a sus vecinos de acuerdo a la etiqueta
+                # que el nodo desencolado tenga
+                if nodo_actual.etiqueta == 1:
+                    etiqueta = 2
                 else:
-                    if nodo_vecino.etiqueta == nodo_actual.etiqueta:
-                        self.__limpiar_etiquetas("nodos")
-                        return None, None
+                    etiqueta = 1
+                # Se  agregan a la partición contraria  todos los vértices vecinos que no tengan
+                # etiqueta. Si cumplen con esta condición, se encolan.
+                # En caso de que tengan etiqueta y sea la misma que la del nodo actual, entonces
+                # la gráfica no es bipartita
+                for arista in self.__grafica[nodo_actual]:
+                    nodo_vecino = arista.destino
+                    if not nodo_vecino.etiqueta:
+                        nodo_vecino.etiqueta = etiqueta
+                        if etiqueta == 1:
+                            particion_1.append(nodo_vecino)
+                        else:
+                            particion_2.append(nodo_vecino)
+                            
+                        cola.encolar(nodo_vecino)
+                        nodos_sin_etiqueta.remove(nodo_vecino)
+
+                    else:
+                        if nodo_vecino.etiqueta == nodo_actual.etiqueta:
+                            self.__limpiar_etiquetas("nodos")
+                            return None, None
         
         self.__limpiar_etiquetas("nodos")
         return particion_1, particion_2
