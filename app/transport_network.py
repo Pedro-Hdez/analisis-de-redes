@@ -1297,7 +1297,7 @@ def updateNetwork(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
             # Getting target flow
             target_flow = None
             try:
-                target_flow = select_source_and_sink_nodes_modal_body_children[2]['props']['children'][1]['props']['value']
+                target_flow = select_source_and_sink_nodes_modal_body_children[-1]['props']['children'][1]['props']['value']
                 # If it exists, validate if it is a positive number less than infinity
                 target_flow = float(target_flow)
                 if target_flow < 0 or target_flow == math.inf:
