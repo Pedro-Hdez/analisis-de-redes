@@ -545,7 +545,7 @@ class Digrafica:
                 ciclo = []
                 # elemento para identificar si se regresa un ciclo
                 ciclo.append('ciclo')
-  
+                ciclo.append(a)
 
                 # ciclo para revisar ancestros y detectar ciclos
                 while arista_antecesor != nodo_inicial:
