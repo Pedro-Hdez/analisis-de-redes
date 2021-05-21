@@ -663,7 +663,7 @@ class Digrafica:
         origen = self.buscar_nodo(nodo_origen)
         
         if nodo_origen == None:
-            return None
+            return None, None
 
         # Creamos una lista con los nodos de la gráfica
         nodos = []
@@ -704,7 +704,7 @@ class Digrafica:
                                     ruta_ciclo = []
                                     ruta_ciclo = self.regresar_ruta_ciclo(i,j,lista_matriz,nodos)
                                 
-                                    return ruta_ciclo
+                                    return ruta_ciclo, lista_matriz
                              
                             else:
                                 # si el nuevo peso es menor, actualizamos el arco del elemento ij de la matriz    
@@ -718,7 +718,7 @@ class Digrafica:
         # recuperamos la ruta
         ruta_corta = self.recuperar_ruta_floyd(lista_matriz,origen,nodos,destino)
 
-        return ruta_corta
+        return ruta_corta, lista_matriz
 
     
     def recuperar_ruta_floyd(self,matriz,nodo,lista_nodos, destino = None):
@@ -891,15 +891,15 @@ class Digrafica:
 
         # verificamos que esixtan los nodos origen y destino
         if (self.buscar_nodo(origen) == None or self.buscar_nodo(destino)== None):
-            return None
+            return None, None
 
         # aplicamos el algoritmo
-        rutas_origen = self.floyd(origen,destino)
+        rutas_origen, matriz = self.floyd(origen,destino)
      
         if rutas_origen:
             # si se encontró un ciclo negativo, regresamos el ciloc
             if (rutas_origen[len(rutas_origen)-1][0]=="ciclo"):
-                return rutas_origen
+                return rutas_origen, matriz
             
             # recuperamos la ruta del nodo origen al nodo destino
             ruta = self.arcos_floyd(rutas_origen)
@@ -908,9 +908,9 @@ class Digrafica:
             ruta.append(rutas_origen[len(rutas_origen)-1][1][1])
 
         
-            return ruta
+            return ruta, matriz
         else:
-            return None
+            return None, matriz
 
     def objeto_arco(self):
         return Arco
