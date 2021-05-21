@@ -16,6 +16,7 @@ from main import app
 # ----- Dropdown menu for algorithm selection -----
 algorithms = ["Find maximum flow using Ford-Fulkerson algorithm", 
               "Find minimum-cost flow using Primal algorithm",
+              "Find minimum-cost flow using Dual algorithm",
               "Find total minimum-cost flow using Simplex algorithm"]
 
 select_algorithm_dropdown = dcc.Dropdown(
