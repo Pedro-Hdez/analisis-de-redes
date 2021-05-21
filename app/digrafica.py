@@ -663,7 +663,7 @@ class Digrafica:
         origen = self.buscar_nodo(nodo_origen)
         
         if nodo_origen == None:
-            return None, None
+            return None
 
         # Creamos una lista con los nodos de la gráfica
         nodos = []
@@ -704,7 +704,7 @@ class Digrafica:
                                     ruta_ciclo = []
                                     ruta_ciclo = self.regresar_ruta_ciclo(i,j,lista_matriz,nodos)
                                 
-                                    return ruta_ciclo, lista_matriz
+                                    return ruta_ciclo
                              
                             else:
                                 # si el nuevo peso es menor, actualizamos el arco del elemento ij de la matriz    
@@ -891,10 +891,10 @@ class Digrafica:
 
         # verificamos que esixtan los nodos origen y destino
         if (self.buscar_nodo(origen) == None or self.buscar_nodo(destino)== None):
-            return None, None
+            return None
 
         # aplicamos el algoritmo
-        rutas_origen, matriz = self.floyd(origen,destino)
+        rutas_origen, matriz  = self.floyd(origen,destino)
      
         if rutas_origen:
             # si se encontró un ciclo negativo, regresamos el ciloc
