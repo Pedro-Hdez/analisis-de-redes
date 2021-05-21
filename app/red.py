@@ -799,7 +799,7 @@ class Red:
         while(True):
             
             # aplicamos el algoritmo de floyd para encontrar ciclos negativos
-            ciclo = d.floyd("a")
+            ciclo, _ = d.floyd("a")
 
             # en caso de encontrar algun ciclo negativo, seguimos con el algoritmo
             if ciclo[len(ciclo)-1][0] == 'ciclo':
