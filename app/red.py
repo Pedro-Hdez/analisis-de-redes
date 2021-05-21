@@ -728,7 +728,7 @@ class Red:
             red_marginal.crear_red_marginal(arcos_red_original)
             
             # aplicamos el algoritmo usando la red marginal
-            red_marginal.eliminacion_ciclos_negativos()
+            red_marginal.eliminacion_ciclos_negativos(fuentes)
 
             # regresamos los nodos con reestricciones a la normalidad
             for nodo in nodos_con_restriccion:
@@ -779,7 +779,7 @@ class Red:
                 arcoNuevo = self.buscar_arco(arco.destino.nombre,arco.origen.nombre,0,0,arco.flujo - arco.res_min)
                 arcoNuevo.etiqueta = arco
     
-    def eliminacion_ciclos_negativos(self):
+    def eliminacion_ciclos_negativos(self,fuentes):
         # creamos el objeto dígrafica que usaremos para aplicar el algoritmo de rutas mas cortas (Floyd)
         # para encontrar ciclos negativos en la red marginal
         d = Digrafica()
@@ -796,10 +796,13 @@ class Red:
     
 
         # hacemos las iteraciones del algoritmo mientras haya ciclos negativos en la red marginal
+        i = 0
         while(True):
             
             # aplicamos el algoritmo de floyd para encontrar ciclos negativos
-            ciclo, _ = d.floyd("a")
+            if i >= len(fuentes):
+                break
+            ciclo, _ = d.floyd(fuentes[i])
 
             # en caso de encontrar algun ciclo negativo, seguimos con el algoritmo
             if ciclo[len(ciclo)-1][0] == 'ciclo':
@@ -931,7 +934,7 @@ class Red:
 
             else: 
                 # si no hay ciclos negativos, rompemos el while y se acaba el algoritmo              
-                break        
+                i+=1       
                 
             
     def algoritmo_dual(self,fuentes,sumideros,limite_flujo):
