@@ -1109,11 +1109,6 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             path_original, rutas = g.dijkstra_general(selected_node_data[0]['label'])
                             path = copy.deepcopy(path_original)
                             
-                            print("LISTA DE RUTAS")
-                            for i in rutas:
-                                print(i, "\n\n")
-                            print("-----------------")
-                            
                             # Check if path exists
                             if not path:
                                 result_text_children = html.P(f"No arborescence found with root {selected_node_data[0]['label']}")
@@ -1158,13 +1153,16 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                             result = f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}\n\n"
                                             result += routes
                                             result_text_children = html.P(result, style={'whiteSpace': 'pre-wrap'})    
+                                        
+                                        elif len(path) != len(graph_elements['nodes'])-1:
+                                            result = f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.\n\n"
+                                            result += routes
+                                            result_text_children = html.P(result, style={'whiteSpace': 'pre-wrap'})
                                             
                                     else:
                                         result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
-                                    if len(path) != len(graph_elements['nodes'])-1:
-                                        result = f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.\n\n"
-                                        result += routes
-                                        result_text_children = html.P(result, style={'whiteSpace': 'pre-wrap'})    
+
+                                        
                     
                     # Floyd - Warshall Algorithm
                     elif select_algorithm_dropdown == "Find shortest paths from one node to all others using Floyd-Warshall algorithm": 
