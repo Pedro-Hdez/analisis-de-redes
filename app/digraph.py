@@ -1106,7 +1106,13 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         if not alert:
                             result_div_style = {'display':''}
                             # Running the algorithm
-                            path = g.dijkstra_general(selected_node_data[0]['label'])
+                            path_original, rutas = g.dijkstra_general(selected_node_data[0]['label'])
+                            path = copy.deepcopy(path_original)
+                            
+                            print("LISTA DE RUTAS")
+                            for i in rutas:
+                                print(i, "\n\n")
+                            print("-----------------")
                             
                             # Check if path exists
                             if not path:
@@ -1136,12 +1142,29 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                                 length += float(e['data']['weight'])
                                                 break
                                     if not cycle:
+
+                                        routes = f"The following shortest paths system has been found:\n"
+                                        for p in rutas:
+                                            try:
+                                                longitud = 0
+                                                for arco in p[1]:
+                                                    longitud += arco.peso
+                                                
+                                                routes += f"{p[0].nombre}: {longitud}\n"
+                                            except:
+                                                None
+
                                         if len(path) == len(graph_elements['nodes']) - 1:
-                                            result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
+                                            result = f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}\n\n"
+                                            result += routes
+                                            result_text_children = html.P(result, style={'whiteSpace': 'pre-wrap'})    
+                                            
                                     else:
                                         result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
                                     if len(path) != len(graph_elements['nodes'])-1:
-                                        result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
+                                        result = f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.\n\n"
+                                        result += routes
+                                        result_text_children = html.P(result, style={'whiteSpace': 'pre-wrap'})    
                     
                     # Floyd - Warshall Algorithm
                     elif select_algorithm_dropdown == "Find shortest paths from one node to all others using Floyd-Warshall algorithm": 
@@ -1343,7 +1366,7 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                 
                 result_div_style = {'display':''}
                 # Running the algorithm
-                path = g.dijkstra_general(node1, node2)
+                path, rutas = g.dijkstra_general(node1, node2)
                 
                 # Check if path exists
                 if not path:

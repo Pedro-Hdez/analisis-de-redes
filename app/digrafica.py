@@ -560,7 +560,7 @@ class Digrafica:
                         longitud_ciclo = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
                         # agreamos la longitud del ciclo como último elemento de la lista
                         ciclo.append(longitud_ciclo)
-                        return ciclo
+                        return ciclo, None
      
                     
                     arista_antecesor = arista_antecesor.origen.etiqueta["antecesor"]
@@ -568,7 +568,7 @@ class Digrafica:
                 if(a.destino == nodo_inicial):
                         longitud_ciclo = a.origen.etiqueta["longitud_ruta"] + a.peso - a.destino.etiqueta["longitud_ruta"]
                         ciclo.append(longitud_ciclo)
-                        return ciclo
+                        return ciclo, None
                 # Si no se formó ningún ciclo negativo, entonces eliminamos la nueva arista de 
                 # las aristas sin usar y la agregamos a la arborescencia. Además, la arista 
                 # mejorada se elimina de la arborescencia y se agrega a las aristas sin usar.
@@ -603,14 +603,17 @@ class Digrafica:
 
         if n_final:
             if not n_final.etiqueta:
-                return []
+                return [], None
             else:
-                return self.__recuperar_ruta(n_final, nodo_inicial, True)
+                return self.__recuperar_ruta(n_final, nodo_inicial, True), None
 
         # recuperamos las rutas del origen a los demas nodos
         rutas = []
         for nodo in lista_nodos:
-            rutas.append(self.__recuperar_ruta(nodo,nodo_inicial,False))
+            try:
+                rutas.append([nodo, self.__recuperar_ruta(nodo,nodo_inicial,False)])
+            except:
+                rutas.append([nodo, None])
 
         return arborescencia, rutas
 
