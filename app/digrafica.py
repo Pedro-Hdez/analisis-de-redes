@@ -520,8 +520,9 @@ class Digrafica:
         print("cicssslo")
         # Obtenemos las aristas sin usar
         aristas_sin_usar = []
-        
+        lista_nodos = []
         for nodo in self.__digrafica:
+            lista_nodos.append(nodo)
             for arco in self.__digrafica[nodo]["salientes"]:
                 # únicamente tomaremos en cuenta los arcos cuyos extremos tengan etiqueta porque
                 # en caso contrario, significa que no existe ruta desde el vértice inicial hasta
@@ -606,7 +607,12 @@ class Digrafica:
             else:
                 return self.__recuperar_ruta(n_final, nodo_inicial, True)
 
-        return arborescencia
+        # recuperamos las rutas del origen a los demas nodos
+        rutas = []
+        for nodo in lista_nodos:
+            rutas.append(self.__recuperar_ruta(nodo,nodo_inicial,False))
+
+        return arborescencia, rutas
 
 
 

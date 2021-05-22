@@ -1039,7 +1039,7 @@ class Red:
         # hacemos las iteraciones del algoritmo mientras haya ciclos negativos en la red marginal
         while(True):
             # aplicamos el algoritmo de floyd para encontrar ciclos negativos
-            ruta = d.dijkstra_general(fuente[0],sumidero[0])
+            ruta, nt = d.dijkstra_general(fuente[0],sumidero[0])
             print(ruta)
             # en caso de encontrar alguna ruta, seguimos con el algoritmo
             if ruta :
