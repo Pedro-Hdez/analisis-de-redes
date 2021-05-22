@@ -507,7 +507,7 @@ class Digrafica:
 
     def dijkstra_general(self, nodo_inicial, nodo_final=None):
         # Se buscan los dos nodos
-        print("cicssslo")
+
         nodo_inicial = self.buscar_nodo(nodo_inicial)
         n_final = self.buscar_nodo(nodo_final)
 
@@ -517,7 +517,7 @@ class Digrafica:
         
         # Se encuentra la arborescencia temporal con dijkstra normal
         arborescencia = self.dijkstra(nodo_inicial.nombre, None)
-        print("cicssslo")
+   
         # Obtenemos las aristas sin usar
         aristas_sin_usar = []
         lista_nodos = []
@@ -573,7 +573,7 @@ class Digrafica:
                 # las aristas sin usar y la agregamos a la arborescencia. Además, la arista 
                 # mejorada se elimina de la arborescencia y se agrega a las aristas sin usar.
                 aristas_sin_usar.remove(a)
-
+                arborescencia.append(a)
                 aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
              
                 arborescencia.remove(a.destino.etiqueta["antecesor"])

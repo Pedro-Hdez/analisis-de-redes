@@ -263,7 +263,7 @@ while (seleccion != "23"):
                 
                 nodo1 = "a"
                 nodo2 = "b"
-                ruta_mas_corta = d.dikjstra_general(nodo1)
+                ruta_mas_corta = d.dijkstra_general(nodo1)
 
 
                 if ruta_mas_corta:

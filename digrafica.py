@@ -568,7 +568,7 @@ class Digrafica:
                 # las aristas sin usar y la agregamos a la arborescencia. Además, la arista 
                 # mejorada se elimina de la arborescencia y se agrega a las aristas sin usar.
                 aristas_sin_usar.remove(a)
-
+                arborescencia.append(a)
                 aristas_sin_usar.append(a.destino.etiqueta["antecesor"])
                 print(a.destino.nombre)
                 arborescencia.remove(a.destino.etiqueta["antecesor"])
