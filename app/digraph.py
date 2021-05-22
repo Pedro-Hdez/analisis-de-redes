@@ -1155,11 +1155,18 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                             result_div_style = {'display':''}
                             show_matrix_btn_style = {'display':''}
                             # Running the algorithm
-                            path, matrix = g.floyd(selected_node_data[0]['label'])
-                            
+                            path_original, matrix = g.floyd(selected_node_data[0]['label'])
+                            path = copy.deepcopy(path_original)
+
+                            print("RESULTADOS DE FLOYD")
+                            for p in path_original:
+                                print(p, "\n\n")                      
+                            print("------------------------\n")
+
                             # Check if we have a cycle
                             cycle = False
                             if path[-1][0] == "ciclo":
+                                print("CICLO")
                                 path = [e[0] for e in path[0:-1]]
                                 cycle = True
                             else:
@@ -1187,13 +1194,31 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                                             length += float(e['data']['weight'])
                                             break
                                 if not cycle:
+                                    routes = f"The following shortest paths system has been found:\n"
+                                    for p in path_original:
+                                        try:
+                                            if isinstance(p[1], list):
+                                                routes += f"{p[0].nombre}: {p[1][1]}\n"
+                                            else:
+                                                try:
+                                                    routes += f"{p[0].nombre}: {p[1][1]}\n"
+                                                except:
+                                                    routes += f"{p[0].nombre}: {0}\n"
+                                        except:
+                                            None
+                                            
+                                            
                                     if len(path) == len(graph_elements['nodes']) - 1:
-                                        result_text_children = html.P(f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}")
+                                        result = f"The minimum arborescence with root {selected_node_data[0]['label']}  has length {length}\n\n"
+                                        result += routes
+                                        result_text_children = html.P(result, style={'whiteSpace': 'pre-wrap'})
                                     
                                     elif len(path) != len(graph_elements['nodes'])-1:
-                                        result_text_children = html.P(f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.")
+                                        result = f"A partial arborescence with root {selected_node_data[0]['label']} and length {length} has been found.\n\n"
+                                        result += routes
+                                        result_text_children = html.P(result, style={'whiteSpace': 'pre-wrap'})
                                 else:
-                                    result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.")
+                                    result_text_children = html.P(f"A negative cycle with length {length} has been found. The problem has no solution.", style={'whiteSpace': 'pre-wrap'})
                         
                             # Getting matrix information
                             # Sacamos el orden de los elementos (la diagonal)(
@@ -1379,7 +1404,10 @@ def updateDigraph(add_node_btn_n_clicks, done_btn_edit_nodes_modal, remove_nodes
                         cycle = True
                 except:
                     # If path is not a cycle, remove last path element, which is the route length
-                    path = path[:-1]
+                    try:
+                        path = path[:-1]
+                    except:
+                        None
                 
                 # Check if path exists
                 if not path:
