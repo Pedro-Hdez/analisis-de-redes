@@ -375,7 +375,7 @@ class Red:
     def imprimir_arcos(self): 
         for nodo in self.__red:
             for arco in self.__red[nodo]["salientes"]:
-                print("(",arco.origen.nombre,', ',arco.destino.nombre,', ',arco.res_min,', ',arco.flujo,', ',arco.capacidad,", ",arco.costo,')')
+                print("(",arco.origen.nombre,', ',arco.destino.nombre,', ',arco.res_min,', ',arco.flujo,', ',arco.capacidad,", ",arco.costo,' ,',arco.Id,')')
 
     def fulkerson(self,fuente,sumidero,limite_flujo,sumideros):
             arcos_visitados = []
@@ -487,8 +487,9 @@ class Red:
                 self.agregar_arco(nodo.nombre, nodo.nombre+ '"',nodo.res_min,0,nodo.res_max)
 
                 for arco in lista_arcos:   
-                    # los arcos salientes del nodo con restricciones ahora serán los arcos salientes del nuevo nodo ficticio           
-                    self.agregar_arco(nodo.nombre+ '"', arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
+                    # los arcos salientes del nodo con restricciones ahora serán los arcos salientes del nuevo nodo ficticio 
+                    arco_a_eliminar = self.buscar_arco(nodo.nombre,arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)         
+                    self.agregar_arco(nodo.nombre+ '"', arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo,arco_a_eliminar.Id)
                     # eliminamos momentaneamente los arcos salientes del nodo que tiene restricciones
                     self.eliminar_arco(nodo.nombre,arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
 
@@ -575,7 +576,7 @@ class Red:
                         lista_arcos_ficticios.append(arco)
                     
                     for arco in lista_arcos_ficticios:
-                        self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
+                        self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo,arco.Id)
                     self.eliminar_nodo(nodo.nombre+ '"')
                 costo = 0
                 for nodo in self.__red:
@@ -594,7 +595,8 @@ class Red:
                         self.eliminar_nodo('Z-')
                     
                     return None
-        # aplicamos for fulkerson a la red
+                    
+        # aplicamos ford fulkerson a la red
         self.fulkerson(fuente,sumidero,limite_flujo,sumideros)
        
 
@@ -606,7 +608,7 @@ class Red:
                 lista_arcos_ficticios.append(arco)
             
             for arco in lista_arcos_ficticios:
-                self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
+                self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo,arco.Id)
             self.eliminar_nodo(nodo.nombre+ '"')
 
         # eliminamos los nodos super fuente y super sumidero en caso de que fueran requeridos
@@ -624,7 +626,7 @@ class Red:
                 flujo_final += arco.flujo
             for arco in self.__red[self.buscar_nodo(nodo)]["salientes"]:
                 flujo_final -= arco.flujo
-
+        self.imprimir_arcos()
         return flujo_final
 
     def dfs(self, node,fuente, sumidero, cadena,arcos_visitados):
@@ -679,6 +681,8 @@ class Red:
         print("Fuentes: ",fuentes)
         print("Sumideros: ",sumideros)
         print("")
+        self.imprimir_arcos()
+        print("")
         flujo = self.flujo_maximo(fuentes,sumideros,limite_flujo)
         
         if (flujo < limite_flujo):
@@ -706,9 +710,10 @@ class Red:
                     # creamos un arco ficticio entre el nodo con restricciones y en nuevo nodo ficticio creado
                     self.agregar_arco(nodo.nombre, nodo.nombre+ '"',nodo.res_min,0,nodo.res_max,0)
                     arcoNuevo = self.buscar_arco(nodo.nombre, nodo.nombre+ '"',nodo.res_min,0,nodo.res_max)
-                    for arco in lista_arcos:   
+                    for arco in lista_arcos: 
+                        arco_a_eliminar = self.buscar_arco(nodo.nombre,arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)  
                         # los arcos salientes del nodo con restricciones ahora serán los arcos salientes del nuevo nodo ficticio           
-                        self.agregar_arco(nodo.nombre+ '"', arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
+                        self.agregar_arco(nodo.nombre+ '"', arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo,arco_a_eliminar.Id)
                         # eliminamos momentaneamente los arcos salientes del nodo que tiene restricciones
                         self.eliminar_arco(nodo.nombre,arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad)
                         arcoNuevo.flujo += arco.flujo
@@ -738,7 +743,7 @@ class Red:
                     lista_arcos_ficticios.append(arco)
                 # recuperamos los arcos que tenia el nodo antes de particionarlo
                 for arco in lista_arcos_ficticios:
-                    self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo)
+                    self.agregar_arco(nodo.nombre, arco.destino.nombre,arco.res_min,arco.flujo,arco.capacidad,arco.costo,arco.Id)
                 # eliminamos el nodo ficticio creado para la partición
                 self.eliminar_nodo(nodo.nombre+ '"')
            

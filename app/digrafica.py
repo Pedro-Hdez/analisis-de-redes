@@ -880,6 +880,7 @@ class Digrafica:
         
     def arcos_floyd(self,rutas): 
         arcos = set()
+        print(rutas)
         for ruta in rutas:
             for arco in ruta:
                 if(type(arco)!= Nodo):
